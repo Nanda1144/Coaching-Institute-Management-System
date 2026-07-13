@@ -1,0 +1,40 @@
+import type { Faculty } from '../types/faculty.types'
+
+export const facultyList: Faculty[] = [
+  { id: 'FAC-001', photo: '', name: 'Dr. Rajesh Kumar', department: 'Computer Science', designation: 'Professor', qualification: 'Ph.D. Computer Science', email: 'rajesh.kumar@college.edu', phone: '+91-9876543210', status: 'Active', joiningDate: '2019-08-15', branch: 'Main Campus', experience: 14 },
+  { id: 'FAC-002', photo: '', name: 'Prof. Sunita Sharma', department: 'Mathematics', designation: 'Associate Professor', qualification: 'Ph.D. Mathematics', email: 'sunita.sharma@college.edu', phone: '+91-9876543211', status: 'Active', joiningDate: '2020-01-10', branch: 'Main Campus', experience: 10 },
+  { id: 'FAC-003', photo: '', name: 'Dr. Amit Verma', department: 'Physics', designation: 'Professor', qualification: 'Ph.D. Physics', email: 'amit.verma@college.edu', phone: '+91-9876543212', status: 'Active', joiningDate: '2018-06-20', branch: 'Science Block', experience: 16 },
+  { id: 'FAC-004', photo: '', name: 'Prof. Priya Patel', department: 'Computer Science', designation: 'Assistant Professor', qualification: 'M.Tech CSE', email: 'priya.patel@college.edu', phone: '+91-9876543213', status: 'Active', joiningDate: '2021-03-05', branch: 'Main Campus', experience: 7 },
+  { id: 'FAC-005', photo: '', name: 'Dr. Vikram Singh', department: 'Electronics', designation: 'Professor', qualification: 'Ph.D. Electronics', email: 'vikram.singh@college.edu', phone: '+91-9876543214', status: 'Inactive', joiningDate: '2017-11-12', branch: 'Engineering Block', experience: 18 },
+  { id: 'FAC-006', photo: '', name: 'Prof. Anjali Gupta', department: 'Chemistry', designation: 'Associate Professor', qualification: 'Ph.D. Chemistry', email: 'anjali.gupta@college.edu', phone: '+91-9876543215', status: 'Active', joiningDate: '2022-07-18', branch: 'Science Block', experience: 9 },
+  { id: 'FAC-007', photo: '', name: 'Dr. Suresh Reddy', department: 'Mathematics', designation: 'Professor', qualification: 'Ph.D. Mathematics', email: 'suresh.reddy@college.edu', phone: '+91-9876543216', status: 'Active', joiningDate: '2020-09-22', branch: 'Main Campus', experience: 20 },
+  { id: 'FAC-008', photo: '', name: 'Prof. Meera Nair', department: 'English', designation: 'Lecturer', qualification: 'M.A. English', email: 'meera.nair@college.edu', phone: '+91-9876543217', status: 'Active', joiningDate: '2021-05-30', branch: 'Arts Block', experience: 5 },
+  { id: 'FAC-009', photo: '', name: 'Dr. Arjun Joshi', department: 'Physics', designation: 'Associate Professor', qualification: 'Ph.D. Physics', email: 'arjun.joshi@college.edu', phone: '+91-9876543218', status: 'Inactive', joiningDate: '2016-02-14', branch: 'Science Block', experience: 12 },
+  { id: 'FAC-010', photo: '', name: 'Prof. Deepa Krishnan', department: 'Computer Science', designation: 'Assistant Professor', qualification: 'Ph.D. Machine Learning', email: 'deepa.krishnan@college.edu', phone: '+91-9876543219', status: 'Active', joiningDate: '2023-01-08', branch: 'Main Campus', experience: 6 },
+  { id: 'FAC-011', photo: '', name: 'Dr. Manoj Tiwari', department: 'Mechanical', designation: 'Professor', qualification: 'Ph.D. Mechanical Engg.', email: 'manoj.tiwari@college.edu', phone: '+91-9876543220', status: 'Active', joiningDate: '2015-09-01', branch: 'Engineering Block', experience: 22 },
+  { id: 'FAC-012', photo: '', name: 'Prof. Neha Gupta', department: 'Biotechnology', designation: 'Associate Professor', qualification: 'Ph.D. Biotechnology', email: 'neha.gupta@college.edu', phone: '+91-9876543221', status: 'On Leave', joiningDate: '2020-03-15', branch: 'Science Block', experience: 11 },
+  { id: 'FAC-013', photo: '', name: 'Dr. Karan Mehta', department: 'Business Administration', designation: 'Professor', qualification: 'Ph.D. Management', email: 'karan.mehta@college.edu', phone: '+91-9876543222', status: 'Active', joiningDate: '2018-11-20', branch: 'Management Block', experience: 15 },
+  { id: 'FAC-014', photo: '', name: 'Prof. Ritu Agarwal', department: 'Electronics', designation: 'Assistant Professor', qualification: 'M.Tech ECE', email: 'ritu.agarwal@college.edu', phone: '+91-9876543223', status: 'Active', joiningDate: '2022-01-10', branch: 'Engineering Block', experience: 4 },
+  { id: 'FAC-015', photo: '', name: 'Dr. Pradeep Jain', department: 'Civil', designation: 'Professor', qualification: 'Ph.D. Civil Engg.', email: 'pradeep.jain@college.edu', phone: '+91-9876543224', status: 'Active', joiningDate: '2014-07-01', branch: 'Engineering Block', experience: 25 },
+  { id: 'FAC-016', photo: '', name: 'Prof. Swati Deshmukh', department: 'Chemistry', designation: 'Assistant Professor', qualification: 'Ph.D. Organic Chemistry', email: 'swati.deshmukh@college.edu', phone: '+91-9876543225', status: 'On Leave', joiningDate: '2021-08-16', branch: 'Science Block', experience: 5 },
+  { id: 'FAC-017', photo: '', name: 'Dr. Rohan Bose', department: 'Computer Science', designation: 'Associate Professor', qualification: 'Ph.D. Computer Science', email: 'rohan.bose@college.edu', phone: '+91-9876543226', status: 'Active', joiningDate: '2019-04-22', branch: 'Main Campus', experience: 13 },
+  { id: 'FAC-018', photo: '', name: 'Prof. Kavita Sinha', department: 'Mathematics', designation: 'Lecturer', qualification: 'M.Sc. Mathematics', email: 'kavita.sinha@college.edu', phone: '+91-9876543227', status: 'Inactive', joiningDate: '2023-06-05', branch: 'Main Campus', experience: 2 },
+  { id: 'FAC-019', photo: '', name: 'Dr. Akash Dave', department: 'Mechanical', designation: 'Associate Professor', qualification: 'Ph.D. Mechanical Engg.', email: 'akash.dave@college.edu', phone: '+91-9876543228', status: 'Active', joiningDate: '2017-02-28', branch: 'Engineering Block', experience: 14 },
+  { id: 'FAC-020', photo: '', name: 'Prof. Ishita Roy', department: 'Business Administration', designation: 'Assistant Professor', qualification: 'MBA Finance', email: 'ishita.roy@college.edu', phone: '+91-9876543229', status: 'Active', joiningDate: '2022-11-14', branch: 'Management Block', experience: 8 },
+  { id: 'FAC-021', photo: '', name: 'Dr. Farhan Ali', department: 'Biotechnology', designation: 'Professor', qualification: 'Ph.D. Genetics', email: 'farhan.ali@college.edu', phone: '+91-9876543230', status: 'Active', joiningDate: '2016-05-09', branch: 'Science Block', experience: 17 },
+  { id: 'FAC-022', photo: '', name: 'Prof. Nidhi Kapoor', department: 'English', designation: 'Associate Professor', qualification: 'M.A. Literature', email: 'nidhi.kapoor@college.edu', phone: '+91-9876543231', status: 'Active', joiningDate: '2020-10-01', branch: 'Arts Block', experience: 9 },
+  { id: 'FAC-023', photo: '', name: 'Dr. Vivek Saxena', department: 'Civil', designation: 'Associate Professor', qualification: 'Ph.D. Structural Engg.', email: 'vivek.saxena@college.edu', phone: '+91-9876543232', status: 'On Leave', joiningDate: '2018-08-12', branch: 'Engineering Block', experience: 11 },
+  { id: 'FAC-024', photo: '', name: 'Prof. Tanvi Shah', department: 'Electronics', designation: 'Lecturer', qualification: 'M.Tech VLSI', email: 'tanvi.shah@college.edu', phone: '+91-9876543233', status: 'Active', joiningDate: '2023-03-20', branch: 'Engineering Block', experience: 3 },
+  { id: 'FAC-025', photo: '', name: 'Dr. Sameer Bhat', department: 'Computer Science', designation: 'Professor', qualification: 'Ph.D. AI & Robotics', email: 'sameer.bhat@college.edu', phone: '+91-9876543234', status: 'Active', joiningDate: '2013-12-01', branch: 'Main Campus', experience: 19 },
+]
+
+export const departmentOptions = [...new Set(facultyList.map(f => f.department))]
+export const branchOptions = [...new Set(facultyList.map(f => f.branch))]
+export const statusOptions = ['Active', 'Inactive', 'On Leave'] as const
+export const experienceRanges = [
+  { label: 'All', value: '' },
+  { label: '0-5 Years', value: '0-5' },
+  { label: '6-10 Years', value: '6-10' },
+  { label: '11-15 Years', value: '11-15' },
+  { label: '15+ Years', value: '15+' },
+]

@@ -1,0 +1,28 @@
+import type { RegistrationFormData } from '../types/registration.types'
+
+export const defaultEditValues: RegistrationFormData = {
+  facultyId: 'FAC-001',
+  fullName: 'Dr. Rajesh Kumar',
+  gender: 'Male',
+  dob: '1982-05-15',
+  photo: '',
+  email: 'rajesh.kumar@college.edu',
+  phone: '+91-9876543210',
+  address: '42, Academic Heights, Sector 12, Dwarka, New Delhi - 110075',
+  qualification: 'Ph.D. Computer Science',
+  specialization: 'Data Structures & Algorithms',
+  experience: '14',
+  department: 'Computer Science',
+  designation: 'Professor',
+  joiningDate: '2019-08-15',
+  employmentType: 'Permanent',
+  salary: '₹1,25,000',
+  branch: 'Main Campus',
+  status: 'Active',
+  username: 'rajesh.kumar',
+  password: '',
+  confirmPassword: '',
+  emergencyName: 'Mrs. Sunita Kumar',
+  emergencyPhone: '+91-9876543235',
+  emergencyRelationship: 'Spouse',
+}
