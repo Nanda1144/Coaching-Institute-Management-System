@@ -1,22 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MdPersonAdd, MdAssignment, MdSchool, MdAssessment } from 'react-icons/md'
+import { MdHowToVote, MdAssessment, MdAnalytics, MdHistory } from 'react-icons/md'
 
 const actions = [
-  { label: 'Add Faculty', icon: MdPersonAdd, color: '#3b82f6', bg: '#dbeafe', route: '/faculty/add' },
-  { label: 'Assign Faculty', icon: MdAssignment, color: '#10b981', bg: '#d1fae5', route: '/faculty/assign' },
-  { label: 'View Departments', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/departments' },
-  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: null },
+  { label: 'Mark Attendance', icon: MdHowToVote, color: '#3b82f6', bg: '#dbeafe', route: '/attendance/manual' },
+  { label: 'View Reports', icon: MdAssessment, color: '#10b981', bg: '#d1fae5', route: null },
+  { label: 'Analytics', icon: MdAnalytics, color: '#8b5cf6', bg: '#ede9fe', route: null },
+  { label: 'History', icon: MdHistory, color: '#f59e0b', bg: '#fef3c7', route: null },
 ]
 
-export default function QuickActions() {
+export default function AttendanceQuickActions() {
   const navigate = useNavigate()
 
-  const handleClick = (route: string | null) => {
-    if (route) {
-      navigate(route)
-    } else {
-      alert('Report generation feature coming soon.')
+  const handleClick = (action: typeof actions[0]) => {
+    if (action.route) {
+      navigate(action.route)
     }
   }
 
@@ -37,9 +35,9 @@ export default function QuickActions() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 + index * 0.08 }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => handleClick(action.route)}
+              whileHover={{ scale: 1.04, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => handleClick(action)}
               className="flex flex-col items-center gap-2 p-4 rounded-xl border border-white/50 hover:shadow-md transition-all duration-200 cursor-pointer"
               style={{ backgroundColor: action.bg + '60' }}
             >
