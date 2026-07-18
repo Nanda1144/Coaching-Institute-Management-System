@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdClose, MdPerson, MdBadge, MdSchool, MdBook, MdAccessTime, MdCheckCircle } from 'react-icons/md'
 import type { HistoryRecord } from '../types/attendanceHistory.types'
+import { getInitials, safeUpperFirst, getFacultyName } from '../../../utils/unwrap'
 
 interface ViewModalProps {
   record: HistoryRecord | null
@@ -50,7 +51,7 @@ export default function ViewModal({ record, onClose }: ViewModalProps) {
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-white shadow-sm">
                   <span className="text-lg font-bold text-primary">
-                    {record.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    {getInitials(record.studentName)}
                   </span>
                 </div>
                 <div>
@@ -70,7 +71,7 @@ export default function ViewModal({ record, onClose }: ViewModalProps) {
                     }`}
                   >
                     <MdCheckCircle className="text-xs" />
-                    {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                    {safeUpperFirst(record.status)}
                   </span>
                 </div>
               </div>
@@ -80,7 +81,7 @@ export default function ViewModal({ record, onClose }: ViewModalProps) {
                   { icon: MdSchool, label: 'Department', value: record.department },
                   { icon: MdSchool, label: 'Course', value: record.course },
                   { icon: MdBook, label: 'Subject', value: record.subject },
-                  { icon: MdPerson, label: 'Faculty', value: record.faculty },
+                  { icon: MdPerson, label: 'Faculty', value: getFacultyName(record.faculty) || String(record.faculty || '') },
                   { icon: MdAccessTime, label: 'Date', value: record.date },
                   { icon: MdAccessTime, label: 'Time', value: record.time },
                 ].map((field) => (

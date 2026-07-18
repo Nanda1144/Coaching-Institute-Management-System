@@ -7,14 +7,19 @@ import {
   MdDarkMode,
   MdLightMode,
 } from 'react-icons/md'
+import { useAuth } from '../contexts/AuthContext'
 
 interface NavbarProps {
   onToggleSidebar: () => void
 }
 
 export default function Navbar({ onToggleSidebar }: NavbarProps) {
+  const { user: authUser } = useAuth()
   const [darkMode, setDarkMode] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const name = authUser?.name || authUser?.email || 'User'
+  const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  const user = { name, email: authUser?.email || '', initials }
 
   return (
     <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-white/20 shadow-sm">
@@ -85,11 +90,11 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
 
           <div className="flex items-center gap-3 ml-2 pl-2 border-l border-gray-200">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-gray-800">Admin User</p>
-              <p className="text-xs text-gray-500">admin@college.edu</p>
+              <p className="text-sm font-medium text-gray-800">{user.name}</p>
+              <p className="text-xs text-gray-500">{user.email}</p>
             </div>
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-semibold shadow-md">
-              A
+              {user.initials}
             </div>
           </div>
         </div>

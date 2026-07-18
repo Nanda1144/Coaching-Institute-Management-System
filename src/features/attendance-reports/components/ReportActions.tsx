@@ -1,12 +1,39 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MdDownload, MdPictureAsPdf, MdTableChart, MdPrint, MdCheckCircle } from 'react-icons/md'
+import * as XLSX from 'xlsx'
+import type { SummaryStats } from '../types/attendanceReports.types'
 
-export default function ReportActions() {
+interface ReportActionsProps {
+  summary?: SummaryStats
+}
+
+export default function ReportActions({ summary }: ReportActionsProps) {
   const [action, setAction] = useState<string | null>(null)
+
+  const exportExcel = () => {
+    if (!summary) return
+    const data = [
+      { Metric: 'Total Students', Value: summary.total },
+      { Metric: 'Present', Value: summary.present },
+      { Metric: 'Absent', Value: summary.absent },
+      { Metric: 'Late', Value: summary.late },
+      { Metric: 'Leave', Value: summary.leave },
+      { Metric: 'Percentage', Value: `${summary.percentage}%` },
+    ]
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Report')
+    XLSX.writeFile(wb, `attendance-report-${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
 
   const handleAction = (label: string) => {
     setAction(label)
+    if (label === 'Download PDF' || label === 'Print') {
+      window.print()
+    } else if (label === 'Export Excel') {
+      exportExcel()
+    }
     setTimeout(() => setAction(null), 2000)
   }
 

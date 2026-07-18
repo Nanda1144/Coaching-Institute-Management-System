@@ -3,6 +3,7 @@ import { MdAccessTime, MdPerson, MdRoom } from 'react-icons/md'
 import { EVENT_TYPE_CONFIG } from '../types/calendar.types'
 import type { CalendarEvent } from '../types/calendar.types'
 import { useState } from 'react'
+import { getFacultyName, safeConfig } from '../../../utils/unwrap'
 import EventTooltip from './EventTooltip'
 
 interface EventCardProps {
@@ -13,7 +14,7 @@ interface EventCardProps {
 
 export default function EventCard({ event, compact = false, onDragStart }: EventCardProps) {
   const [showTooltip, setShowTooltip] = useState(false)
-  const config = EVENT_TYPE_CONFIG[event.type]
+  const config = safeConfig(EVENT_TYPE_CONFIG, event.type, { bg: '#f3f4f6', border: '#e5e7eb', label: event.type, color: '#6b7280' })
 
   return (
     <motion.div
@@ -52,7 +53,7 @@ export default function EventCard({ event, compact = false, onDragStart }: Event
           </div>
           <div className="flex items-center gap-1">
             <MdPerson className="text-gray-400" />
-            <span className="truncate">{event.faculty}</span>
+            <span className="truncate">{getFacultyName(event.faculty) || 'Unknown'}</span>
           </div>
           <div className="flex items-center gap-1">
             <MdRoom className="text-gray-400" />

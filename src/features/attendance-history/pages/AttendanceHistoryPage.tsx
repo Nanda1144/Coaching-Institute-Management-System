@@ -10,21 +10,53 @@ import EditModal from '../components/EditModal'
 import ExportMenu from '../components/ExportMenu'
 import AttendanceHistorySkeleton from '../components/AttendanceHistorySkeleton'
 import EmptyState from '../components/EmptyState'
-import { initialRecords, initialFilters, ITEMS_PER_PAGE } from '../data/attendanceHistoryData'
+import Toast from '../../../components/Toast'
+import attendanceService from '../../../services/attendance/attendance.service'
+import { initialFilters, ITEMS_PER_PAGE } from '../data/attendanceHistoryData'
+import { normalizeHistoryRecordList } from '../../../utils/normalizers'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
 import type { HistoryRecord, HistoryFilters, SortConfig, SortField } from '../types/attendanceHistory.types'
 
 export default function AttendanceHistoryPage() {
-  const [records, setRecords] = useState<HistoryRecord[]>(initialRecords)
+  const [records, setRecords] = useState<HistoryRecord[]>([])
   const [filters, setFilters] = useState<HistoryFilters>(initialFilters)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'date', direction: 'desc' })
   const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [viewRecord, setViewRecord] = useState<HistoryRecord | null>(null)
   const [editRecord, setEditRecord] = useState<HistoryRecord | null>(null)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  const fetchRecords = useCallback(async (f: HistoryFilters) => {
+    setLoading(true)
+    try {
+      const params: Record<string, unknown> = {}
+      if (f.search) params.search = f.search
+      if (f.department) params.department = f.department
+      if (f.course) params.course = f.course
+      if (f.batch) params.batch = f.batch
+      if (f.status) params.status = f.status
+      if (f.method) params.method = f.method
+      if (f.dateFrom) params.dateFrom = f.dateFrom
+      if (f.dateTo) params.dateTo = f.dateTo
+      params.sortBy = 'date'
+      params.sortOrder = 'desc'
+      params.page = 1
+      params.limit = 100
+
+      const res = await attendanceService.getAll(params)
+      setRecords(normalizeHistoryRecordList(res))
+    } catch {
+      setToastMessage('Failed to load attendance records')
+      setShowToast(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 700)
-    return () => clearTimeout(timer)
+    fetchRecords(filters)
   }, [])
 
   const handleFilterChange = useCallback((key: keyof HistoryFilters, value: string) => {
@@ -44,8 +76,16 @@ export default function AttendanceHistoryPage() {
     }))
   }, [])
 
-  const handleSave = useCallback((updated: HistoryRecord) => {
-    setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+  const handleSave = useCallback(async (updated: HistoryRecord) => {
+    try {
+      await attendanceService.update(updated.id, updated as unknown as Record<string, unknown>)
+      setRecords((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+      setToastMessage('Record updated successfully')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to update record')
+      setShowToast(true)
+    }
   }, [])
 
   const filtered = useMemo(() => {
@@ -86,6 +126,7 @@ export default function AttendanceHistoryPage() {
   if (loading) {
     return (
       <div className="space-y-6">
+        <AttendanceNavBar />
         <div className="h-8 w-64 bg-gray-100/60 rounded-xl animate-pulse" />
         <AttendanceHistorySkeleton />
       </div>
@@ -94,6 +135,7 @@ export default function AttendanceHistoryPage() {
 
   return (
     <div className="space-y-6">
+      <AttendanceNavBar />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -143,6 +185,12 @@ export default function AttendanceHistoryPage() {
 
       <ViewModal record={viewRecord} onClose={() => setViewRecord(null)} />
       <EditModal record={editRecord} onClose={() => setEditRecord(null)} onSave={handleSave} />
+
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   )
 }

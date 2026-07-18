@@ -11,6 +11,7 @@ export interface Faculty {
   joiningDate: string
   branch: string
   experience: number
+  gender: string
 }
 
 export type SortDirection = 'asc' | 'desc'

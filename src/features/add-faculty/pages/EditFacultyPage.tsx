@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { MdChevronRight, MdHome, MdArrowBack } from 'react-icons/md'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import type { RegistrationFormData } from '../types/registration.types'
-import { defaultEditValues } from '../data/editData'
+import facultyService from '../../../services/faculty/faculty.service'
 import PersonalInfoSection from '../components/PersonalInfoSection'
 import AcademicDetailsSection from '../components/AcademicDetailsSection'
 import EmploymentDetailsSection from '../components/EmploymentDetailsSection'
@@ -15,9 +15,12 @@ import Toast from '../../../components/Toast'
 
 export default function EditFacultyPage() {
   const navigate = useNavigate()
-  const [photoValue, setPhotoValue] = useState(defaultEditValues.photo)
+  const { id } = useParams<{ id: string }>()
+  const [photoValue, setPhotoValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const {
     register,
@@ -25,27 +28,92 @@ export default function EditFacultyPage() {
     reset,
     formState: { errors },
     watch,
-  } = useForm<RegistrationFormData>({ defaultValues: defaultEditValues })
+  } = useForm<RegistrationFormData>()
 
   const password = watch('password')
   const handleCloseToast = useCallback(() => setShowToast(false), [])
 
-  const onSubmit = (_data: RegistrationFormData) => {
+  useEffect(() => {
+    if (!id) return
+    const fetchFaculty = async () => {
+      setLoading(true)
+      setFetchError(null)
+      try {
+        const result = await facultyService.getById(id)
+        const faculty = result?.data ?? result
+        const defaults: RegistrationFormData = {
+          facultyId: faculty.id ?? '',
+          fullName: faculty.name ?? '',
+          gender: faculty.gender ?? '',
+          dob: faculty.dob ?? '',
+          photo: faculty.photo ?? '',
+          email: faculty.email ?? '',
+          phone: faculty.phone ?? '',
+          address: faculty.address ?? '',
+          qualification: faculty.qualification ?? '',
+          specialization: faculty.specialization ?? '',
+          experience: String(faculty.experience ?? ''),
+          department: faculty.department ?? '',
+          designation: faculty.designation ?? '',
+          joiningDate: faculty.joiningDate ?? '',
+          employmentType: faculty.employmentType ?? '',
+          salary: faculty.salary ?? '',
+          branch: faculty.branch ?? '',
+          status: faculty.status ?? '',
+          username: faculty.username ?? faculty.email ?? '',
+          password: '',
+          confirmPassword: '',
+          emergencyName: faculty.emergencyName ?? '',
+          emergencyPhone: faculty.emergencyPhone ?? '',
+          emergencyRelationship: faculty.emergencyRelationship ?? '',
+        }
+        reset(defaults)
+        setPhotoValue(faculty.photo ?? '')
+      } catch (err) {
+        setFetchError(err instanceof Error ? err.message : 'Failed to load faculty data')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFaculty()
+  }, [id, reset])
+
+  const onSubmit = async (data: RegistrationFormData) => {
+    if (!id) return
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await facultyService.update(id, data as unknown as Record<string, unknown>)
       setShowToast(true)
       setTimeout(() => navigate('/faculty'), 1500)
-    }, 1000)
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : 'Failed to update faculty')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
-    reset(defaultEditValues)
-    setPhotoValue(defaultEditValues.photo)
+    reset()
   }
 
   const handleCancel = () => {
     navigate('/faculty')
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-red-500">{fetchError}</p>
+      </div>
+    )
   }
 
   return (

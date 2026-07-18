@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdClose, MdVisibility, MdCheckCircle, MdCancel, MdBadge, MdSchool, MdBook, MdDateRange, MdAccessTime } from 'react-icons/md'
 import type { CorrectionRequest } from '../types/attendanceCorrection.types'
+import { getInitials, safeUpperFirst } from '../../../utils/unwrap'
 
 interface ViewModalProps {
   request: CorrectionRequest | null
@@ -46,7 +47,7 @@ export function ViewCorrectionModal({ request, onClose }: ViewModalProps) {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-white shadow-sm">
                 <span className="text-base font-bold text-primary">
-                  {request.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {getInitials(request.studentName)}
                 </span>
               </div>
               <div>
@@ -62,7 +63,7 @@ export function ViewCorrectionModal({ request, onClose }: ViewModalProps) {
                   request.approvalStatus === 'approved' ? 'bg-emerald-50 text-emerald-600' :
                   'bg-red-50 text-red-600'
                 }`}>
-                  {request.approvalStatus.charAt(0).toUpperCase() + request.approvalStatus.slice(1)}
+                  {safeUpperFirst(request.approvalStatus)}
                 </span>
               </div>
             </div>

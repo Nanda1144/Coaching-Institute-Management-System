@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdPerson, MdBadge, MdSchool, MdGroup, MdAccessTime } from 'react-icons/md'
 import type { RecognizedStudent, RecognitionStatusType } from '../types/faceRecognition.types'
+import { getInitials } from '../../../utils/unwrap'
 
 interface StudentInfoCardProps {
   student: RecognizedStudent | null
@@ -10,8 +11,6 @@ interface StudentInfoCardProps {
 export default function StudentInfoCard({ student, status }: StudentInfoCardProps) {
   const show = (status === 'detected' || status === 'marked') && student !== null
 
-  const getInitials = (name: string) =>
-    name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <motion.div

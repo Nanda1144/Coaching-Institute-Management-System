@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdDownload, MdTableChart, MdDescription, MdTextSnippet, MdCheckCircle } from 'react-icons/md'
+import * as XLSX from 'xlsx'
 import type { HistoryRecord } from '../types/attendanceHistory.types'
 
 interface ExportMenuProps {
@@ -21,6 +22,39 @@ export default function ExportMenu({ records }: ExportMenuProps) {
   }, [])
 
   const handleExport = (format: 'csv' | 'pdf' | 'excel') => {
+    if (format === 'csv') {
+      const headers = ['ID', 'Date', 'Student Name', 'Roll Number', 'Department', 'Course', 'Batch', 'Subject', 'Status', 'Method', 'Faculty', 'Time']
+      const rows = records.map(r => [r.id, r.date, r.studentName, r.rollNumber, r.department, r.course, r.batch, r.subject, r.status, r.method, r.faculty, r.time])
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `attendance-history-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } else if (format === 'excel') {
+      const data = records.map(r => ({
+        ID: r.id,
+        Date: r.date,
+        'Student Name': r.studentName,
+        'Roll Number': r.rollNumber,
+        Department: r.department,
+        Course: r.course,
+        Batch: r.batch,
+        Subject: r.subject,
+        Status: r.status,
+        Method: r.method,
+        Faculty: r.faculty,
+        Time: r.time,
+      }))
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'History')
+      XLSX.writeFile(wb, `attendance-history-${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } else if (format === 'pdf') {
+      window.print()
+    }
     setExported(format)
     setTimeout(() => setExported(null), 2000)
     setOpen(false)

@@ -163,7 +163,7 @@ function FingerprintSvg({ status }: { status: FingerprintStatus }) {
 }
 
 export default function FingerprintScanner({ status, onScan, onRetry }: FingerprintScannerProps) {
-  const config = statusConfig[status]
+  const config = statusConfig[status] || { label: 'Unknown', color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb', icon: MdFingerprint }
   const Icon = config.icon
 
   return (

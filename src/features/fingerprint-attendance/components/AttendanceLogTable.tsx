@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdPerson, MdAccessTime, MdCheckCircle, MdCancel, MdSchedule } from 'react-icons/md'
 import type { AttendanceLogEntry } from '../types/fingerprint.types'
+import { getInitials, safeUpperFirst } from '../../../utils/unwrap'
 
 interface AttendanceLogTableProps {
   entries: AttendanceLogEntry[]
@@ -69,7 +70,7 @@ export default function AttendanceLogTable({ entries }: AttendanceLogTableProps)
           </thead>
           <tbody>
             {entries.map((entry, index) => {
-              const StatusIcon = statusIcon[entry.status]
+              const StatusIcon = statusIcon[entry.status] || MdCheckCircle
               return (
                 <motion.tr
                   key={entry.id}
@@ -89,7 +90,7 @@ export default function AttendanceLogTable({ entries }: AttendanceLogTableProps)
                           color: entry.verificationResult === 'matched' ? '#059669' : '#dc2626',
                         }}
                       >
-                        {entry.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {getInitials(entry.studentName, '?')}
                       </div>
                       <span className="text-xs text-gray-800 font-medium">{entry.studentName}</span>
                     </div>
@@ -106,7 +107,7 @@ export default function AttendanceLogTable({ entries }: AttendanceLogTableProps)
                       style={{ backgroundColor: statusBg[entry.status], color: statusColor[entry.status] }}
                     >
                       <StatusIcon className="text-xs" />
-                      {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      {safeUpperFirst(entry.status)}
                     </span>
                   </td>
                   <td className="py-3 px-3">

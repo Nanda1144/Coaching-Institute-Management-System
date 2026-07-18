@@ -1,12 +1,12 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MdChevronRight, MdHome, MdArrowBack } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import type { SearchFilters } from '../types/search.types'
-import {
-  facultySearchData, departmentOptions, branchOptions, qualificationOptions,
-  designationOptions, statusOptions, genderOptions, experienceRanges,
-} from '../data/searchData'
+import type { Faculty } from '../../faculty/types/faculty.types'
+import facultyService from '../../../services/faculty/faculty.service'
+import { normalizeFacultyList } from '../../../utils/normalizers'
+import { statusOptions, genderOptions, experienceRanges } from '../data/searchData'
 import SearchBar from '../components/SearchBar'
 import FilterPanel from '../components/FilterPanel'
 import FilterChips from '../components/FilterChips'
@@ -28,6 +28,30 @@ export default function FacultySearchPage() {
   const [filters, setFilters] = useState<SearchFilters>(initialFilters)
   const [view, setView] = useState<'card' | 'table'>('card')
   const [page, setPage] = useState(1)
+  const [facultySearchData, setFacultySearchData] = useState<Faculty[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await facultyService.getAll()
+        setFacultySearchData(normalizeFacultyList(result))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load faculty data')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const departmentOptions = useMemo(() => [...new Set(facultySearchData.map(f => f.department).filter(Boolean))], [facultySearchData])
+  const branchOptions = useMemo(() => [...new Set(facultySearchData.map(f => f.branch).filter(Boolean))], [facultySearchData])
+  const qualificationOptions = useMemo(() => [...new Set(facultySearchData.map(f => f.qualification).filter(Boolean))], [facultySearchData])
+  const designationOptions = useMemo(() => [...new Set(facultySearchData.map(f => f.designation).filter(Boolean))], [facultySearchData])
 
   const filtered = useMemo(() => {
     let result = [...facultySearchData]
@@ -76,7 +100,7 @@ export default function FacultySearchPage() {
     }
 
     return result
-  }, [searchQuery, filters])
+  }, [searchQuery, filters, facultySearchData])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -99,6 +123,22 @@ export default function FacultySearchPage() {
     setSearchQuery('')
     setPage(1)
   }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
+  }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">

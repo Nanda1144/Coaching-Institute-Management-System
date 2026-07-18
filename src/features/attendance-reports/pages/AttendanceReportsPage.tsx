@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { MdAssessment } from 'react-icons/md'
 import ReportStatsCards from '../components/ReportStatsCards'
@@ -7,17 +7,49 @@ import ReportCharts from '../components/ReportCharts'
 import ReportSummaryTable from '../components/ReportSummaryTable'
 import ReportActions from '../components/ReportActions'
 import ReportSkeleton from '../components/ReportSkeleton'
-import { initialFilters, dummyReportData } from '../data/attendanceReportsData'
-import type { ReportFilters as ReportFiltersType, ReportType } from '../types/attendanceReports.types'
+import Toast from '../../../components/Toast'
+import attendanceService from '../../../services/attendance/attendance.service'
+import { initialFilters } from '../data/attendanceReportsData'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
+import type { ReportFilters as ReportFiltersType, ReportData } from '../types/attendanceReports.types'
 
 export default function AttendanceReportsPage() {
   const [filters, setFilters] = useState<ReportFiltersType>(initialFilters)
   const [loading, setLoading] = useState(true)
+  const [reportData, setReportData] = useState<ReportData | null>(null)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  const fetchReport = useCallback(async (f: ReportFiltersType) => {
+    setLoading(true)
+    try {
+      const params: Record<string, unknown> = {}
+      if (f.department) params.department = f.department
+      if (f.course) params.course = f.course
+      if (f.batch) params.batch = f.batch
+      if (f.dateFrom) params.dateFrom = f.dateFrom
+      if (f.dateTo) params.dateTo = f.dateTo
+      if (f.reportType) params.reportType = f.reportType
+
+      const res = await attendanceService.getAttendanceStats(params)
+      const data = res?.data || res || {}
+      setReportData({
+        stats: data.stats || [],
+        trends: data.trends || [],
+        departmentData: data.departmentData || [],
+        summary: data.summary || { present: 0, absent: 0, late: 0, leave: 0, total: 0, percentage: 0 },
+      })
+    } catch {
+      setToastMessage('Failed to load report data')
+      setShowToast(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 900)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchReport(filters)
+  }, [filters])
 
   const handleFilterChange = useCallback((key: keyof ReportFiltersType, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -27,14 +59,10 @@ export default function AttendanceReportsPage() {
     setFilters(initialFilters)
   }, [])
 
-  const reportData = useMemo(() => {
-    const rt = filters.reportType as ReportType
-    return dummyReportData[rt] || dummyReportData.daily
-  }, [filters.reportType])
-
-  if (loading) {
+  if (loading || !reportData) {
     return (
       <div className="space-y-6">
+        <AttendanceNavBar />
         <div className="h-8 w-56 bg-gray-100/60 rounded-xl animate-pulse" />
         <ReportSkeleton />
       </div>
@@ -43,6 +71,7 @@ export default function AttendanceReportsPage() {
 
   return (
     <div className="space-y-6">
+      <AttendanceNavBar />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -77,6 +106,12 @@ export default function AttendanceReportsPage() {
       <ReportSummaryTable summary={reportData.summary} />
 
       <ReportActions />
+
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   )
 }

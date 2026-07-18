@@ -57,7 +57,7 @@ export default function RecentAttendanceTable({ records, error }: RecentAttendan
             </thead>
             <tbody>
               {records.map((record, index) => {
-                const status = statusConfig[record.status]
+                const status = statusConfig[record.status] || { label: 'Unknown', color: '#6b7280', bg: '#f3f4f6' }
                 const method = methodConfig[record.method] ?? { color: '#6b7280', bg: '#f3f4f6' }
                 const StatusIcon = record.status === 'present' ? MdCheckCircle
                   : record.status === 'absent' ? MdCancel

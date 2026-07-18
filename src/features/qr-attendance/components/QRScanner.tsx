@@ -17,7 +17,7 @@ const scanStatusConfig: Record<QRStatus, { label: string; icon: typeof MdCheckCi
 }
 
 export default function QRScanner({ isScannerOn, scanStatus, onStart, onStop }: QRScannerProps) {
-  const config = scanStatusConfig[scanStatus]
+  const config = scanStatusConfig[scanStatus] || { label: 'Unknown', icon: MdCheckCircle, color: '#6b7280', bg: '#f3f4f6' }
   const Icon = config.icon
 
   return (

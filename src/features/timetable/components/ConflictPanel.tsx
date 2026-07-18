@@ -219,8 +219,8 @@ export default function ConflictPanel({ entries, onClose }: ConflictPanelProps) 
           <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
             <AnimatePresence mode="popLayout">
               {filteredConflicts.map((conflict, index) => {
-                const sev = severityConfig[conflict.severity]
-                const typ = typeConfig[conflict.type]
+                const sev = severityConfig[conflict.severity] || { icon: MdInfo, color: '#6b7280', bg: '#f3f4f6', label: 'Unknown' }
+                const typ = typeConfig[conflict.type] || { icon: MdInfo, label: 'Unknown' }
                 const SevIcon = sev.icon
                 const TypIcon = typ.icon
                 const isExpanded = expanded === conflict.id

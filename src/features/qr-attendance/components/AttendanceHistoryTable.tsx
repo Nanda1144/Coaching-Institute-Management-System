@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdPerson, MdAccessTime, MdCheckCircle, MdCancel, MdTimerOff, MdHowToVote } from 'react-icons/md'
 import type { AttendanceRecord, QRStatus } from '../types/qrAttendance.types'
+import { getInitials, safeUpperFirst } from '../../../utils/unwrap'
 
 interface AttendanceHistoryTableProps {
   records: AttendanceRecord[]
@@ -62,9 +63,9 @@ export default function AttendanceHistoryTable({ records }: AttendanceHistoryTab
           </thead>
           <tbody>
             {records.map((record, index) => {
-              const qrConfig = qrStatusConfig[record.qrStatus]
+              const qrConfig = qrStatusConfig[record.qrStatus] || { label: 'Unknown', icon: MdCheckCircle, color: '#6b7280', bg: '#f3f4f6' }
               const QrIcon = qrConfig.icon
-              const attConfig = attendanceStatusConfig[record.attendanceStatus]
+              const attConfig = attendanceStatusConfig[record.attendanceStatus] || { color: '#6b7280', bg: '#f3f4f6' }
               return (
                 <motion.tr
                   key={record.id}
@@ -76,7 +77,7 @@ export default function AttendanceHistoryTable({ records }: AttendanceHistoryTab
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400/20 to-purple-400/20 flex items-center justify-center text-[8px] font-bold text-indigo-600">
-                        {record.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {getInitials(record.studentName)}
                       </div>
                       <span className="text-xs text-gray-800 font-medium">{record.studentName}</span>
                     </div>
@@ -102,7 +103,7 @@ export default function AttendanceHistoryTable({ records }: AttendanceHistoryTab
                       style={{ backgroundColor: attConfig.bg, color: attConfig.color }}
                     >
                       {record.attendanceStatus === 'present' ? <MdCheckCircle className="text-xs" /> : <MdCancel className="text-xs" />}
-                      {record.attendanceStatus.charAt(0).toUpperCase() + record.attendanceStatus.slice(1)}
+                      {safeUpperFirst(record.attendanceStatus)}
                     </span>
                   </td>
                 </motion.tr>

@@ -8,14 +8,10 @@ import WeeklySchedule from '../components/WeeklySchedule'
 import MonthlySchedule from '../components/MonthlySchedule'
 import ScheduleTable from '../components/ScheduleTable'
 import StudentTimetableSkeleton from '../components/StudentTimetableSkeleton'
-import {
-  studentInfo,
-  scheduleEntries,
-  pastScheduleEntries,
-  quickStats,
-  dayOptions,
-} from '../data/studentTimetableData'
+import Toast from '../../../components/Toast'
+import timetableService from '../../../services/timetable/timetable.service'
 import type { ScheduleView } from '../types/studentTimetable.types'
+import type { ScheduleEntry, StudentInfo, QuickStats as QuickStatsType } from '../types/studentTimetable.types'
 
 const viewTabs: { key: ScheduleView; label: string }[] = [
   { key: 'daily', label: 'Today' },
@@ -23,16 +19,84 @@ const viewTabs: { key: ScheduleView; label: string }[] = [
   { key: 'monthly', label: 'Monthly' },
 ]
 
+const dayOptions = [
+  { value: '', label: 'All Days' },
+  { value: 'Monday', label: 'Monday' },
+  { value: 'Tuesday', label: 'Tuesday' },
+  { value: 'Wednesday', label: 'Wednesday' },
+  { value: 'Thursday', label: 'Thursday' },
+  { value: 'Friday', label: 'Friday' },
+  { value: 'Saturday', label: 'Saturday' },
+]
+
 export default function StudentTimetablePage() {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<ScheduleView>('daily')
   const [search, setSearch] = useState('')
   const [dayFilter, setDayFilter] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
+  const [studentInfo, setStudentInfo] = useState<StudentInfo>({
+    photo: '', name: '', rollNumber: '', department: '', course: '', batch: '', semester: 0,
+  })
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([])
+  const [pastScheduleEntries, setPastScheduleEntries] = useState<ScheduleEntry[]>([])
+  const [quickStats, setQuickStats] = useState<QuickStatsType>({ classesToday: 0, attendancePercentage: 0, upcomingExams: 0, assignments: 0 })
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(t)
+    const fetchData = async () => {
+      setError(null)
+      try {
+        const response = await timetableService.getAll()
+        const rawData = response?.data ?? []
+        const items = Array.isArray(rawData) ? rawData : (rawData?.data ?? [])
+        const mapped = (items as Record<string, unknown>[]).map((item, index) => ({
+          id: String(item.id || `ST-${String(index + 1).padStart(3, '0')}`),
+          time: String(item.time || `${item.startTime || '09:00'} - ${item.endTime || '10:00'}`),
+          subject: String(item.subject || ''),
+          faculty: String(item.faculty || ''),
+          classroom: String(item.classroom || ''),
+          status: (item.status as ScheduleEntry['status']) || 'Scheduled',
+          attendance: 'Not Marked' as const,
+          day: String(item.day || ''),
+          date: String(item.date || ''),
+          month: String(item.month || ''),
+        }))
+        setScheduleEntries(mapped)
+        setPastScheduleEntries([])
+        const today = new Date().toLocaleString('en-US', { weekday: 'long' })
+        const todayCount = mapped.filter((e: ScheduleEntry) => e.day === today).length
+        setQuickStats({ classesToday: todayCount, attendancePercentage: 0, upcomingExams: 0, assignments: 0 })
+        setStudentInfo({
+          photo: '',
+          name: 'Student',
+          rollNumber: '',
+          department: '',
+          course: '',
+          batch: '',
+          semester: 0,
+        })
+      } catch (err) {
+        setScheduleEntries([])
+        setPastScheduleEntries([])
+        setError(err instanceof Error ? err.message : 'Failed to load timetable')
+        setToastMessage('Failed to load timetable data')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
+
+  useEffect(() => {
+    if (!loading && scheduleEntries.length > 0) {
+      const today = new Date().toLocaleString('en-US', { weekday: 'long' })
+      const todayCount = scheduleEntries.filter((e) => e.day === today).length
+      setQuickStats((prev) => ({ ...prev, classesToday: todayCount }))
+    }
+  }, [loading, scheduleEntries])
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value)
@@ -55,7 +119,7 @@ export default function StudentTimetablePage() {
     window.print()
   }, [])
 
-  const allEntries = useMemo(() => [...pastScheduleEntries, ...scheduleEntries], [])
+  const allEntries = useMemo(() => [...pastScheduleEntries, ...scheduleEntries], [pastScheduleEntries, scheduleEntries])
 
   const todayEntries = useMemo(() => {
     const today = new Date().toLocaleString('en-US', { weekday: 'long' })
@@ -85,6 +149,26 @@ export default function StudentTimetablePage() {
   }, [view, todayEntries, filteredEntries])
 
   if (loading) return <StudentTimetableSkeleton />
+
+  if (error && scheduleEntries.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mb-4">
+            <span className="text-red-600 text-2xl font-bold">!</span>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Failed to Load Timetable</h3>
+          <p className="text-sm text-gray-500 mb-4 max-w-md">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors shadow-md"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -181,6 +265,8 @@ export default function StudentTimetablePage() {
           </div>
         </div>
       )}
+
+      <Toast message={toastMessage} isVisible={showToast} onClose={() => setShowToast(false)} />
     </div>
   )
 }

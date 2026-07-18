@@ -1,28 +1,89 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { MdCalendarMonth, MdPrint, MdDownload } from 'react-icons/md'
+import Toast from '../../../components/Toast'
 import * as XLSX from 'xlsx'
+import { safeUpperFirst } from '../../../utils/unwrap'
 import HolidayStatsCards from '../components/HolidayStatsCards'
 import HolidayCalendar from '../components/HolidayCalendar'
 import HolidayList from '../components/HolidayList'
 import HolidayFilters from '../components/HolidayFilters'
 import SpecialEvents from '../components/SpecialEvents'
 import HolidaySkeleton from '../components/HolidaySkeleton'
-import {
-  holidayStats, holidays, specialEvents,
-  departmentOptions, monthOptions, typeOptions,
-} from '../data/holidayData'
+import holidayService from '../../../services/holiday/holiday.service'
 import type { HolidayFilters as FilterType } from '../types/holiday.types'
+import type { Holiday, SpecialEvent, HolidayStats } from '../types/holiday.types'
 
 const initialFilters: FilterType = { search: '', department: '', month: '', type: '' }
+
+const departmentOptions = ['All Departments', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electronics', 'Mechanical', 'Civil', 'English', 'Biotechnology', 'Business Administration']
+
+const monthOptions = [
+  { value: '', label: 'All Months' },
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+]
+
+const typeOptions = [
+  { value: '', label: 'All Types' },
+  { value: 'national', label: 'National' },
+  { value: 'festival', label: 'Festival' },
+  { value: 'academic', label: 'Academic' },
+  { value: 'event', label: 'Event' },
+]
 
 export default function HolidayManagementPage() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<FilterType>(initialFilters)
+  const [holidayStats, setHolidayStats] = useState<HolidayStats>({ totalHolidays: 0, upcomingHolidays: 0, specialEvents: 0, workingDays: 0 })
+  const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [specialEvents, setSpecialEvents] = useState<SpecialEvent[]>([])
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(t)
+    const fetchData = async () => {
+      try {
+        const [holidaysRes, statsRes, eventsRes] = await Promise.allSettled([
+          holidayService.getAll(),
+          holidayService.getStats(),
+          holidayService.getSpecialEvents(),
+        ])
+        if (holidaysRes.status === 'fulfilled') {
+          const data = holidaysRes.value
+          const rawData = data?.data ?? []
+          setHolidays(Array.isArray(rawData) ? rawData : (rawData?.data ?? []))
+        }
+        if (statsRes.status === 'fulfilled') {
+          const data = statsRes.value
+          const s = (data?.data ?? data) as HolidayStats
+          if (s) setHolidayStats(s)
+        }
+        if (eventsRes.status === 'fulfilled') {
+          const data = eventsRes.value
+          const rawEvents = data?.data ?? []
+          setSpecialEvents(Array.isArray(rawEvents) ? rawEvents : (rawEvents?.data ?? []))
+        }
+      } catch {
+        setHolidays([])
+        setSpecialEvents([])
+        setToastMessage('Failed to load holiday data')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
 
   const handleFilterChange = useCallback((key: keyof FilterType, value: string) => {
@@ -54,7 +115,7 @@ export default function HolidayManagementPage() {
       result = result.filter((h) => h.type === filters.type)
     }
     return result
-  }, [filters])
+  }, [filters, holidays])
 
   const handlePrint = () => {
     window.print()
@@ -65,9 +126,9 @@ export default function HolidayManagementPage() {
       'Holiday Name': h.name,
       Date: h.date,
       Day: h.day,
-      Type: h.type.charAt(0).toUpperCase() + h.type.slice(1),
+      Type: safeUpperFirst(h.type),
       Department: h.department,
-      Status: h.status.charAt(0).toUpperCase() + h.status.slice(1),
+      Status: safeUpperFirst(h.status),
     }))
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -133,6 +194,11 @@ export default function HolidayManagementPage() {
       </div>
 
       <HolidayList holidays={filteredHolidays} />
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   )
 }

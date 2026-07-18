@@ -5,19 +5,15 @@ import { MdPersonAdd, MdAssignment, MdSchool, MdAssessment } from 'react-icons/m
 const actions = [
   { label: 'Add Faculty', icon: MdPersonAdd, color: '#3b82f6', bg: '#dbeafe', route: '/faculty/add' },
   { label: 'Assign Faculty', icon: MdAssignment, color: '#10b981', bg: '#d1fae5', route: '/faculty/assign' },
-  { label: 'View Departments', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/departments' },
-  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: null },
+  { label: 'Timetable', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/timetable' },
+  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: '/attendance/reports' },
 ]
 
 export default function QuickActions() {
   const navigate = useNavigate()
 
-  const handleClick = (route: string | null) => {
-    if (route) {
-      navigate(route)
-    } else {
-      alert('Report generation feature coming soon.')
-    }
+  const handleClick = (route: string) => {
+    navigate(route)
   }
 
   return (

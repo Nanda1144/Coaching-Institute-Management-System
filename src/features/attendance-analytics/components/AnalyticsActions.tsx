@@ -7,6 +7,10 @@ export default function AnalyticsActions() {
 
   const handleAction = (label: string) => {
     setAction(label)
+    if (label === 'Export Analytics') {
+    } else if (label === 'Print Dashboard') {
+      window.print()
+    }
     setTimeout(() => setAction(null), 2000)
   }
 

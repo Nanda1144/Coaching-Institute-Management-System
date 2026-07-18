@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MdFingerprint } from 'react-icons/md'
 import FingerprintScanner from '../components/FingerprintScanner'
@@ -7,23 +7,62 @@ import AttendanceLogTable from '../components/AttendanceLogTable'
 import StatisticsCards from '../components/StatisticsCards'
 import FingerprintActions from '../components/FingerprintActions'
 import Toast from '../../../components/Toast'
-import { dummyStudent, attendanceLog, fingerprintStats } from '../data/fingerprintData'
-import type { FingerprintStatus, StudentInfo } from '../types/fingerprint.types'
+import attendanceService from '../../../services/attendance/attendance.service'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
+import type { FingerprintStatus, StudentInfo, AttendanceLogEntry, FingerprintStats } from '../types/fingerprint.types'
 
 export default function FingerprintAttendancePage() {
   const [status, setStatus] = useState<FingerprintStatus>('waiting')
   const [student, setStudent] = useState<StudentInfo | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [stats, setStats] = useState<FingerprintStats>({ successfulScans: 0, failedAttempts: 0, totalAttendance: 0 })
+  const [log, setLog] = useState<AttendanceLogEntry[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const simulateScan = useCallback(() => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [statsRes, logRes] = await Promise.all([
+          attendanceService.getAttendanceStats({ type: 'fingerprint' }),
+          attendanceService.getAll({ type: 'fingerprint', limit: 12 }),
+        ])
+        const s = statsRes?.data || statsRes || {}
+        setStats({
+          successfulScans: s.successfulScans || s.successful || 0,
+          failedAttempts: s.failedAttempts || s.failed || 0,
+          totalAttendance: s.totalAttendance || s.total || 0,
+        })
+        const logRaw = logRes?.data ?? []
+        const entries = Array.isArray(logRaw) ? logRaw : (logRaw?.data ?? [])
+        setLog(Array.isArray(entries) ? entries : [])
+      } catch {
+        setToastMessage('Failed to load fingerprint data')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleScan = useCallback(async () => {
     setStatus('scanning')
-    setTimeout(() => {
-      const success = Math.random() > 0.3
-      if (success) {
+    try {
+      const result = await attendanceService.markFingerprint({ timestamp: new Date().toISOString() })
+      if (result?.status === 'success' || result?.verified) {
         setStatus('verified')
-        setStudent(dummyStudent)
-        setToastMessage(`Attendance marked for ${dummyStudent.name}`)
+        const studentData = result?.student || result?.data || {}
+        const info: StudentInfo = {
+          id: studentData.id || studentData.studentId || '',
+          name: studentData.name || studentData.studentName || 'Unknown',
+          rollNumber: studentData.rollNumber || '',
+          department: studentData.department || '',
+          batch: studentData.batch || '',
+        }
+        setStudent(info)
+        setToastMessage(`Attendance marked for ${info.name}`)
         setShowToast(true)
       } else {
         setStatus('failed')
@@ -31,7 +70,12 @@ export default function FingerprintAttendancePage() {
         setToastMessage('Fingerprint did not match. Please try again.')
         setShowToast(true)
       }
-    }, 2500)
+    } catch {
+      setStatus('failed')
+      setStudent(null)
+      setToastMessage('Fingerprint scan failed. Please try again.')
+      setShowToast(true)
+    }
   }, [])
 
   const handleRetry = useCallback(() => {
@@ -39,8 +83,19 @@ export default function FingerprintAttendancePage() {
     setStudent(null)
   }, [])
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <AttendanceNavBar />
+        <div className="h-8 w-64 bg-gray-100/60 rounded-xl animate-pulse" />
+        <div className="h-96 bg-gray-100/40 rounded-2xl animate-pulse" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      <AttendanceNavBar />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -61,16 +116,16 @@ export default function FingerprintAttendancePage() {
         </div>
       </motion.div>
 
-      <StatisticsCards stats={fingerprintStats} />
+      <StatisticsCards stats={stats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <FingerprintScanner
             status={status}
-            onScan={simulateScan}
+            onScan={handleScan}
             onRetry={handleRetry}
           />
-          <AttendanceLogTable entries={attendanceLog} />
+          <AttendanceLogTable entries={log} />
         </div>
         <div className="lg:col-span-1 space-y-6">
           <StudentDetailsCard student={student} status={status} />

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { MdSchool, MdVisibility, MdEdit, MdAssignment } from 'react-icons/md'
 import type { FacultySearchResult } from '../types/search.types'
 import FacultyCard from './FacultyCard'
+import { getInitials } from '../../../utils/unwrap'
 
 interface SearchResultsProps {
   faculty: FacultySearchResult[]
@@ -72,7 +73,7 @@ export default function SearchResults({ faculty, view, onView, onEdit, onAssign 
               >
                 <td className="py-3 px-4">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-sm">
-                    {f.photo || f.name.charAt(0)}
+                    {f.photo || getInitials(f.name, '?')}
                   </div>
                 </td>
                 <td className="py-3 px-4">

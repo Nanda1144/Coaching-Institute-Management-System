@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdAccessTime, MdBook, MdPerson, MdRoom, MdGroup, MdCalendarMonth, MdEventNote } from 'react-icons/md'
 import type { UpcomingClass } from '../types/timetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface UpcomingClassesProps {
   classes: UpcomingClass[]
@@ -51,7 +52,7 @@ export default function UpcomingClasses({ classes, error }: UpcomingClassesProps
                 <span className="text-[9px] font-semibold text-accent mt-0.5 leading-tight text-center px-1">
                   {item.day?.slice(0, 3)}
                 </span>
-                <span className="text-[8px] text-gray-500 -mt-0.5">{item.date.slice(-2)}</span>
+                <span className="text-[8px] text-gray-500 -mt-0.5">{item.date?.slice(-2) ?? ''}</span>
               </div>
 
               <div className="flex-1 min-w-0">
@@ -61,7 +62,7 @@ export default function UpcomingClasses({ classes, error }: UpcomingClassesProps
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <MdPerson className="text-gray-400 text-xs flex-shrink-0" />
-                  <p className="text-xs text-gray-600 truncate">{item.faculty}</p>
+                  <p className="text-xs text-gray-600 truncate">{getFacultyName(item.faculty) || 'Unknown'}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                   <div className="flex items-center gap-1">

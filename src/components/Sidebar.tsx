@@ -1,10 +1,9 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   MdDashboard,
   MdPeople,
   MdSchool,
-  MdBook,
   MdCalendarMonth,
   MdAssignment,
   MdSettings,
@@ -13,34 +12,22 @@ import {
   MdPerson,
   MdHowToVote,
   MdSearch,
-  MdFace,
-  MdFingerprint,
-  MdQrCode,
-  MdHistory,
   MdAssessment,
-  MdAnalytics,
   MdEditNote,
 } from 'react-icons/md'
+import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { to: '/', icon: MdDashboard, label: 'Dashboard' },
   { to: '/student/timetable', icon: MdPerson, label: 'My Schedule' },
   { to: '/faculty', icon: MdPeople, label: 'Faculty' },
-  { to: '/departments', icon: MdSchool, label: 'Departments' },
-  { to: '/courses', icon: MdBook, label: 'Courses' },
   { to: '/schedule', icon: MdCalendarMonth, label: 'Schedule' },
   { to: '/holidays', icon: MdStar, label: 'Holidays' },
   { to: '/faculty/timetable', icon: MdCalendarMonth, label: 'My Timetable' },
   { to: '/faculty/search', icon: MdSearch, label: 'Advanced Search' },
   { to: '/faculty/assign', icon: MdAssignment, label: 'Assignments' },
   { to: '/attendance', icon: MdHowToVote, label: 'Attendance' },
-  { to: '/attendance/manual', icon: MdHowToVote, label: 'Manual Attendance' },
-  { to: '/attendance/face-recognition', icon: MdFace, label: 'Face Recognition' },
-  { to: '/attendance/fingerprint', icon: MdFingerprint, label: 'Fingerprint' },
-  { to: '/attendance/qr', icon: MdQrCode, label: 'QR Attendance' },
-  { to: '/attendance/history', icon: MdHistory, label: 'Attendance History' },
   { to: '/attendance/reports', icon: MdAssessment, label: 'Attendance Reports' },
-  { to: '/attendance/analytics', icon: MdAnalytics, label: 'Attendance Analytics' },
   { to: '/attendance/correction', icon: MdEditNote, label: 'Correction' },
 ]
 
@@ -49,6 +36,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen }: SidebarProps) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login')
+  }
+
   return (
     <motion.aside
       initial={{ x: -280 }}
@@ -71,6 +66,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.to === '/'}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
@@ -86,11 +82,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
       </nav>
 
       <div className="px-3 py-4 border-t border-gray-100/50 space-y-1">
-        <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50/50 hover:text-gray-800 w-full transition-all duration-200">
+        <NavLink to="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50/50 hover:text-gray-800 w-full transition-all duration-200">
           <MdSettings className="text-lg" />
           Settings
-        </button>
-        <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50/50 w-full transition-all duration-200">
+        </NavLink>
+        <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50/50 w-full transition-all duration-200">
           <MdLogout className="text-lg" />
           Logout
         </button>

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdPerson, MdBadge, MdSchool, MdAccessTime, MdCheckCircle } from 'react-icons/md'
 import type { StudentInfo, FingerprintStatus } from '../types/fingerprint.types'
+import { getInitials } from '../../../utils/unwrap'
 
 interface StudentDetailsCardProps {
   student: StudentInfo | null
@@ -37,7 +38,7 @@ export default function StudentDetailsCard({ student, status }: StudentDetailsCa
                 className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center border-2 border-white shadow-md"
               >
                 <span className="text-xl font-bold text-white">
-                  {student.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  {getInitials(student.name)}
                 </span>
               </motion.div>
               <div>

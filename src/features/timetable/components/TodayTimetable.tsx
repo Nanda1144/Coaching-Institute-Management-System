@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdAccessTime, MdBook, MdPerson, MdRoom, MdGroup, MdCheckCircle, MdSchedule, MdCancel, MdPlayCircle } from 'react-icons/md'
 import type { TimetableEntry } from '../types/timetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface TodayTimetableProps {
   entries: TimetableEntry[]
@@ -64,7 +65,7 @@ export default function TodayTimetable({ entries, error }: TodayTimetableProps) 
             </thead>
             <tbody>
               {entries.map((entry, index) => {
-                const status = statusConfig[entry.status]
+                const status = statusConfig[entry.status] || { label: 'Unknown', icon: MdSchedule, color: '#6b7280', bg: '#f3f4f6' }
                 const StatusIcon = status.icon
                 return (
                   <motion.tr
@@ -92,7 +93,7 @@ export default function TodayTimetable({ entries, error }: TodayTimetableProps) 
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-1.5">
                         <MdPerson className="text-gray-400 text-xs" />
-                        <span className="text-gray-700 text-xs">{entry.faculty}</span>
+                        <span className="text-gray-700 text-xs">{getFacultyName(entry.faculty) || (typeof entry.faculty === 'string' ? entry.faculty : 'Unknown')}</span>
                       </div>
                     </td>
                     <td className="py-3 px-2">

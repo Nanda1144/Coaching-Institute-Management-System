@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { MdChevronRight, MdHome, MdArrowBack } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import type { RegistrationFormData } from '../types/registration.types'
+import facultyService from '../../../services/faculty/faculty.service'
 import PersonalInfoSection from '../components/PersonalInfoSection'
 import AcademicDetailsSection from '../components/AcademicDetailsSection'
 import EmploymentDetailsSection from '../components/EmploymentDetailsSection'
@@ -15,6 +16,7 @@ export default function AddFacultyPage() {
   const navigate = useNavigate()
   const [photoValue, setPhotoValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const {
     register,
@@ -26,17 +28,23 @@ export default function AddFacultyPage() {
 
   const password = watch('password')
 
-  const onSubmit = (_data: RegistrationFormData) => {
+  const onSubmit = async (data: RegistrationFormData) => {
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    setSubmitError(null)
+    try {
+      await facultyService.create(data as unknown as Record<string, unknown>)
       navigate('/faculty')
-    }, 1500)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create faculty')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
     reset()
     setPhotoValue('')
+    setSubmitError(null)
   }
 
   const handleCancel = () => {
@@ -75,6 +83,12 @@ export default function AddFacultyPage() {
           Back to List
         </button>
       </motion.div>
+
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+          {submitError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <PersonalInfoSection

@@ -14,8 +14,9 @@ import {
   classroomOptions, buildingOptions, floorOptions, dayOptions,
   statusOptions, recurringOptions,
 } from '../data/timetableFormData'
-import { getEditEntryById } from '../data/editTimetableData'
+import timetableService from '../../../services/timetable/timetable.service'
 import type { CreateTimetableFormData } from '../types/timetableForm.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 type FormValues = { [key: string]: string }
 
@@ -48,33 +49,50 @@ export default function EditTimetablePage() {
   const [toastMessage, setToastMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  const [loadingEntry, setLoadingEntry] = useState(true)
+  const [entryMeta, setEntryMeta] = useState({ lastModified: '', createdBy: '' })
 
   useEffect(() => {
-    const entry = getEditEntryById(id || '')
-    if (!entry) {
-      setNotFound(true)
-      return
+    const loadEntry = async () => {
+      setLoadingEntry(true)
+      try {
+        const response = await timetableService.getById(id || '')
+        const entry = response?.data ?? response
+        if (!entry || !entry.id) {
+          setNotFound(true)
+          return
+        }
+        setForm({
+          academicYear: entry.academicYear || '',
+          semester: entry.semester || '',
+          department: entry.department || '',
+          course: entry.course || '',
+          batch: entry.batch || '',
+          section: entry.section || '',
+          subject: entry.subject || '',
+          faculty: getFacultyName(entry.faculty) || (typeof entry.faculty === 'string' ? entry.faculty : ''),
+          classroom: entry.classroom || '',
+          building: entry.building || '',
+          floor: entry.floor || '',
+          day: entry.day || '',
+          startTime: entry.startTime || '',
+          endTime: entry.endTime || '',
+          duration: '',
+          remarks: entry.remarks || '',
+          status: entry.status || '',
+          recurringClass: entry.recurringClass || '',
+        })
+        setEntryMeta({
+          lastModified: entry.lastModified || '',
+          createdBy: entry.createdBy || '',
+        })
+      } catch {
+        setNotFound(true)
+      } finally {
+        setLoadingEntry(false)
+      }
     }
-    setForm({
-      academicYear: entry.academicYear,
-      semester: entry.semester,
-      department: entry.department,
-      course: entry.course,
-      batch: entry.batch,
-      section: entry.section,
-      subject: entry.subject,
-      faculty: entry.faculty,
-      classroom: entry.classroom,
-      building: entry.building,
-      floor: entry.floor,
-      day: entry.day,
-      startTime: entry.startTime,
-      endTime: entry.endTime,
-      duration: '',
-      remarks: entry.remarks,
-      status: entry.status,
-      recurringClass: entry.recurringClass,
-    })
+    loadEntry()
   }, [id])
 
   const handleChange = useCallback((field: string, value: string) => {
@@ -112,40 +130,50 @@ export default function EditTimetablePage() {
     setShowConfirm(true)
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     setShowConfirm(false)
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await timetableService.update(id || '', form as unknown as Record<string, unknown>)
       setToastMessage(`Timetable ${id} updated successfully!`)
       setShowToast(true)
-    }, 1000)
+    } catch {
+      setToastMessage('Failed to update timetable entry')
+      setShowToast(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleReset = () => {
-    const entry = getEditEntryById(id || '')
-    if (!entry) return
-    setForm({
-      academicYear: entry.academicYear,
-      semester: entry.semester,
-      department: entry.department,
-      course: entry.course,
-      batch: entry.batch,
-      section: entry.section,
-      subject: entry.subject,
-      faculty: entry.faculty,
-      classroom: entry.classroom,
-      building: entry.building,
-      floor: entry.floor,
-      day: entry.day,
-      startTime: entry.startTime,
-      endTime: entry.endTime,
-      duration: '',
-      remarks: entry.remarks,
-      status: entry.status,
-      recurringClass: entry.recurringClass,
-    })
-    setErrors({})
+  const handleReset = async () => {
+    try {
+      const response = await timetableService.getById(id || '')
+      const entry = response?.data ?? response
+      if (!entry) return
+      setForm({
+        academicYear: entry.academicYear || '',
+        semester: entry.semester || '',
+        department: entry.department || '',
+        course: entry.course || '',
+        batch: entry.batch || '',
+        section: entry.section || '',
+        subject: entry.subject || '',
+        faculty: getFacultyName(entry.faculty) || (typeof entry.faculty === 'string' ? entry.faculty : ''),
+        classroom: entry.classroom || '',
+        building: entry.building || '',
+        floor: entry.floor || '',
+        day: entry.day || '',
+        startTime: entry.startTime || '',
+        endTime: entry.endTime || '',
+        duration: '',
+        remarks: entry.remarks || '',
+        status: entry.status || '',
+        recurringClass: entry.recurringClass || '',
+      })
+      setErrors({})
+    } catch {
+      // ignore
+    }
   }
 
   const handleCancel = () => {
@@ -174,15 +202,13 @@ export default function EditTimetablePage() {
     )
   }
 
-  if (Object.keys(form).length === 0) {
+  if (loadingEntry || Object.keys(form).length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
-
-  const entry = getEditEntryById(id || '')
 
   return (
     <motion.div
@@ -208,7 +234,7 @@ export default function EditTimetablePage() {
           <h2 className="text-2xl font-bold text-gray-800">Edit Timetable Entry</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             Modifying entry <span className="font-mono font-medium text-primary">{id}</span>
-            {entry && <> &middot; Last modified: {entry.lastModified} by {entry.createdBy}</>}
+            {entryMeta.lastModified && <> &middot; Last modified: {entryMeta.lastModified} by {entryMeta.createdBy}</>}
           </p>
         </div>
         <button

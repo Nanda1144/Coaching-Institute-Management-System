@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdEmojiEvents, MdWarning } from 'react-icons/md'
 import type { StudentData } from '../types/attendanceAnalytics.types'
+import { getInitials } from '../../../utils/unwrap'
 
 interface StudentPerformanceProps {
   topStudents: StudentData[]
@@ -34,7 +35,7 @@ function StudentTable({ students, type }: { students: StudentData[]; type: 'top'
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[7px] font-bold ${
                     isTop ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
                   }`}>
-                    {s.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    {getInitials(s.name)}
                   </div>
                   <span className="text-xs text-gray-800 font-medium truncate max-w-[100px]">{s.name}</span>
                 </div>

@@ -9,14 +9,12 @@ import FacultyMonthlySchedule from '../components/FacultyMonthlySchedule'
 import FacultyScheduleTable from '../components/FacultyScheduleTable'
 import FacultyQuickActions from '../components/FacultyQuickActions'
 import FacultyTimetableSkeleton from '../components/FacultyTimetableSkeleton'
-import {
-  facultyInfo,
-  facultyScheduleEntries,
-  facultyPastEntries,
-  facultyStats,
-  facultyDayOptions,
-} from '../data/facultyTimetableData'
+import Toast from '../../../components/Toast'
+import { normalizeFaculty } from '../../../utils/normalizers'
+import timetableService from '../../../services/timetable/timetable.service'
+import facultyService from '../../../services/faculty/faculty.service'
 import type { FacultyScheduleView } from '../types/facultyTimetable.types'
+import type { FacultyInfo, FacultyScheduleEntry, FacultyStats as FacultyStatsType } from '../types/facultyTimetable.types'
 
 const viewTabs: { key: FacultyScheduleView; label: string }[] = [
   { key: 'daily', label: 'Today' },
@@ -24,21 +22,109 @@ const viewTabs: { key: FacultyScheduleView; label: string }[] = [
   { key: 'monthly', label: 'Monthly' },
 ]
 
+const facultyDayOptions = [
+  { value: '', label: 'All Days' },
+  { value: 'Monday', label: 'Monday' },
+  { value: 'Tuesday', label: 'Tuesday' },
+  { value: 'Wednesday', label: 'Wednesday' },
+  { value: 'Thursday', label: 'Thursday' },
+  { value: 'Friday', label: 'Friday' },
+  { value: 'Saturday', label: 'Saturday' },
+]
+
 export default function FacultyTimetablePage() {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<FacultyScheduleView>('daily')
   const [search, setSearch] = useState('')
   const [dayFilter, setDayFilter] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
+  const [facultyInfo, setFacultyInfo] = useState<FacultyInfo>({
+    id: '', photo: '', name: '', department: '', designation: '', subjects: [], experience: 0,
+  })
+  const [facultyScheduleEntries, setFacultyScheduleEntries] = useState<FacultyScheduleEntry[]>([])
+  const [facultyPastEntries, setFacultyPastEntries] = useState<FacultyScheduleEntry[]>([])
+  const [facultyStats, setFacultyStats] = useState<FacultyStatsType>({ classesToday: 0, classesThisWeek: 0, studentsAssigned: 0, workingHours: 0 })
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(t)
+    const fetchData = async () => {
+      try {
+        let facultyId = ''
+        let facultyName = 'Faculty Member'
+        let facultyDept = ''
+        let facultyDesignation = ''
+        let facultySubjects: string[] = []
+        let facultyExperience = 0
+        try {
+          const profileRes = await facultyService.getProfile()
+          const rawProfile = profileRes?.data || profileRes
+          if (rawProfile) {
+            const norm = normalizeFaculty(rawProfile as Record<string, unknown>)
+            facultyId = norm.id
+            facultyName = norm.name
+            facultyDept = norm.department
+            facultyDesignation = norm.designation
+            facultySubjects = (rawProfile as any)?.assignedSubjects || (rawProfile as any)?.subjects || []
+            facultyExperience = norm.experience
+          }
+        } catch {
+          setToastMessage('Failed to load faculty profile')
+          setShowToast(true)
+        }
+        const today = new Date().toLocaleString('en-US', { weekday: 'long' })
+        let mapped: FacultyScheduleEntry[] = []
+        if (facultyId) {
+          const response = await timetableService.getByDay(facultyId, today)
+          const data = Array.isArray(response) ? response : (response?.data ?? [])
+          mapped = (data as Record<string, unknown>[]).map((item, index) => ({
+            id: String(item.id || `FS-${String(index + 1).padStart(3, '0')}`),
+            time: String(item.time || `${item.startTime || '09:00'} - ${item.endTime || '10:00'}`),
+            course: String(item.course || ''),
+            subject: String(item.subject || ''),
+            batch: String(item.batch || ''),
+            classroom: String(item.classroom || ''),
+            status: (item.status as FacultyScheduleEntry['status']) || 'Scheduled',
+            day: String(item.day || today),
+            date: String(item.date || ''),
+          }))
+        }
+        setFacultyScheduleEntries(mapped)
+        setFacultyPastEntries([])
+        const todayCount = mapped.filter((e: FacultyScheduleEntry) => e.day === today).length
+        setFacultyStats({ classesToday: todayCount, classesThisWeek: mapped.length, studentsAssigned: 0, workingHours: 0 })
+        setFacultyInfo({
+          id: facultyId || 'FAC-001',
+          photo: '',
+          name: facultyName,
+          department: facultyDept,
+          designation: facultyDesignation,
+          subjects: facultySubjects,
+          experience: facultyExperience,
+        })
+      } catch {
+        setFacultyScheduleEntries([])
+        setFacultyPastEntries([])
+        setToastMessage('Failed to load timetable data')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [])
+
+  useEffect(() => {
+    if (!loading && facultyScheduleEntries.length > 0) {
+      const today = new Date().toLocaleString('en-US', { weekday: 'long' })
+      const todayCount = facultyScheduleEntries.filter((e) => e.day === today).length
+      setFacultyStats((prev) => ({ ...prev, classesToday: todayCount, classesThisWeek: facultyScheduleEntries.length }))
+    }
+  }, [loading, facultyScheduleEntries])
 
   const handleSearchChange = useCallback((value: string) => setSearch(value), [])
   const handleDayFilterChange = useCallback((value: string) => setDayFilter(value), [])
 
-  const allEntries = useMemo(() => [...facultyPastEntries, ...facultyScheduleEntries], [])
+  const allEntries = useMemo(() => [...facultyPastEntries, ...facultyScheduleEntries], [facultyPastEntries, facultyScheduleEntries])
 
   const todayEntries = useMemo(() => {
     const today = new Date().toLocaleString('en-US', { weekday: 'long' })
@@ -182,6 +268,8 @@ export default function FacultyTimetablePage() {
           />
         </div>
       </div>
+
+      <Toast message={toastMessage} isVisible={showToast} onClose={() => setShowToast(false)} />
     </div>
   )
 }

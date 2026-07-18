@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdSchool, MdArrowUpward, MdArrowDownward, MdUnfoldMore } from 'react-icons/md'
 import type { Faculty, SortConfig } from '../types/faculty.types'
+import { getInitials } from '../../../utils/unwrap'
 import StatusBadge from './StatusBadge'
 import FacultyActions from './FacultyActions'
 
@@ -81,7 +82,7 @@ export default function FacultyTable({ faculty, sortConfig, requestSort, onView,
               >
                 <td className="py-3 px-4">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-primary font-bold text-sm shadow-sm group-hover:shadow-md transition-shadow">
-                    {f.photo || f.name.charAt(0)}
+                    {f.photo || getInitials(f.name, '?')}
                   </div>
                 </td>
                 <td className="py-3 px-4 text-sm font-mono text-gray-600">{f.id}</td>

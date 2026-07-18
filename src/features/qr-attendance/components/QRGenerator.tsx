@@ -18,7 +18,7 @@ const statusConfig: Record<QRStatus, { label: string; color: string; bg: string 
 }
 
 export default function QRGenerator({ qrData, qrStatus, secondsLeft, onGenerate, onRefresh }: QRGeneratorProps) {
-  const config = statusConfig[qrStatus]
+  const config = statusConfig[qrStatus] || { label: 'Unknown', color: '#6b7280', bg: '#f3f4f6' }
   const timerPercent = qrData ? (secondsLeft / 900) * 100 : 0
   const timerMinutes = Math.floor(secondsLeft / 60)
   const timerSeconds = secondsLeft % 60

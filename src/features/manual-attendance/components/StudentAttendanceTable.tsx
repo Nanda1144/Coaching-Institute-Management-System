@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { MdSearch, MdClose, MdCheckCircle, MdCancel, MdSchedule, MdNightlight, MdEventBusy, MdPerson, MdChevronLeft, MdChevronRight } from 'react-icons/md'
 import type { StudentAttendance } from '../types/manualAttendance.types'
 import { statusColors } from '../data/manualAttendanceData'
+import { getInitials } from '../../../utils/unwrap'
 
 interface StudentAttendanceTableProps {
   students: StudentAttendance[]
@@ -85,8 +86,6 @@ export default function StudentAttendanceTable({
     setSelectedIds(new Set())
   }
 
-  const getInitials = (name: string) =>
-    name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <motion.div

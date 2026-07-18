@@ -1,0 +1,1082 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Subject {
+  id                 String             @id @default(uuid()) @map("id")
+  subjectCode        String             @unique @map("subject_code")
+  subjectName        String             @map("subject_name")
+  department         String
+  semester           Int
+  credits            Int?
+  isDeleted          Boolean            @default(false) @map("is_deleted")
+  deletedAt          DateTime?          @map("deleted_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  assignments        Assignment[]
+  attendance         Attendance[]
+  chapters           Chapter[]
+  homeworks          Homework[]
+  materialCategories MaterialCategory[]
+  qrSessions         QRSession[]
+  studyMaterials     StudyMaterial[]
+  timetables         Timetable[]        @relation("TimetableSubject")
+
+  @@map("subjects")
+}
+
+model Batch {
+  id                 String             @id @default(uuid()) @map("id")
+  batchName          String             @map("batch_name")
+  department         String
+  course             String
+  semester           Int
+  academicYear       String             @map("academic_year")
+  isDeleted          Boolean            @default(false) @map("is_deleted")
+  deletedAt          DateTime?          @map("deleted_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  assignments        Assignment[]
+  attendance         Attendance[]
+  homeworks          Homework[]
+  materialCategories MaterialCategory[]
+  qrSessions         QRSession[]
+  students           Student[]
+  studyMaterials     StudyMaterial[]
+  timetables         Timetable[]        @relation("TimetableBatch")
+
+  @@map("batches")
+}
+
+model Classroom {
+  id            String       @id @default(uuid()) @map("id")
+  classroomCode String       @unique @map("classroom_code")
+  building      String
+  floor         Int
+  roomNumber    String       @map("room_number")
+  capacity      Int?
+  isDeleted     Boolean      @default(false) @map("is_deleted")
+  deletedAt     DateTime?    @map("deleted_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  attendance    Attendance[]
+  qrSessions    QRSession[]
+  timetables    Timetable[]  @relation("TimetableClassroom")
+
+  @@map("classrooms")
+}
+
+model Faculty {
+  id                      String                  @id @default(uuid()) @map("id")
+  facultyId               String                  @unique @map("faculty_id")
+  firstName               String                  @map("first_name")
+  lastName                String                  @map("last_name")
+  fullName                String                  @map("full_name")
+  gender                  String
+  dateOfBirth             DateTime                @map("date_of_birth")
+  email                   String                  @unique
+  phone                   String                  @unique
+  alternatePhone          String?                 @map("alternate_phone")
+  profileImage            String?                 @map("profile_image")
+  employeeId              String                  @unique @map("employee_id")
+  designation             String
+  department              String
+  specialization          String[]
+  qualification           String[]
+  experience              Float
+  joiningDate             DateTime                @map("joining_date")
+  employmentType          String                  @map("employment_type")
+  salary                  Decimal?                @map("salary")
+  branch                  String
+  campus                  String
+  address                 Json                    @map("address")
+  emergencyContact        Json                    @map("emergency_contact")
+  username                String                  @unique
+  password                String
+  role                    String                  @default("faculty")
+  permissions             String[]
+  status                  String                  @default("active")
+  assignedCourses         Json                    @default("[]") @map("assigned_courses")
+  assignedSubjects        Json                    @default("[]") @map("assigned_subjects")
+  assignedBatches         Json                    @default("[]") @map("assigned_batches")
+  assignedSemesters       Json                    @default("[]") @map("assigned_semesters")
+  transferHistory         Json                    @default("[]") @map("transfer_history")
+  isDeleted               Boolean                 @default(false) @map("is_deleted")
+  deletedAt               DateTime?               @map("deleted_at")
+  createdById             String?                 @map("created_by_id")
+  updatedById             String?                 @map("updated_by_id")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+  assignmentLogs          AssignmentLog[]         @relation("AssignmentFaculty")
+  assignmentLogsPerformed AssignmentLog[]         @relation("AssignmentPerformedBy")
+  remindersCreated        AssignmentReminder[]    @relation("ReminderCreatedBy")
+  submissionsGraded       AssignmentSubmission[]  @relation("SubmissionGradedBy")
+  assignmentCreatedBy     Assignment[]            @relation("AssignmentCreatedBy")
+  facultyAssignments      Assignment[]            @relation("FacultyAssignment")
+  assignmentUpdatedBy     Assignment[]            @relation("AssignmentUpdatedBy")
+  correctionsApproved     AttendanceCorrection[]  @relation("CorrectionApprovedBy")
+  correctionsCreated      AttendanceCorrection[]  @relation("CorrectionCreatedBy")
+  attendanceCreatedBy     Attendance[]            @relation("AttendanceCreatedBy")
+  attendanceMarkedBy      Attendance[]            @relation("AttendanceMarkedBy")
+  attendanceUpdatedBy     Attendance[]            @relation("AttendanceUpdatedBy")
+  evaluationCreatedBy     Evaluation[]            @relation("EvaluationCreatedBy")
+  evaluations             Evaluation[]            @relation("EvaluationFaculty")
+  evaluationUpdatedBy     Evaluation[]            @relation("EvaluationUpdatedBy")
+  faceRecognitions        FaceRecognition[]       @relation("FaceRecognitionCreatedBy")
+  createdBy               Faculty?                @relation("FacultyCreatedBy", fields: [createdById], references: [id])
+  createdFaculty          Faculty[]               @relation("FacultyCreatedBy")
+  updatedBy               Faculty?                @relation("FacultyUpdatedBy", fields: [updatedById], references: [id])
+  updatedFaculty          Faculty[]               @relation("FacultyUpdatedBy")
+  facultyTransfers        FacultyTransfer[]       @relation("FacultyTransferFaculty")
+  transfersPerformed      FacultyTransfer[]       @relation("FacultyTransferPerformedBy")
+  fingerprintsCreated     FingerprintAttendance[] @relation("FingerprintCreatedBy")
+  holidaysCreated         Holiday[]               @relation("HolidayCreatedBy")
+  holidaysUpdated         Holiday[]               @relation("HolidayUpdatedBy")
+  homeworkCreatedBy       Homework[]              @relation("HomeworkCreatedBy")
+  homeworks               Homework[]
+  homeworkUpdatedBy       Homework[]              @relation("HomeworkUpdatedBy")
+  categoriesCreated       MaterialCategory[]      @relation("CategoryCreatedBy")
+  categoriesUpdated       MaterialCategory[]      @relation("CategoryUpdatedBy")
+  qrSessionsCreated       QRSession[]             @relation("QRSessionCreatedBy")
+  qrSessions              QRSession[]             @relation("QRSessionFaculty")
+  studentsCreated         Student[]               @relation("StudentCreatedBy")
+  studentsUpdated         Student[]               @relation("StudentUpdatedBy")
+  studyMaterialsCreated   StudyMaterial[]         @relation("StudyMaterialCreatedBy")
+  studyMaterialsUpdated   StudyMaterial[]         @relation("StudyMaterialUpdatedBy")
+  studyMaterialsUploaded  StudyMaterial[]         @relation("StudyMaterialUploadedBy")
+  timetableCreatedBy      Timetable[]             @relation("TimetableCreatedBy")
+  timetables              Timetable[]
+  timetableUpdatedBy      Timetable[]             @relation("TimetableUpdatedBy")
+
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([department])
+  @@index([status])
+  @@map("faculty")
+}
+
+model Student {
+  id                     String                  @id @default(uuid()) @map("id")
+  studentId              String                  @unique @map("student_id")
+  firstName              String                  @map("first_name")
+  lastName               String                  @map("last_name")
+  fullName               String                  @map("full_name")
+  email                  String                  @unique
+  phone                  String
+  rollNumber             String                  @map("roll_number")
+  department             String
+  course                 String
+  semester               Int
+  batch                  String
+  batchId                String?                 @map("batch_id")
+  section                String?
+  gender                 String
+  dateOfBirth            DateTime                @map("date_of_birth")
+  address                Json?
+  profileImage           String?                 @map("profile_image")
+  status                 String                  @default("active")
+  isDeleted              Boolean                 @default(false) @map("is_deleted")
+  deletedAt              DateTime?               @map("deleted_at")
+  createdById            String?                 @map("created_by_id")
+  updatedById            String?                 @map("updated_by_id")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  reminders              AssignmentReminder[]
+  submissions            AssignmentSubmission[]
+  corrections            AttendanceCorrection[]
+  attendances            Attendance[]
+  faceRecognitions       FaceRecognition[]
+  fingerprintAttendances FingerprintAttendance[]
+  qrScans                QRScan[]
+  batchRef               Batch?                  @relation(fields: [batchId], references: [id])
+  createdBy              Faculty?                @relation("StudentCreatedBy", fields: [createdById], references: [id])
+  updatedBy              Faculty?                @relation("StudentUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([batchId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([department])
+  @@index([status])
+  @@map("students")
+}
+
+model Attendance {
+  id                     String                  @id @default(uuid()) @map("id")
+  attendanceCode         String                  @unique @map("attendance_code")
+  studentId              String                  @map("student_id")
+  facultyId              String                  @map("faculty_id")
+  subjectId              String                  @map("subject_id")
+  batchId                String                  @map("batch_id")
+  classroomId            String                  @map("classroom_id")
+  attendanceDate         DateTime                @map("attendance_date")
+  startTime              DateTime                @map("start_time")
+  endTime                DateTime                @map("end_time")
+  attendanceMethod       AttendanceMethod        @map("attendance_method")
+  attendanceStatus       AttendanceStatus        @map("attendance_status")
+  remarks                String?
+  createdById            String                  @map("created_by_id")
+  updatedById            String                  @map("updated_by_id")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  isDeleted              Boolean                 @default(false) @map("is_deleted")
+  deletedAt              DateTime?               @map("deleted_at")
+  corrections            AttendanceCorrection[]
+  batch                  Batch                   @relation(fields: [batchId], references: [id])
+  classroom              Classroom               @relation(fields: [classroomId], references: [id])
+  createdBy              Faculty                 @relation("AttendanceCreatedBy", fields: [createdById], references: [id])
+  faculty                Faculty                 @relation("AttendanceMarkedBy", fields: [facultyId], references: [id])
+  student                Student                 @relation(fields: [studentId], references: [id])
+  subject                Subject                 @relation(fields: [subjectId], references: [id])
+  updatedBy              Faculty                 @relation("AttendanceUpdatedBy", fields: [updatedById], references: [id])
+  faceRecognitions       FaceRecognition[]
+  fingerprintAttendances FingerprintAttendance[]
+  qrScans                QRScan[]
+
+  @@index([studentId])
+  @@index([facultyId])
+  @@index([subjectId])
+  @@index([batchId])
+  @@index([classroomId])
+  @@index([attendanceDate])
+  @@index([facultyId, attendanceDate])
+  @@map("attendances")
+}
+
+model Timetable {
+  id                String    @id @default(uuid()) @map("id")
+  timetableId       String    @unique @map("timetable_id")
+  academicYear      String    @map("academic_year")
+  semester          Int
+  department        String
+  course            String
+  batch             String
+  section           String?
+  subject           String
+  subjectCode       String    @map("subject_code")
+  subjectId         String?   @map("subject_id")
+  facultyId         String    @map("faculty_id")
+  facultyName       String    @map("faculty_name")
+  classroomId       String    @map("classroom_id")
+  batchId           String?   @map("batch_id")
+  batchName         String    @map("batch_name")
+  building          String
+  floor             Int
+  roomNumber        String    @map("room_number")
+  dayOfWeek         String    @map("day_of_week")
+  startTime         DateTime  @map("start_time")
+  endTime           DateTime  @map("end_time")
+  duration          String
+  status            String    @default("scheduled")
+  remarks           String?
+  recurringClass    Boolean   @default(false) @map("recurring_class")
+  recurrenceType    String?   @map("recurrence_type")
+  recurrenceEndDate DateTime? @map("recurrence_end_date")
+  createdBy         String    @map("created_by")
+  updatedBy         String    @map("updated_by")
+  isDeleted         Boolean   @default(false) @map("is_deleted")
+  deletedAt         DateTime? @map("deleted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  batchRef          Batch?    @relation("TimetableBatch", fields: [batchId], references: [id])
+  classroom         Classroom @relation("TimetableClassroom", fields: [classroomId], references: [id])
+  createdByFaculty  Faculty   @relation("TimetableCreatedBy", fields: [createdBy], references: [id])
+  faculty           Faculty   @relation(fields: [facultyId], references: [id])
+  subjectRef        Subject?  @relation("TimetableSubject", fields: [subjectId], references: [id])
+  updatedByFaculty  Faculty   @relation("TimetableUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([facultyId])
+  @@index([subjectId])
+  @@index([batchId])
+  @@index([classroomId])
+  @@index([dayOfWeek])
+  @@map("timetables")
+}
+
+model FacultyTransfer {
+  id              String                   @id @default(uuid()) @map("id")
+  facultyId       String                   @map("faculty_id")
+  fromBranch      String                   @map("from_branch")
+  fromDepartment  String                   @map("from_department")
+  toBranch        String                   @map("to_branch")
+  toDepartment    String                   @map("to_department")
+  transferDate    DateTime                 @map("transfer_date")
+  reason          String
+  approvedBy      String?                  @map("approved_by")
+  status          CorrectionApprovalStatus @default(pending)
+  performedBy     String                   @map("performed_by")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  faculty         Faculty                  @relation("FacultyTransferFaculty", fields: [facultyId], references: [id])
+  performedByUser Faculty                  @relation("FacultyTransferPerformedBy", fields: [performedBy], references: [id])
+
+  @@index([facultyId])
+  @@index([performedBy])
+  @@index([status])
+  @@index([transferDate])
+  @@map("faculty_transfers")
+}
+
+model AssignmentLog {
+  id              String   @id @default(uuid()) @map("id")
+  facultyId       String   @map("faculty_id")
+  action          String
+  entityType      String   @map("entity_type")
+  entityId        String?  @map("entity_id")
+  entityName      String?  @map("entity_name")
+  oldValue        Json?    @map("old_value")
+  newValue        Json?    @map("new_value")
+  performedBy     String   @map("performed_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  faculty         Faculty  @relation("AssignmentFaculty", fields: [facultyId], references: [id])
+  performedByUser Faculty  @relation("AssignmentPerformedBy", fields: [performedBy], references: [id])
+
+  @@index([facultyId])
+  @@index([performedBy])
+  @@map("assignment_logs")
+}
+
+model Holiday {
+  id                    String    @id @default(uuid()) @map("id")
+  holidayName           String    @map("holiday_name")
+  holidayType           String    @map("holiday_type")
+  startDate             DateTime  @map("start_date")
+  endDate               DateTime  @map("end_date")
+  description           String?
+  applicableDepartments String[]  @map("applicable_departments")
+  academicYear          String?   @map("academic_year")
+  isDeleted             Boolean   @default(false) @map("is_deleted")
+  deletedAt             DateTime? @map("deleted_at")
+  createdBy             String    @map("created_by")
+  updatedBy             String    @map("updated_by")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  createdByFaculty      Faculty   @relation("HolidayCreatedBy", fields: [createdBy], references: [id])
+  updatedByFaculty      Faculty   @relation("HolidayUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([createdBy])
+  @@index([updatedBy])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([holidayType])
+  @@map("holidays")
+}
+
+model FaceRecognition {
+  id              String            @id @default(uuid()) @map("id")
+  sessionId       String            @map("session_id")
+  studentId       String            @map("student_id")
+  attendanceId    String?           @map("attendance_id")
+  confidence      Float             @default(0)
+  recognitionTime DateTime          @map("recognition_time")
+  imageUrl        String?           @map("image_url")
+  deviceId        String?           @map("device_id")
+  metadata        Json              @default("{}")
+  status          RecognitionStatus @default(pending)
+  createdById     String            @map("created_by_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  attendance      Attendance?       @relation(fields: [attendanceId], references: [id])
+  createdBy       Faculty           @relation("FaceRecognitionCreatedBy", fields: [createdById], references: [id])
+  student         Student           @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([attendanceId])
+  @@index([createdById])
+  @@index([sessionId])
+  @@index([status])
+  @@map("face_recognitions")
+}
+
+model FingerprintAttendance {
+  id                 String            @id @default(uuid()) @map("id")
+  sessionId          String            @map("session_id")
+  fingerprintId      String            @map("fingerprint_id")
+  studentId          String            @map("student_id")
+  attendanceId       String?           @map("attendance_id")
+  verificationStatus FingerprintStatus @default(pending) @map("verification_status")
+  recognitionTime    DateTime          @map("recognition_time")
+  scannerId          String?           @map("scanner_id")
+  metadata           Json              @default("{}")
+  createdById        String            @map("created_by_id")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  attendance         Attendance?       @relation(fields: [attendanceId], references: [id])
+  createdBy          Faculty           @relation("FingerprintCreatedBy", fields: [createdById], references: [id])
+  student            Student           @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([attendanceId])
+  @@index([createdById])
+  @@index([sessionId])
+  @@index([verificationStatus])
+  @@map("fingerprint_attendances")
+}
+
+model QRSession {
+  id             String    @id @default(uuid()) @map("id")
+  qrToken        String    @unique @map("qr_token")
+  facultyId      String    @map("faculty_id")
+  subjectId      String    @map("subject_id")
+  batchId        String    @map("batch_id")
+  classroomId    String    @map("classroom_id")
+  attendanceDate DateTime  @map("attendance_date")
+  startTime      DateTime  @map("start_time")
+  endTime        DateTime  @map("end_time")
+  expiryTime     DateTime  @map("expiry_time")
+  status         QRStatus  @default(active)
+  createdById    String    @map("created_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  scans          QRScan[]
+  batch          Batch     @relation(fields: [batchId], references: [id])
+  classroom      Classroom @relation(fields: [classroomId], references: [id])
+  createdBy      Faculty   @relation("QRSessionCreatedBy", fields: [createdById], references: [id])
+  faculty        Faculty   @relation("QRSessionFaculty", fields: [facultyId], references: [id])
+  subject        Subject   @relation(fields: [subjectId], references: [id])
+
+  @@index([facultyId])
+  @@index([subjectId])
+  @@index([batchId])
+  @@index([classroomId])
+  @@index([createdById])
+  @@index([status])
+  @@map("qr_sessions")
+}
+
+model QRScan {
+  id           String       @id @default(uuid()) @map("id")
+  qrSessionId  String       @map("qr_session_id")
+  studentId    String       @map("student_id")
+  attendanceId String?      @map("attendance_id")
+  scannedAt    DateTime     @map("scanned_at")
+  status       QRScanStatus @default(pending)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  attendance   Attendance?  @relation(fields: [attendanceId], references: [id])
+  qrSession    QRSession    @relation(fields: [qrSessionId], references: [id])
+  student      Student      @relation(fields: [studentId], references: [id])
+
+  @@index([qrSessionId])
+  @@index([studentId])
+  @@index([attendanceId])
+  @@map("qr_scans")
+}
+
+model AttendanceCorrection {
+  id              String                   @id @default(uuid()) @map("id")
+  attendanceId    String                   @map("attendance_id")
+  studentId       String                   @map("student_id")
+  attendanceDate  DateTime                 @map("attendance_date")
+  currentStatus   AttendanceStatus         @map("current_status")
+  requestedStatus AttendanceStatus         @map("requested_status")
+  reason          String
+  attachmentUrl   String?                  @map("attachment_url")
+  approvalStatus  CorrectionApprovalStatus @default(pending) @map("approval_status")
+  approvedById    String?                  @map("approved_by_id")
+  approvalDate    DateTime?                @map("approval_date")
+  createdById     String                   @map("created_by_id")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  approvedBy      Faculty?                 @relation("CorrectionApprovedBy", fields: [approvedById], references: [id])
+  attendance      Attendance               @relation(fields: [attendanceId], references: [id])
+  createdBy       Faculty                  @relation("CorrectionCreatedBy", fields: [createdById], references: [id])
+  student         Student                  @relation(fields: [studentId], references: [id])
+
+  @@index([attendanceId])
+  @@index([studentId])
+  @@index([approvedById])
+  @@index([createdById])
+  @@index([approvalStatus])
+  @@map("attendance_corrections")
+}
+
+model Department {
+  id                 String             @id @default(uuid()) @map("id")
+  name               String             @unique
+  code               String             @unique
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  assignments        Assignment[]
+  homeworks          Homework[]
+  materialCategories MaterialCategory[]
+  studyMaterials     StudyMaterial[]
+
+  @@map("departments")
+}
+
+model Course {
+  id                 String             @id @default(uuid()) @map("id")
+  name               String             @unique
+  code               String             @unique
+  duration           Int?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  assignments        Assignment[]
+  homeworks          Homework[]
+  materialCategories MaterialCategory[]
+  studyMaterials     StudyMaterial[]
+
+  @@map("courses")
+}
+
+model Semester {
+  id                 String             @id @default(uuid()) @map("id")
+  semester           Int                @unique
+  name               String
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  assignments        Assignment[]
+  materialCategories MaterialCategory[]
+  studyMaterials     StudyMaterial[]
+
+  @@map("semesters")
+}
+
+model Assignment {
+  id                  String                 @id @default(uuid()) @map("id")
+  assignmentCode      String                 @unique @map("assignment_code")
+  title               String
+  description         String?
+  instructions        String?
+  departmentId        String                 @map("department_id")
+  courseId            String                 @map("course_id")
+  semesterId          String                 @map("semester_id")
+  subjectId           String                 @map("subject_id")
+  batchId             String                 @map("batch_id")
+  facultyId           String                 @map("faculty_id")
+  totalMarks          Int                    @map("total_marks")
+  passingMarks        Int                    @map("passing_marks")
+  publishDate         DateTime               @map("publish_date")
+  dueDate             DateTime               @map("due_date")
+  dueTime             DateTime               @map("due_time")
+  allowLateSubmission Boolean                @default(false) @map("allow_late_submission")
+  maxFileSize         Int?                   @map("max_file_size")
+  maxAttempts         Int                    @default(1) @map("max_attempts")
+  visibility          AssignmentVisibility   @default(visible)
+  status              AssignmentStatus       @default(active)
+  createdById         String                 @map("created_by_id")
+  updatedById         String                 @map("updated_by_id")
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
+  isDeleted           Boolean                @default(false) @map("is_deleted")
+  deletedAt           DateTime?              @map("deleted_at")
+  attachments         AssignmentAttachment[]
+  reminders           AssignmentReminder[]
+  submissions         AssignmentSubmission[]
+  batch               Batch                  @relation(fields: [batchId], references: [id])
+  course              Course                 @relation(fields: [courseId], references: [id])
+  createdBy           Faculty                @relation("AssignmentCreatedBy", fields: [createdById], references: [id])
+  department          Department             @relation(fields: [departmentId], references: [id])
+  faculty             Faculty                @relation("FacultyAssignment", fields: [facultyId], references: [id])
+  semester            Semester               @relation(fields: [semesterId], references: [id])
+  subject             Subject                @relation(fields: [subjectId], references: [id])
+  updatedBy           Faculty                @relation("AssignmentUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([departmentId])
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([batchId])
+  @@index([facultyId])
+  @@index([status])
+  @@index([facultyId, status, deletedAt])
+  @@map("assignments")
+}
+
+model AssignmentAttachment {
+  id           String     @id @default(uuid()) @map("id")
+  assignmentId String     @map("assignment_id")
+  fileName     String     @map("file_name")
+  fileType     String     @map("file_type")
+  fileUrl      String     @map("file_url")
+  fileSize     Int?       @map("file_size")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId])
+  @@map("assignment_attachments")
+}
+
+model Homework {
+  id           String               @id @default(uuid()) @map("id")
+  title        String
+  description  String?
+  departmentId String               @map("department_id")
+  courseId     String               @map("course_id")
+  batchId      String               @map("batch_id")
+  subjectId    String               @map("subject_id")
+  facultyId    String               @map("faculty_id")
+  dueDate      DateTime             @map("due_date")
+  status       HomeworkStatus       @default(active)
+  createdById  String               @map("created_by_id")
+  updatedById  String               @map("updated_by_id")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  isDeleted    Boolean              @default(false) @map("is_deleted")
+  deletedAt    DateTime?            @map("deleted_at")
+  attachments  HomeworkAttachment[]
+  batch        Batch                @relation(fields: [batchId], references: [id])
+  course       Course               @relation(fields: [courseId], references: [id])
+  createdBy    Faculty              @relation("HomeworkCreatedBy", fields: [createdById], references: [id])
+  department   Department           @relation(fields: [departmentId], references: [id])
+  faculty      Faculty              @relation(fields: [facultyId], references: [id])
+  subject      Subject              @relation(fields: [subjectId], references: [id])
+  updatedBy    Faculty              @relation("HomeworkUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([departmentId])
+  @@index([courseId])
+  @@index([batchId])
+  @@index([subjectId])
+  @@index([facultyId])
+  @@map("homeworks")
+}
+
+model HomeworkAttachment {
+  id         String   @id @default(uuid()) @map("id")
+  homeworkId String   @map("homework_id")
+  fileName   String   @map("file_name")
+  fileType   String   @map("file_type")
+  fileUrl    String   @map("file_url")
+  fileSize   Int?     @map("file_size")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  homework   Homework @relation(fields: [homeworkId], references: [id])
+
+  @@index([homeworkId])
+  @@map("homework_attachments")
+}
+
+model AssignmentSubmission {
+  id             String                 @id @default(uuid()) @map("id")
+  submissionCode String                 @unique @map("submission_code")
+  assignmentId   String                 @map("assignment_id")
+  studentId      String                 @map("student_id")
+  attemptNumber  Int                    @default(1) @map("attempt_number")
+  submissionDate DateTime               @map("submission_date")
+  submissionTime DateTime               @map("submission_time")
+  status         SubmissionStatus       @default(submitted)
+  remarks        String?
+  lateFlag       Boolean                @default(false) @map("late_flag")
+  gradedById     String?                @map("graded_by_id")
+  gradedAt       DateTime?              @map("graded_at")
+  isDeleted      Boolean                @default(false) @map("is_deleted")
+  deletedAt      DateTime?              @map("deleted_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  assignment     Assignment             @relation(fields: [assignmentId], references: [id])
+  gradedBy       Faculty?               @relation("SubmissionGradedBy", fields: [gradedById], references: [id])
+  student        Student                @relation(fields: [studentId], references: [id])
+  evaluations    Evaluation?
+  attachments    SubmissionAttachment[]
+
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([gradedById])
+  @@index([status])
+  @@index([assignmentId, status])
+  @@map("assignment_submissions")
+}
+
+model SubmissionAttachment {
+  id           String               @id @default(uuid()) @map("id")
+  submissionId String               @map("submission_id")
+  fileName     String               @map("file_name")
+  fileType     String               @map("file_type")
+  fileUrl      String               @map("file_url")
+  fileSize     Int?                 @map("file_size")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  submission   AssignmentSubmission @relation(fields: [submissionId], references: [id])
+
+  @@index([submissionId])
+  @@map("submission_attachments")
+}
+
+model Evaluation {
+  id              String               @id @default(uuid()) @map("id")
+  submissionId    String               @unique @map("submission_id")
+  facultyId       String               @map("faculty_id")
+  marksObtained   Decimal              @map("marks_obtained")
+  totalMarks      Int                  @map("total_marks")
+  grade           String?
+  feedback        String?
+  remarks         String?
+  evaluationDate  DateTime             @map("evaluation_date")
+  status          EvaluationStatus     @default(draft)
+  previousVersion Json?                @map("previous_version")
+  createdById     String               @map("created_by_id")
+  updatedById     String               @map("updated_by_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  deletedAt       DateTime?            @map("deleted_at")
+  createdBy       Faculty              @relation("EvaluationCreatedBy", fields: [createdById], references: [id])
+  faculty         Faculty              @relation("EvaluationFaculty", fields: [facultyId], references: [id])
+  submission      AssignmentSubmission @relation(fields: [submissionId], references: [id])
+  updatedBy       Faculty              @relation("EvaluationUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([submissionId])
+  @@index([facultyId])
+  @@index([createdById])
+  @@index([updatedById])
+  @@index([status])
+  @@map("evaluations")
+}
+
+model Chapter {
+  id                 String             @id @default(uuid()) @map("id")
+  chapterName        String             @map("chapter_name")
+  subjectId          String             @map("subject_id")
+  description        String?
+  chapterNumber      Int?               @map("chapter_number")
+  isDeleted          Boolean            @default(false) @map("is_deleted")
+  deletedAt          DateTime?          @map("deleted_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  subject            Subject            @relation(fields: [subjectId], references: [id])
+  materialCategories MaterialCategory[]
+  studyMaterials     StudyMaterial[]
+
+  @@index([subjectId])
+  @@map("chapters")
+}
+
+model StudyMaterial {
+  id               String               @id @default(uuid()) @map("id")
+  materialCode     String               @unique @map("material_code")
+  title            String
+  description      String?
+  departmentId     String               @map("department_id")
+  courseId         String               @map("course_id")
+  semesterId       String               @map("semester_id")
+  subjectId        String               @map("subject_id")
+  chapterId        String?              @map("chapter_id")
+  batchId          String               @map("batch_id")
+  categoryId       String?              @map("category_id")
+  uploadedById     String               @map("uploaded_by_id")
+  materialType     MaterialType         @map("material_type")
+  visibility       MaterialVisibility   @default(PUBLIC)
+  fileName         String               @map("file_name")
+  originalFileName String               @map("original_file_name")
+  contentHash      String?              @map("content_hash")
+  fileUrl          String               @map("file_url")
+  thumbnailUrl     String?              @map("thumbnail_url")
+  fileExtension    String               @map("file_extension")
+  mimeType         String               @map("mime_type")
+  fileSize         Int                  @map("file_size")
+  totalDownloads   Int                  @default(0) @map("total_downloads")
+  totalViews       Int                  @default(0) @map("total_views")
+  isPublic         Boolean              @default(true) @map("is_public")
+  status           String               @default("active")
+  createdBy        String               @map("created_by")
+  updatedBy        String?              @map("updated_by")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  isDeleted        Boolean              @default(false) @map("is_deleted")
+  deletedAt        DateTime?            @map("deleted_at")
+  attachments      MaterialAttachment[]
+  downloads        MaterialDownload[]
+  batch            Batch                @relation(fields: [batchId], references: [id])
+  category         MaterialCategory?    @relation(fields: [categoryId], references: [id])
+  chapter          Chapter?             @relation(fields: [chapterId], references: [id])
+  course           Course               @relation(fields: [courseId], references: [id])
+  createdByFaculty Faculty              @relation("StudyMaterialCreatedBy", fields: [createdBy], references: [id])
+  department       Department           @relation(fields: [departmentId], references: [id])
+  semester         Semester             @relation(fields: [semesterId], references: [id])
+  subject          Subject              @relation(fields: [subjectId], references: [id])
+  updatedByFaculty Faculty?             @relation("StudyMaterialUpdatedBy", fields: [updatedBy], references: [id])
+  uploadedBy       Faculty              @relation("StudyMaterialUploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([departmentId])
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([chapterId])
+  @@index([batchId])
+  @@index([categoryId])
+  @@index([uploadedById])
+  @@index([materialType])
+  @@index([status])
+  @@index([visibility])
+  @@map("study_materials")
+}
+
+model MaterialCategory {
+  id               String             @id @default(uuid()) @map("id")
+  categoryName     String             @map("category_name")
+  description      String?
+  departmentId     String             @map("department_id")
+  courseId         String?            @map("course_id")
+  semesterId       String?            @map("semester_id")
+  subjectId        String?            @map("subject_id")
+  chapterId        String?            @map("chapter_id")
+  batchId          String?            @map("batch_id")
+  parentId         String?            @map("parent_id")
+  createdBy        String             @map("created_by")
+  updatedBy        String?            @map("updated_by")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  isDeleted        Boolean            @default(false) @map("is_deleted")
+  deletedAt        DateTime?          @map("deleted_at")
+  batch            Batch?             @relation(fields: [batchId], references: [id])
+  chapter          Chapter?           @relation(fields: [chapterId], references: [id])
+  course           Course?            @relation(fields: [courseId], references: [id])
+  createdByFaculty Faculty            @relation("CategoryCreatedBy", fields: [createdBy], references: [id])
+  department       Department         @relation(fields: [departmentId], references: [id])
+  parent           MaterialCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         MaterialCategory[] @relation("CategoryHierarchy")
+  semester         Semester?          @relation(fields: [semesterId], references: [id])
+  subject          Subject?           @relation(fields: [subjectId], references: [id])
+  updatedByFaculty Faculty?           @relation("CategoryUpdatedBy", fields: [updatedBy], references: [id])
+  studyMaterials   StudyMaterial[]
+
+  @@index([departmentId])
+  @@index([courseId])
+  @@index([semesterId])
+  @@index([subjectId])
+  @@index([chapterId])
+  @@index([batchId])
+  @@index([parentId])
+  @@map("material_categories")
+}
+
+model MaterialAttachment {
+  id              String        @id @default(uuid()) @map("id")
+  studyMaterialId String        @map("study_material_id")
+  fileName        String        @map("file_name")
+  fileUrl         String        @map("file_url")
+  fileSize        Int?          @map("file_size")
+  fileType        String        @map("file_type")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  studyMaterial   StudyMaterial @relation(fields: [studyMaterialId], references: [id])
+
+  @@index([studyMaterialId])
+  @@map("material_attachments")
+}
+
+model MaterialDownload {
+  id               String        @id @default(uuid()) @map("id")
+  studyMaterialId  String        @map("study_material_id")
+  downloadedById   String        @map("downloaded_by_id")
+  downloadedByRole String        @map("downloaded_by_role")
+  downloadedAt     DateTime      @map("downloaded_at")
+  ipAddress        String?       @map("ip_address")
+  deviceInfo       String?       @map("device_info")
+  userAgent        String?       @map("user_agent")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  studyMaterial    StudyMaterial @relation(fields: [studyMaterialId], references: [id])
+
+  @@index([studyMaterialId])
+  @@index([downloadedById])
+  @@map("material_downloads")
+}
+
+model MaterialSearchLog {
+  id          String   @id @default(uuid()) @map("id")
+  userId      String   @map("user_id")
+  query       String
+  filters     Json     @default("{}")
+  resultCount Int?     @map("result_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([query])
+  @@map("material_search_logs")
+}
+
+model AssignmentReminder {
+  id                   String              @id @default(uuid()) @map("id")
+  assignmentId         String              @map("assignment_id")
+  studentId            String?             @map("student_id")
+  reminderDate         DateTime            @map("reminder_date")
+  reminderTime         DateTime            @map("reminder_time")
+  reminderType         ReminderType        @default(upcoming_deadline) @map("reminder_type")
+  status               ReminderStatus      @default(pending)
+  notificationChannel  NotificationChannel @default(email) @map("notification_channel")
+  frequency            ReminderFrequency   @default(once)
+  customCronExpression String?             @map("custom_cron_expression")
+  sentAt               DateTime?           @map("sent_at")
+  errorMessage         String?             @map("error_message")
+  metadata             Json                @default("{}")
+  createdById          String              @map("created_by_id")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  isDeleted            Boolean             @default(false) @map("is_deleted")
+  deletedAt            DateTime?           @map("deleted_at")
+  assignment           Assignment          @relation(fields: [assignmentId], references: [id])
+  createdBy            Faculty             @relation("ReminderCreatedBy", fields: [createdById], references: [id])
+  student              Student?            @relation(fields: [studentId], references: [id])
+
+  @@index([assignmentId])
+  @@index([studentId])
+  @@index([createdById])
+  @@index([status])
+  @@index([reminderType])
+  @@index([reminderDate])
+  @@map("assignment_reminders")
+}
+
+model Upload {
+  id             String    @id @default(uuid()) @map("id")
+  originalName   String    @map("original_name")
+  fileName       String    @map("file_name")
+  mimeType       String    @map("mime_type")
+  extension      String
+  size           Int
+  url            String
+  provider       String    @default("local")
+  thumbnailUrl   String?   @map("thumbnail_url")
+  contentHash    String?   @map("content_hash")
+  uploadedById   String?   @map("uploaded_by_id")
+  uploadedByRole String?   @map("uploaded_by_role")
+  module         String?
+  moduleId       String?   @map("module_id")
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@index([uploadedById])
+  @@index([module])
+  @@index([moduleId])
+  @@map("uploads")
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  half_day
+  leave
+}
+
+enum AttendanceMethod {
+  manual
+  face_recognition
+  fingerprint
+  qr_code
+}
+
+enum RecognitionStatus {
+  pending
+  verified
+  completed
+  failed
+}
+
+enum FingerprintStatus {
+  pending
+  verified
+  completed
+  failed
+}
+
+enum QRStatus {
+  active
+  expired
+  revoked
+}
+
+enum QRScanStatus {
+  pending
+  completed
+  failed
+}
+
+enum EvaluationStatus {
+  draft
+  published
+  under_review
+  revised
+}
+
+enum ReminderType {
+  upcoming_deadline
+  overdue
+  recurring
+  custom
+}
+
+enum ReminderStatus {
+  pending
+  sent
+  failed
+  cancelled
+}
+
+enum NotificationChannel {
+  email
+  sms
+  push
+  all
+}
+
+enum ReminderFrequency {
+  once
+  daily
+  weekly
+  custom
+}
+
+enum SubmissionStatus {
+  submitted
+  late
+  resubmitted
+  graded
+  returned
+}
+
+enum AssignmentVisibility {
+  visible
+  hidden
+  draft
+}
+
+enum AssignmentStatus {
+  active
+  closed
+  cancelled
+  archived
+}
+
+enum HomeworkStatus {
+  active
+  closed
+  cancelled
+  archived
+}
+
+enum CorrectionApprovalStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MaterialType {
+  PDF
+  PPT
+  PPTX
+  DOC
+  DOCX
+  IMAGE
+  VIDEO
+  ZIP
+  NOTES
+}
+
+enum MaterialVisibility {
+  PUBLIC
+  FACULTY_ONLY
+  STUDENTS_ONLY
+  BATCH_ONLY
+}

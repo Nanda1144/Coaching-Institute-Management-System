@@ -8,29 +8,84 @@ import AttendanceFilters from '../components/AttendanceFilters'
 import RecentAttendanceTable from '../components/RecentAttendanceTable'
 import AttendanceQuickActions from '../components/AttendanceQuickActions'
 import AttendanceNotifications from '../components/AttendanceNotifications'
-import {
-  attendanceStats,
-  recentAttendance as initialRecentAttendance,
-  dailyAttendance,
-  weeklyTrend,
-  departmentAttendance,
-  monthlySummary,
-  attendanceNotifications,
-  departmentOptions,
-} from '../data/attendanceData'
-import type { AttendanceFilterState, PageState } from '../types/attendance.types'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
+import ErrorMessage from '../../../components/ErrorMessage'
+import attendanceService from '../../../services/attendance/attendance.service'
+import type { AttendanceFilterState, PageState, AttendanceRecord, DailyAttendance, WeeklyTrend, DepartmentAttendance, MonthlySummary, AttendanceNotification } from '../types/attendance.types'
 
 const initialFilters: AttendanceFilterState = { search: '', department: '', date: '' }
 
 export default function AttendanceDashboard() {
   const [filters, setFilters] = useState<AttendanceFilterState>(initialFilters)
   const [pageState, setPageState] = useState<PageState>({ loading: true, error: null })
+  const [stats, setStats] = useState<any>({ totalStudents: 0, presentToday: 0, absentToday: 0, lateArrivals: 0, leaveRequests: 0, attendancePercentage: 0 })
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
+  const [dailyData, setDailyData] = useState<DailyAttendance[]>([])
+  const [weeklyData, setWeeklyData] = useState<WeeklyTrend[]>([])
+  const [deptData, setDeptData] = useState<DepartmentAttendance[]>([])
+  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([])
+  const [notifications] = useState<AttendanceNotification[]>([])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPageState({ loading: false, error: null })
-    }, 800)
-    return () => clearTimeout(timer)
+    async function fetchData() {
+      try {
+        setPageState({ loading: true, error: null })
+        const [todayRes, statsRes, listRes] = await Promise.allSettled([
+          attendanceService.getTodayAttendance(),
+          attendanceService.getAttendanceStats(),
+          attendanceService.getAll({ page: 1, limit: 50 }),
+        ])
+
+        if (todayRes.status === 'fulfilled' && todayRes.value?.data) {
+          const d = todayRes.value.data
+          const summary = d.summary || d
+          setStats({
+            totalStudents: summary.total || 0,
+            presentToday: summary.present || 0,
+            absentToday: summary.absent || 0,
+            lateArrivals: summary.late || 0,
+            leaveRequests: summary.leave || 0,
+            attendancePercentage: summary.total > 0 ? Math.round(((summary.present || 0) / summary.total) * 100) : 0,
+          })
+        }
+
+        if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
+          const s = statsRes.value.data
+          if (s.bySubject) {
+            setDailyData(s.bySubject.map((sub: any) => ({ label: sub.subjectName, present: sub.present, absent: sub.absent, total: sub.total })))
+          }
+          if (s.byMonth) {
+            setMonthlyData(s.byMonth.map((m: any) => ({ month: `${m.month}/${m.year}`, present: m.present, absent: m.absent, total: m.total, percentage: m.percentage })))
+          }
+          if (s.bySubject) {
+            setDeptData(s.bySubject.map((sub: any) => ({ name: sub.subjectName, value: sub.percentage })))
+          }
+          if (s.byMonth) {
+            setWeeklyData(s.byMonth.map((m: any) => ({ week: `${m.month}/${m.year}`, rate: m.percentage })))
+          }
+        }
+
+        if (listRes.status === 'fulfilled' && listRes.value?.data) {
+          const recordsData = listRes.value.data.data || listRes.value.data
+          const mapped: AttendanceRecord[] = (Array.isArray(recordsData) ? recordsData : []).map((item: any) => ({
+            id: item.id,
+            studentName: item.student?.fullName || 'Unknown',
+            rollNumber: item.student?.rollNumber || '',
+            department: item.student?.department || '',
+            status: item.attendanceStatus || 'present',
+            time: item.startTime ? new Date(item.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '',
+            method: item.attendanceMethod || 'manual',
+            date: item.attendanceDate ? new Date(item.attendanceDate).toISOString().split('T')[0] : '',
+          }))
+          setRecords(mapped)
+        }
+
+        setPageState({ loading: false, error: null })
+      } catch (err: any) {
+        setPageState({ loading: false, error: err?.message || 'Failed to load data' })
+      }
+    }
+    fetchData()
   }, [])
 
   const handleFilterChange = useCallback((key: keyof AttendanceFilterState, value: string) => {
@@ -41,14 +96,17 @@ export default function AttendanceDashboard() {
     setFilters(initialFilters)
   }, [])
 
+  const departmentOptions = useMemo(() => {
+    const depts = [...new Set(records.map(r => r.department).filter(Boolean))]
+    return depts.map(d => ({ value: d, label: d }))
+  }, [records])
+
   const filteredRecords = useMemo(() => {
-    let result = [...initialRecentAttendance]
+    let result = [...records]
     if (filters.search) {
       const q = filters.search.toLowerCase()
       result = result.filter(
-        (r) =>
-          r.studentName.toLowerCase().includes(q) ||
-          r.rollNumber.toLowerCase().includes(q)
+        (r) => r.studentName.toLowerCase().includes(q) || r.rollNumber.toLowerCase().includes(q)
       )
     }
     if (filters.department) {
@@ -58,14 +116,25 @@ export default function AttendanceDashboard() {
       result = result.filter((r) => r.date === filters.date)
     }
     return result
-  }, [filters])
+  }, [filters, records])
 
   if (pageState.loading) {
     return <AttendanceSkeleton />
   }
 
+  if (pageState.error && !records.length && !stats.totalStudents) {
+    return (
+      <div className="space-y-6">
+        <AttendanceNavBar />
+        <ErrorMessage message={pageState.error} onRetry={() => window.location.reload()} fullPage />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      <AttendanceNavBar />
+
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -81,21 +150,18 @@ export default function AttendanceDashboard() {
           <MdHowToVote className="text-primary" />
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           {new Date().toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
           })}
         </div>
       </motion.div>
 
-      <AttendanceStatsCards stats={attendanceStats} />
+      <AttendanceStatsCards stats={stats} />
 
       <AttendanceCharts
-        dailyAttendance={dailyAttendance}
-        weeklyTrend={weeklyTrend}
-        departmentAttendance={departmentAttendance}
-        monthlySummary={monthlySummary}
+        dailyAttendance={dailyData}
+        weeklyTrend={weeklyData}
+        departmentAttendance={deptData}
+        monthlySummary={monthlyData}
       />
 
       <AttendanceFilters
@@ -113,10 +179,10 @@ export default function AttendanceDashboard() {
             <h3 className="font-semibold text-gray-800 mb-3">Today&apos;s Attendance Summary</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {([
-                { label: 'Present', value: attendanceStats.presentToday, color: '#10b981', bg: '#d1fae5' },
-                { label: 'Absent', value: attendanceStats.absentToday, color: '#ef4444', bg: '#fee2e2' },
-                { label: 'Late', value: attendanceStats.lateArrivals, color: '#f59e0b', bg: '#fef3c7' },
-                { label: 'Leave', value: attendanceStats.leaveRequests, color: '#3b82f6', bg: '#dbeafe' },
+                { label: 'Present', value: stats.presentToday, color: '#10b981', bg: '#d1fae5' },
+                { label: 'Absent', value: stats.absentToday, color: '#ef4444', bg: '#fee2e2' },
+                { label: 'Late', value: stats.lateArrivals, color: '#f59e0b', bg: '#fef3c7' },
+                { label: 'Leave', value: stats.leaveRequests, color: '#3b82f6', bg: '#dbeafe' },
               ] as const).map((item) => (
                 <motion.div
                   key={item.label}
@@ -130,7 +196,7 @@ export default function AttendanceDashboard() {
                   <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${(item.value / attendanceStats.totalStudents) * 100}%` }}
+                      animate={{ width: `${stats.totalStudents > 0 ? (item.value / stats.totalStudents) * 100 : 0}%` }}
                       transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
                       className="h-full rounded-full"
                       style={{ backgroundColor: item.color }}
@@ -142,7 +208,7 @@ export default function AttendanceDashboard() {
           </div>
         </div>
         <div className="lg:col-span-1 space-y-6">
-          <AttendanceNotifications notifications={attendanceNotifications} error={pageState.error} />
+          <AttendanceNotifications notifications={notifications} error={pageState.error} />
         </div>
       </div>
 

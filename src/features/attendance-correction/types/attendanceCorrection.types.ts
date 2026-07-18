@@ -1,5 +1,5 @@
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'leave'
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day' | 'leave'
 
 export interface CorrectionRequest {
   id: string

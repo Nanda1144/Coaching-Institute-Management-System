@@ -46,7 +46,7 @@ export default function AttendanceNotifications({ notifications, error }: Attend
       ) : (
         <div className="space-y-2">
           {notifications.map((notif, index) => {
-            const config = typeConfig[notif.type]
+            const config = typeConfig[notif.type] || { icon: MdInfoOutline, label: 'Info', color: '#6b7280', bg: '#f3f4f6' }
             const Icon = config.icon
             return (
               <motion.div
