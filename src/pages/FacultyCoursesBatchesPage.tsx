@@ -100,7 +100,7 @@ export default function FacultyCoursesBatchesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((c: any, i: number) => (
-            <div key={i} className="card p-4 hover:shadow-card-hover transition-all">
+            <div key={'course-' + i} className="card p-4 hover:shadow-card-hover transition-all">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
                   <MdFolder className="text-primary" size={20} />
@@ -119,7 +119,7 @@ export default function FacultyCoursesBatchesPage() {
           <p className="text-sm font-medium text-neutral-700 mb-2">Assigned Semesters</p>
           <div className="flex flex-wrap gap-2">
             {semesters.map((s: any, i: number) => (
-              <span key={i} className="px-3 py-1 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium">{typeof s === 'string' ? s : `Sem ${s}`}</span>
+              <span key={'semester-' + i} className="px-3 py-1 rounded-lg bg-amber-50 text-amber-700 text-sm font-medium">{typeof s === 'string' ? s : `Sem ${s}`}</span>
             ))}
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function FacultyCoursesBatchesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {subjects.map((s: any, i: number) => (
-            <div key={i} className="card p-4 hover:shadow-card-hover transition-all">
+            <div key={'subject-' + i} className="card p-4 hover:shadow-card-hover transition-all">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                   <MdFolder className="text-emerald-500" size={20} />
@@ -174,7 +174,7 @@ export default function FacultyCoursesBatchesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {batches.map((b: any, i: number) => (
-            <div key={i} className="card p-4 hover:shadow-card-hover transition-all">
+            <div key={'batch-' + i} className="card p-4 hover:shadow-card-hover transition-all">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
                   <MdGroup className="text-violet-500" size={20} />

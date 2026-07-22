@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { handleMockRequest, enableMock, isMockEnabled } from './mockAdapter';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Auto-enable mock if env var is set or if no backend configured
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true' || import.meta.env.VITE_API_BASE_URL === '';

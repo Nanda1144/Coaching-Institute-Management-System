@@ -142,7 +142,7 @@ export class TimetableService {
     await sendNotification(
       'Timetable Updated',
       `A new class has been scheduled: ${data.subject} on ${data.dayOfWeek} at ${data.startTime}`,
-      data.batchId
+      data.batchId ?? ''
     );
 
     return timetable;

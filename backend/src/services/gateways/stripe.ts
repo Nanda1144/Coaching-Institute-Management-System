@@ -9,8 +9,13 @@ function getStripe(): Stripe {
   return stripeInstance;
 }
 
-export const stripeGateway = {
-  async createPaymentIntent(amount: number, currency = 'usd', metadata: Record<string, string> = {}) {
+export const stripeGateway: {
+  createPaymentIntent: (amount: number, currency?: string, metadata?: Record<string, string>) => Promise<Stripe.Response<Stripe.PaymentIntent>>;
+  confirmPayment: (paymentIntentId: string) => Promise<Stripe.Response<Stripe.PaymentIntent>>;
+  retrievePayment: (paymentIntentId: string) => Promise<Stripe.Response<Stripe.PaymentIntent>>;
+  constructWebhookEvent: (payload: Buffer, sig: string) => Stripe.Event;
+} = {
+  async createPaymentIntent(amount, currency = 'usd', metadata: Record<string, string> = {}) {
     const stripe = getStripe();
     return stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
@@ -20,12 +25,12 @@ export const stripeGateway = {
     });
   },
 
-  async confirmPayment(paymentIntentId: string) {
+  async confirmPayment(paymentIntentId) {
     const stripe = getStripe();
     return stripe.paymentIntents.confirm(paymentIntentId);
   },
 
-  async retrievePayment(paymentIntentId: string) {
+  async retrievePayment(paymentIntentId) {
     const stripe = getStripe();
     return stripe.paymentIntents.retrieve(paymentIntentId);
   },

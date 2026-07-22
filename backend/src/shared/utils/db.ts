@@ -30,7 +30,7 @@ function mapRowToCamelCase(row: any): any {
 type WhereCondition = {
   column?: string;
   operator?: string;
-  value: any;
+  value?: any;
   params?: any[];
   conditions?: WhereCondition[];
   logic?: 'AND' | 'OR';
