@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
+import { query } from '../../config/database';
 import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 import type { CreateFacultyInput, UpdateFacultyInput, FacultyQueryInput } from './faculty.validator';
@@ -13,7 +14,7 @@ async function generateUsername(firstName: string, lastName: string): Promise<st
   const base = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
   let username = base;
   let suffix = 1;
-  while (await prisma.faculty.findUnique({ where: { username } })) {
+  while (await db.findUnique('faculty', [{ column: 'username', value: username }])) {
     username = `${base}${suffix}`;
     suffix++;
   }
@@ -25,41 +26,32 @@ export const facultyService = {
     const { page, limit, search, department, designation, status, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = { isDeleted: false };
+    const where: any[] = [{ column: 'isDeleted', value: false }];
 
     if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { employeeId: { contains: search, mode: 'insensitive' } },
-        { facultyId: { contains: search, mode: 'insensitive' } },
-      ];
+      const p = `%${search}%`;
+      where.push({
+        column: 'search',
+        operator: 'raw',
+        value: `first_name ILIKE $1 OR last_name ILIKE $2 OR email ILIKE $3 OR employee_id ILIKE $4 OR faculty_id ILIKE $5`,
+        params: [p, p, p, p, p],
+      });
     }
-    if (department) where.department = department;
-    if (designation) where.designation = designation;
-    if (status) where.status = status;
+    if (department) where.push({ column: 'department', value: department });
+    if (designation) where.push({ column: 'designation', value: designation });
+    if (status) where.push({ column: 'status', value: status });
 
     const orderBy: any = {};
     orderBy[sortBy || 'createdAt'] = sortOrder || 'desc';
 
     const [data, total] = await Promise.all([
-      prisma.faculty.findMany({
+      db.findMany('faculty', {
         where,
-        skip,
-        take: limit,
-        orderBy,
-        include: {
-          _count: {
-            select: {
-              attendanceMarkedBy: true,
-              facultyAssignments: true,
-              homeworks: true,
-            },
-          },
-        },
+        offset: skip,
+        limit,
+        orderBy: [{ column: sortBy || 'createdAt', dir: sortOrder || 'desc' }],
       }),
-      prisma.faculty.count({ where }),
+      db.count('faculty', where),
     ]);
 
     return {
@@ -74,100 +66,99 @@ export const facultyService = {
   },
 
   async findById(id: string) {
-    const faculty = await prisma.faculty.findFirst({
-      where: { id, isDeleted: false },
-      include: {
-        facultyAssignments: { where: { isDeleted: false } },
-        attendanceMarkedBy: { where: { isDeleted: false } },
-        timetables: { where: { isDeleted: false } },
-        studyMaterialsUploaded: { where: { isDeleted: false } },
-      },
+    const faculty = await db.findFirst('faculty', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!faculty) throw AppError.notFound('Faculty not found');
     return faculty;
   },
 
-  async create(data: CreateFacultyInput, userId: string) {
-    const existingEmail = await prisma.faculty.findUnique({ where: { email: data.email } });
+  async create(data: any, userId: string) {
+    const firstName = data.fullName ? data.fullName.split(' ')[0] || '' : data.firstName || '';
+    const lastName = data.fullName ? data.fullName.split(' ').slice(1).join(' ') || '' : data.lastName || '';
+    const dateOfBirth = data.dateOfBirth || data.dob;
+    const employeeId = data.employeeId || data.facultyId;
+    const joiningDate = data.joiningDate;
+
+    const existingEmail = await db.findUnique('faculty', [{ column: 'email', value: data.email }]);
     if (existingEmail) throw AppError.conflict('Email already in use');
 
-    const existingPhone = await prisma.faculty.findUnique({ where: { phone: data.phone } });
+    const existingPhone = await db.findUnique('faculty', [{ column: 'phone', value: data.phone }]);
     if (existingPhone) throw AppError.conflict('Phone already in use');
 
-    const existingEmployeeId = await prisma.faculty.findUnique({ where: { employeeId: data.employeeId } });
-    if (existingEmployeeId) throw AppError.conflict('Employee ID already in use');
+    if (employeeId) {
+      const existingEid = await db.findUnique('faculty', [{ column: 'employeeId', value: employeeId }]);
+      if (existingEid) throw AppError.conflict('Employee ID already in use');
+    }
 
-    const lastFaculty = await prisma.faculty.findFirst({
-      orderBy: { facultyId: 'desc' },
-      select: { facultyId: true },
+    const lastFaculty = await db.findFirst('faculty', {
+      orderBy: [{ column: 'facultyId', dir: 'desc' }],
     });
-    const facultyId = generateFacultyId(lastFaculty?.facultyId);
+    const fId = generateFacultyId(lastFaculty?.facultyId);
 
-    const username = await generateUsername(data.firstName, data.lastName);
+    const username = await generateUsername(firstName, lastName);
     const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';
     const hashedPassword = await bcrypt.hash(tempPassword, env.BCRYPT_SALT_ROUNDS);
 
-    const faculty = await prisma.faculty.create({
-      data: {
-        facultyId,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        fullName: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        phone: data.phone,
-        gender: data.gender,
-        dateOfBirth: new Date(data.dateOfBirth),
-        designation: data.designation,
-        department: data.department,
-        employeeId: data.employeeId,
-        joiningDate: new Date(data.joiningDate),
-        username,
-        password: hashedPassword,
-        specialization: [],
-        qualification: [],
-        experience: 0,
-        employmentType: 'full-time',
-        branch: 'main',
-        campus: 'main',
-        address: {},
-        emergencyContact: {},
-        permissions: [],
-        assignedCourses: [],
-        assignedSubjects: [],
-        assignedBatches: [],
-        assignedSemesters: [],
-        transferHistory: [],
-        createdById: userId,
-      },
+    const faculty = await db.create('faculty', {
+      facultyId: fId,
+      firstName,
+      lastName,
+      fullName: data.fullName || `${firstName} ${lastName}`.trim(),
+      email: data.email,
+      phone: data.phone,
+      gender: data.gender,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      designation: data.designation,
+      department: data.department,
+      employeeId: employeeId || fId,
+      joiningDate: joiningDate ? new Date(joiningDate) : undefined,
+      username,
+      password: hashedPassword,
+      specialization: [],
+      qualification: [],
+      experience: 0,
+      employmentType: 'full-time',
+      branch: 'main',
+      campus: 'main',
+      address: {},
+      emergencyContact: {},
+      permissions: [],
+      assignedCourses: [],
+      assignedSubjects: [],
+      assignedBatches: [],
+      assignedSemesters: [],
+      transferHistory: [],
+      createdById: userId,
     });
 
     return faculty;
   },
 
   async update(id: string, data: UpdateFacultyInput, userId: string) {
-    const existing = await prisma.faculty.findFirst({
-      where: { id, isDeleted: false },
+    const existing = await db.findFirst('faculty', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!existing) throw AppError.notFound('Faculty not found');
 
     if (data.email && data.email !== existing.email) {
-      const emailConflict = await prisma.faculty.findUnique({
-        where: { email: data.email },
-      });
+      const emailConflict = await db.findUnique('faculty', [{ column: 'email', value: data.email }]);
       if (emailConflict) throw AppError.conflict('Email already in use');
     }
 
     if (data.phone && data.phone !== existing.phone) {
-      const phoneConflict = await prisma.faculty.findUnique({
-        where: { phone: data.phone },
-      });
+      const phoneConflict = await db.findUnique('faculty', [{ column: 'phone', value: data.phone }]);
       if (phoneConflict) throw AppError.conflict('Phone already in use');
     }
 
     if (data.employeeId && data.employeeId !== existing.employeeId) {
-      const empConflict = await prisma.faculty.findUnique({
-        where: { employeeId: data.employeeId },
-      });
+      const empConflict = await db.findUnique('faculty', [{ column: 'employeeId', value: data.employeeId }]);
       if (empConflict) throw AppError.conflict('Employee ID already in use');
     }
 
@@ -178,13 +169,13 @@ export const facultyService = {
     if (data.dateOfBirth) updateData.dateOfBirth = new Date(data.dateOfBirth);
     if (data.joiningDate) updateData.joiningDate = new Date(data.joiningDate);
 
-    const updated = await prisma.faculty.update({
-      where: { id },
-      data: updateData,
-    });
+    return db.transact(async () => {
+      const updated = await db.update('faculty',
+        [{ column: 'id', value: id }],
+        updateData,
+      );
 
-    await prisma.assignmentLog.create({
-      data: {
+      await db.create('assignment_logs', {
         facultyId: id,
         action: 'UPDATE',
         entityType: 'Faculty',
@@ -193,63 +184,57 @@ export const facultyService = {
         oldValue: JSON.parse(JSON.stringify(existing)),
         newValue: JSON.parse(JSON.stringify(updated)),
         performedBy: userId,
-      },
-    });
+      });
 
-    return updated;
+      return updated;
+    });
   },
 
   async delete(id: string, userId: string) {
-    const faculty = await prisma.faculty.findFirst({
-      where: { id, isDeleted: false },
+    const faculty = await db.findFirst('faculty', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!faculty) throw AppError.notFound('Faculty not found');
 
-    await prisma.faculty.update({
-      where: { id },
-      data: {
-        isDeleted: true,
-        deletedAt: new Date(),
-        updatedById: userId,
-      },
-    });
+    await db.transact(async () => {
+      await db.update('faculty',
+        [{ column: 'id', value: id }],
+        {
+          isDeleted: true,
+          deletedAt: new Date(),
+          updatedById: userId,
+        },
+      );
 
-    await prisma.assignmentLog.create({
-      data: {
+      await db.create('assignment_logs', {
         facultyId: id,
         action: 'DELETE',
         entityType: 'Faculty',
         entityId: id,
         entityName: faculty.fullName,
         performedBy: userId,
-      },
+      });
     });
 
     return { message: 'Faculty deleted successfully' };
   },
 
   async getProfile(id: string) {
-    const faculty = await prisma.faculty.findFirst({
-      where: { id, isDeleted: false },
-      include: {
-        _count: {
-          select: {
-            timetables: true,
-            facultyAssignments: true,
-            homeworks: true,
-            studyMaterialsUploaded: true,
-          },
-        },
-      },
+    const faculty = await db.findFirst('faculty', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!faculty) throw AppError.notFound('Faculty not found');
     return faculty;
   },
 
   async getDashboardStats(facultyId: string) {
-    const faculty = await prisma.faculty.findUnique({
-      where: { id: facultyId },
-    });
+    const faculty = await db.findUnique('faculty', [{ column: 'id', value: facultyId }]);
     if (!faculty) throw AppError.notFound('Faculty not found');
 
     const today = new Date();
@@ -269,29 +254,38 @@ export const facultyService = {
       recentActivities,
     ] = await Promise.all([
       batchIds.length > 0
-        ? prisma.student.count({ where: { batchId: { in: batchIds }, isDeleted: false } })
+        ? db.count('students', [
+          { column: 'batchId', operator: 'in', value: batchIds },
+          { column: 'isDeleted', value: false },
+        ])
         : Promise.resolve(0),
-      prisma.timetable.count({ where: { facultyId, isDeleted: false } }),
-      prisma.attendance.count({
-        where: { facultyId, attendanceDate: { gte: today, lt: tomorrow } },
+      db.count('timetables', [
+        { column: 'facultyId', value: facultyId },
+        { column: 'isDeleted', value: false },
+      ]),
+      db.count('attendances', [
+        { column: 'facultyId', value: facultyId },
+        { column: 'attendanceDate', operator: 'gte', value: today },
+        { column: 'attendanceDate', operator: 'lt', value: tomorrow },
+      ]),
+      db.count('assignments', [
+        { column: 'facultyId', value: facultyId },
+        { column: 'status', value: 'active' },
+        { column: 'deletedAt', value: null, operator: 'is' },
+      ]),
+      db.findMany('timetables', {
+        where: [
+          { column: 'facultyId', value: facultyId },
+          { column: 'isDeleted', value: false },
+          { column: 'startTime', operator: 'gte', value: new Date() },
+        ],
+        orderBy: [{ column: 'startTime', dir: 'asc' }],
+        limit: 5,
       }),
-      prisma.assignment.count({
-        where: { facultyId, status: 'active', deletedAt: null },
-      }),
-      prisma.timetable.findMany({
-        where: { facultyId, isDeleted: false, startTime: { gte: new Date() } },
-        orderBy: { startTime: 'asc' },
-        take: 5,
-        include: {
-          subjectRef: { select: { subjectName: true, subjectCode: true } },
-          batchRef: { select: { batchName: true } },
-          classroom: { select: { roomNumber: true, building: true } },
-        },
-      }),
-      prisma.assignmentLog.findMany({
-        where: { facultyId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
+      db.findMany('assignment_logs', {
+        where: [{ column: 'facultyId', value: facultyId }],
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
+        limit: 10,
       }),
     ]);
 

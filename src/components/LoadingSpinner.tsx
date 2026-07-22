@@ -1,25 +1,30 @@
 import { motion } from 'framer-motion'
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg'
   text?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
-const sizes = {
-  sm: 'h-6 w-6 border-2',
-  md: 'h-10 w-10 border-2',
-  lg: 'h-14 w-14 border-3',
-}
+export default function LoadingSpinner({ text = 'Loading...', size = 'md' }: LoadingSpinnerProps) {
+  const sizes = { sm: 'w-6 h-6 border-2', md: 'w-10 h-10 border-3', lg: 'w-14 h-14 border-4' }
 
-export default function LoadingSpinner({ size = 'md', text }: LoadingSpinnerProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className={`${sizes[size]} rounded-full border-primary/30 border-t-primary`}
-      />
-      {text && <p className="text-sm text-gray-500">{text}</p>}
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center py-16 gap-4"
+    >
+      <div className={`${sizes[size]} border-neutral-200 border-t-primary-600 rounded-full animate-spin`} />
+      {text && (
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-sm text-neutral-400 font-medium"
+        >
+          {text}
+        </motion.p>
+      )}
+    </motion.div>
   )
 }

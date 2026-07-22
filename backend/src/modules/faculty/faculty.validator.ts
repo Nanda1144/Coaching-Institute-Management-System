@@ -1,20 +1,23 @@
 import { z } from 'zod';
 
 export const createFacultySchema = z.object({
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
+  firstName: z.string().min(1, 'First name is required').max(50).optional(),
+  lastName: z.string().min(1, 'Last name is required').max(50).optional(),
+  fullName: z.string().optional(),
   email: z.string().email('Invalid email format'),
   phone: z.string().min(10, 'Phone must be at least 10 digits').max(15),
   gender: z.enum(['male', 'female', 'other']),
   dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Invalid date format for dateOfBirth',
-  }),
+  }).optional(),
+  dob: z.string().optional(),
   designation: z.string().min(1, 'Designation is required'),
   department: z.string().min(1, 'Department is required'),
-  employeeId: z.string().min(1, 'Employee ID is required'),
+  employeeId: z.string().min(1, 'Employee ID is required').optional(),
+  facultyId: z.string().optional(),
   joiningDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Invalid date format for joiningDate',
-  }),
+  }).optional(),
 });
 
 export const updateFacultySchema = createFacultySchema.partial();

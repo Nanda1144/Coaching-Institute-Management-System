@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { UserRole } from '../../shared/enums';
+import { authenticate, authorize, requirePermission } from '../../shared/middleware/auth.middleware';
+import { UserRole, Permission } from '../../shared/enums';
 import { validate } from '../../shared/middleware/validate.middleware';
 import { createHolidaySchema, updateHolidaySchema, holidayQuerySchema } from './holiday.validator';
 import { holidayController } from './holiday.controller';
-import { prisma } from '../../config/database';
 import {
   createBulkDeleteHandler,
   createBulkUpdateHandler,
@@ -21,17 +20,16 @@ router.get('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, Us
 router.get('/stats', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), holidayController.getStats);
 router.get('/special-events', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), holidayController.getSpecialEvents);
 
+router.get('/export', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler('holidays', 'Holiday'));
 router.get('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), holidayController.getById);
 
-router.post('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), validate(createHolidaySchema), holidayController.create);
+router.post('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), requirePermission(Permission.MANAGE_SETTINGS), validate(createHolidaySchema), holidayController.create);
 
-router.post('/bulk-delete', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkDeleteHandler(prisma.holiday, 'Holiday'));
-router.post('/bulk-update', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler(prisma.holiday, 'Holiday'));
-router.post('/import', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler(prisma.holiday, 'Holiday'));
-router.get('/export', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler(prisma.holiday, 'Holiday'));
+router.post('/bulk-delete', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkDeleteHandler('holidays', 'Holiday'));
+router.post('/bulk-update', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler('holidays', 'Holiday'));
+router.post('/import', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler('holidays', 'Holiday'));
+router.patch('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), requirePermission(Permission.MANAGE_SETTINGS), validate(updateHolidaySchema), holidayController.update);
 
-router.patch('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), validate(updateHolidaySchema), holidayController.update);
-
-router.delete('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), holidayController.delete);
+router.delete('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.MANAGE_SETTINGS), holidayController.delete);
 
 export default router;

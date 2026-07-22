@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../../config/env';
-import { prisma } from '../../config/database';
+import { query } from '../../config/database';
 import { AppError } from '../errors/AppError';
 
 export interface IJwtPayload {
@@ -28,13 +28,12 @@ async function resolveDevUser(): Promise<IJwtPayload> {
   if (cachePromise) return cachePromise;
   cachePromise = (async () => {
     try {
-      const firstFaculty = await prisma.faculty.findFirst({
-        where: { isDeleted: false },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, facultyId: true },
-      });
-      if (firstFaculty) {
-        cachedDevUser = { id: firstFaculty.id, facultyId: firstFaculty.facultyId, role: 'SUPER_ADMIN', permissions: ['*'] };
+      const result = await query(
+        'SELECT id, faculty_id FROM "faculty" WHERE is_deleted = false ORDER BY created_at ASC LIMIT 1'
+      );
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        cachedDevUser = { id: row.id, facultyId: row.faculty_id, role: 'SUPER_ADMIN', permissions: ['*'] };
       } else {
         cachedDevUser = devFallbackUser();
       }
@@ -50,9 +49,12 @@ async function resolveDevUser(): Promise<IJwtPayload> {
 export async function authenticate(req: IAuthRequest, res: Response, next: NextFunction): Promise<void> {
   if (env.SKIP_AUTH === 'true') {
     if (env.NODE_ENV === 'production') {
-      return next(AppError.unauthorized('Authentication required'));
+      return next(AppError.unauthorized('SKIP_AUTH is forbidden in production'));
     }
-    console.warn('⚠️  SKIP_AUTH enabled — all users will be SUPER_ADMIN. Disable in production.');
+    console.error('❌ CRITICAL: SKIP_AUTH is enabled. This is a security risk. Only use for local development.');
+    if (process.send) {
+      process.send?.('SKIP_AUTH_WARNING');
+    }
     req.user = await resolveDevUser();
     return next();
   }
@@ -64,6 +66,11 @@ export async function authenticate(req: IAuthRequest, res: Response, next: NextF
 
   const token = authHeader.split(' ')[1];
   try {
+    const result = await query('SELECT id FROM "blacklisted_tokens" WHERE token = $1 AND expires_at > NOW() LIMIT 1', [token]);
+    if (result.rows.length > 0) {
+      return next(AppError.unauthorized('Token has been revoked'));
+    }
+
     const decoded = jwt.verify(token, env.JWT_SECRET) as IJwtPayload;
     req.user = decoded;
     next();
@@ -89,10 +96,10 @@ export function requirePermission(...permissions: string[]) {
     if (!req.user) {
       return next(AppError.unauthorized('Authentication required'));
     }
-    if (req.user.permissions?.includes('*')) {
+    const userPermissions = req.user.permissions ?? [];
+    if (req.user.permissions?.includes('*') || req.user.permissions?.includes('ALL')) {
       return next();
     }
-    const userPermissions = req.user.permissions ?? [];
     const hasAll = permissions.every((p) => userPermissions.includes(p));
     if (!hasAll) {
       return next(AppError.forbidden('Insufficient permissions'));

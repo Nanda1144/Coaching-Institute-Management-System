@@ -1,4 +1,4 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
 import type { CreateHomeworkInput, UpdateHomeworkInput, HomeworkQueryInput } from './homework.validator';
 
@@ -7,38 +7,21 @@ export const homeworkService = {
     const { page, limit, subjectId, batchId, facultyId, status } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = { isDeleted: false };
+    const where: any[] = [{ column: 'isDeleted', value: false }];
 
-    if (subjectId) where.subjectId = subjectId;
-    if (batchId) where.batchId = batchId;
-    if (facultyId) where.facultyId = facultyId;
-    if (status) where.status = status;
+    if (subjectId) where.push({ column: 'subjectId', value: subjectId });
+    if (batchId) where.push({ column: 'batchId', value: batchId });
+    if (facultyId) where.push({ column: 'facultyId', value: facultyId });
+    if (status) where.push({ column: 'status', value: status });
 
     const [homeworks, total] = await Promise.all([
-      prisma.homework.findMany({
+      db.findMany('homeworks', {
         where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          subject: {
-            select: { id: true, subjectName: true, subjectCode: true },
-          },
-          batch: {
-            select: { id: true, batchName: true },
-          },
-          faculty: {
-            select: { id: true, firstName: true, lastName: true, facultyId: true },
-          },
-          department: {
-            select: { id: true, name: true, code: true },
-          },
-          course: {
-            select: { id: true, name: true, code: true },
-          },
-        },
+        offset: skip,
+        limit,
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
       }),
-      prisma.homework.count({ where }),
+      db.count('homeworks', where),
     ]);
 
     return {
@@ -53,26 +36,11 @@ export const homeworkService = {
   },
 
   async findById(id: string) {
-    const homework = await prisma.homework.findFirst({
-      where: { id, isDeleted: false },
-      include: {
-        subject: {
-          select: { id: true, subjectName: true, subjectCode: true },
-        },
-        batch: {
-          select: { id: true, batchName: true },
-        },
-        faculty: {
-          select: { id: true, firstName: true, lastName: true, facultyId: true, email: true },
-        },
-        department: {
-          select: { id: true, name: true, code: true },
-        },
-        course: {
-          select: { id: true, name: true, code: true },
-        },
-        attachments: true,
-      },
+    const homework = await db.findFirst('homeworks', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
 
     if (!homework) {
@@ -83,29 +51,22 @@ export const homeworkService = {
   },
 
   async create(data: CreateHomeworkInput, userId: string) {
-    const homework = await prisma.homework.create({
-      data: {
-        ...data,
-        dueDate: new Date(data.dueDate),
-        createdById: userId,
-        updatedById: userId,
-      },
-      include: {
-        subject: {
-          select: { id: true, subjectName: true },
-        },
-        faculty: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
+    const homework = await db.create('homeworks', {
+      ...data,
+      dueDate: new Date(data.dueDate),
+      createdById: userId,
+      updatedById: userId,
     });
 
     return homework;
   },
 
   async update(id: string, data: UpdateHomeworkInput, userId: string) {
-    const existing = await prisma.homework.findFirst({
-      where: { id, isDeleted: false },
+    const existing = await db.findFirst('homeworks', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
 
     if (!existing) {
@@ -117,64 +78,45 @@ export const homeworkService = {
       updateData.dueDate = new Date(data.dueDate);
     }
 
-    const homework = await prisma.homework.update({
-      where: { id },
-      data: updateData,
-      include: {
-        subject: {
-          select: { id: true, subjectName: true },
-        },
-        faculty: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
-    });
+    const homework = await db.update('homeworks',
+      [{ column: 'id', value: id }],
+      updateData,
+    );
 
     return homework;
   },
 
   async delete(id: string, userId: string) {
-    const existing = await prisma.homework.findFirst({
-      where: { id, isDeleted: false },
+    const existing = await db.findFirst('homeworks', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
 
     if (!existing) {
       throw AppError.notFound('Homework not found');
     }
 
-    const homework = await prisma.homework.update({
-      where: { id },
-      data: {
+    const homework = await db.update('homeworks',
+      [{ column: 'id', value: id }],
+      {
         isDeleted: true,
         deletedAt: new Date(),
         updatedById: userId,
       },
-    });
+    );
 
     return homework;
   },
 
   async getByFaculty(facultyId: string) {
-    const homeworks = await prisma.homework.findMany({
-      where: {
-        facultyId,
-        isDeleted: false,
-      },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        subject: {
-          select: { id: true, subjectName: true, subjectCode: true },
-        },
-        batch: {
-          select: { id: true, batchName: true },
-        },
-        department: {
-          select: { id: true, name: true },
-        },
-        course: {
-          select: { id: true, name: true },
-        },
-      },
+    const homeworks = await db.findMany('homeworks', {
+      where: [
+        { column: 'facultyId', value: facultyId },
+        { column: 'isDeleted', value: false },
+      ],
+      orderBy: [{ column: 'createdAt', dir: 'desc' }],
     });
 
     return homeworks;

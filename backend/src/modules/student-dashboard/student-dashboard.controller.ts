@@ -68,3 +68,10 @@ export const markRead = asyncHandler(async (req: IAuthRequest, res: Response, _n
   const result = await studentDashboardService.markNotificationRead(req.params.id, studentId);
   sendSuccess(res, result, 'Notification marked as read');
 });
+
+export const getCertificates = asyncHandler(async (req: IAuthRequest, res: Response, _next: NextFunction) => {
+  const studentId = req.user?.id;
+  if (!studentId) { sendError(res, 401, 'Authentication required'); return; }
+  const data = await studentDashboardService.getCertificates(studentId);
+  sendSuccess(res, data, 'Certificates fetched');
+});

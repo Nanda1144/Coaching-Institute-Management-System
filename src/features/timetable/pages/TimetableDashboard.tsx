@@ -43,7 +43,7 @@ export default function TimetableDashboard() {
     { hour: '14:00', classes: 0 }, { hour: '15:00', classes: 0 }, { hour: '16:00', classes: 0 },
     { hour: '17:00', classes: 0 },
   ])
-  const [weeklyDistributionData] = useState<WeeklyDistribution[]>([
+  const [weeklyDistributionData, setWeeklyDistributionData] = useState<WeeklyDistribution[]>([
     { day: 'Monday', classes: 0 }, { day: 'Tuesday', classes: 0 }, { day: 'Wednesday', classes: 0 },
     { day: 'Thursday', classes: 0 }, { day: 'Friday', classes: 0 }, { day: 'Saturday', classes: 0 },
   ])
@@ -75,17 +75,21 @@ export default function TimetableDashboard() {
         const entries = normalizeTimetableList(response)
         setTodayTimetable(entries)
         const now = new Date().toLocaleString('en-US', { weekday: 'long' })
-        const todayEntries = entries.filter((e: TimetableEntry) =>
-          'day' in e ? (e as unknown as Record<string, string>).day === now : false
-        )
+        const todayEntries = entries.filter((e: TimetableEntry) => e.day === now)
+        const thisWeekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        const weekEntries = entries.filter((e: TimetableEntry) => thisWeekDays.includes(e.day))
+        const ongoingEntries = entries.filter((e: TimetableEntry) => e.status === 'ongoing')
         setTimetableStats({
           todayClasses: todayEntries.length,
-          thisWeekClasses: entries.length,
+          thisWeekClasses: weekEntries.length,
           monthlyClasses: Math.round(entries.length * 4.3),
           availableClassrooms: 24,
           activeFaculty: [...new Set(entries.map((e: TimetableEntry) => e.faculty))].length || 112,
-          ongoingClasses: entries.filter((e: TimetableEntry) => e.status === 'ongoing').length,
+          ongoingClasses: ongoingEntries.length,
         })
+        const dayCount = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+          .map(day => ({ day, classes: entries.filter(e => e.day === day).length }))
+        setWeeklyDistributionData(dayCount)
         setPageState({ loading: false, error: null })
       } catch {
         setPageState({ loading: false, error: 'Failed to load timetable data' })

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../../shared/middleware/auth.middleware';
-import { UserRole } from '../../shared/enums';
+import { authenticate, authorize, requirePermission } from '../../shared/middleware/auth.middleware';
+import { UserRole, Permission } from '../../shared/enums';
 import { validate } from '../../shared/middleware/validate.middleware';
 import { attendanceController } from './attendance.controller';
 import {
@@ -13,7 +13,6 @@ import {
   qrScanSchema,
   correctionSchema,
 } from './attendance.validator';
-import { prisma } from '../../config/database';
 import {
   createBulkDeleteHandler,
   createBulkUpdateHandler,
@@ -27,16 +26,16 @@ router.use(authenticate);
 
 router.get('/today', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getTodayAttendance);
 router.get('/stats', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getAttendanceStats);
-router.get('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), validate(attendanceQuerySchema, 'query'), attendanceController.findAll);
-router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(createAttendanceSchema), attendanceController.create);
+router.get('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.READ_ATTENDANCE), validate(attendanceQuerySchema, 'query'), attendanceController.findAll);
+router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.CREATE_ATTENDANCE), validate(createAttendanceSchema), attendanceController.create);
+router.get('/export', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler('attendances', 'Attendance'));
 router.get('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.findById);
-router.patch('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), validate(updateAttendanceSchema), attendanceController.update);
-router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), attendanceController.delete);
+router.patch('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.UPDATE_ATTENDANCE), validate(updateAttendanceSchema), attendanceController.update);
+router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.DELETE_ATTENDANCE), attendanceController.delete);
 
-router.post('/bulk-delete', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkDeleteHandler(prisma.attendance, 'Attendance'));
-router.post('/bulk-update', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler(prisma.attendance, 'Attendance'));
-router.post('/import', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler(prisma.attendance, 'Attendance'));
-router.get('/export', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler(prisma.attendance, 'Attendance'));
+router.post('/bulk-delete', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkDeleteHandler('attendances', 'Attendance'));
+router.post('/bulk-update', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler('attendances', 'Attendance'));
+router.post('/import', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler('attendances', 'Attendance'));
 
 router.post('/face-recognition/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(faceRecognitionSchema), attendanceController.createFaceRecognitionSession);
 router.patch('/face-recognition/:sessionId/verify', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.verifyFaceRecognition);

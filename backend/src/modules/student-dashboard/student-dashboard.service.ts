@@ -1,34 +1,37 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
-import { Prisma } from '@prisma/client';
 
 async function getOverview(studentId: string) {
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: { batchRef: { select: { id: true, batchName: true } } },
-  });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
 
   const [totalClasses, attendedClasses, pendingAssignments, totalAssignments] = await Promise.all([
-    prisma.attendance.count({ where: { studentId, isDeleted: false } }),
-    prisma.attendance.count({ where: { studentId, isDeleted: false, attendanceStatus: 'present' } }),
-    prisma.assignment.count({
-      where: {
-        batchId: student.batchId ?? '',
-        status: 'active',
-        isDeleted: false,
-        submissions: { none: { studentId } },
-      },
-    }),
-    prisma.assignment.count({
-      where: { batchId: student.batchId ?? '', isDeleted: false, status: 'active' },
-    }),
+    db.count('attendance', [
+      { column: 'studentId', value: studentId },
+      { column: 'isDeleted', value: false },
+    ]),
+    db.count('attendance', [
+      { column: 'studentId', value: studentId },
+      { column: 'isDeleted', value: false },
+      { column: 'attendanceStatus', value: 'present' },
+    ]),
+    db.count('assignments', [
+      { column: 'batchId', value: student.batchId ?? '' },
+      { column: 'status', value: 'active' },
+      { column: 'isDeleted', value: false },
+    ], { sql: `NOT EXISTS (SELECT 1 FROM assignment_submissions WHERE assignment_submissions.assignment_id = assignments.id AND assignment_submissions.student_id = $1)`, params: [studentId] }),
+    db.count('assignments', [
+      { column: 'batchId', value: student.batchId ?? '' },
+      { column: 'isDeleted', value: false },
+      { column: 'status', value: 'active' },
+    ]),
   ]);
 
-  const fees = await prisma.fee.aggregate({
-    where: { studentId },
-    _sum: { amount: true, paidAmount: true },
+  const fees = await db.findMany('fees', {
+    where: [{ column: 'studentId', value: studentId }],
   });
+  const feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount), 0);
+  const feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount), 0);
 
   return {
     student: {
@@ -51,30 +54,33 @@ async function getOverview(studentId: string) {
       attendancePercent: totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0,
       pendingAssignments,
       totalAssignments,
-      feesTotal: fees._sum.amount ?? 0,
-      feesPaid: fees._sum.paidAmount ?? 0,
+      feesTotal,
+      feesPaid,
     },
   };
 }
 
 async function getAttendance(studentId: string, month?: number, year?: number) {
-  const where: any = { studentId, isDeleted: false };
+  const where: any[] = [
+    { column: 'studentId', value: studentId },
+    { column: 'isDeleted', value: false },
+  ];
   if (month && year) {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59);
-    where.attendanceDate = { gte: start, lte: end };
+    where.push({ column: 'attendanceDate', operator: 'gte', value: start });
+    where.push({ column: 'attendanceDate', operator: 'lte', value: end });
   }
 
-  const records = await prisma.attendance.findMany({
+  const records = await db.findMany('attendance', {
     where,
-    include: { subject: { select: { id: true, subjectName: true, subjectCode: true } } },
-    orderBy: { attendanceDate: 'desc' },
+    orderBy: [{ column: 'attendanceDate', dir: 'desc' }],
   });
 
   const total = records.length;
-  const present = records.filter((r) => r.attendanceStatus === 'present').length;
-  const absent = records.filter((r) => r.attendanceStatus === 'absent').length;
-  const late = records.filter((r) => r.attendanceStatus === 'late').length;
+  const present = records.filter((r: any) => r.attendanceStatus === 'present').length;
+  const absent = records.filter((r: any) => r.attendanceStatus === 'absent').length;
+  const late = records.filter((r: any) => r.attendanceStatus === 'late').length;
 
   return {
     records,
@@ -83,22 +89,17 @@ async function getAttendance(studentId: string, month?: number, year?: number) {
 }
 
 async function getTimetable(studentId: string) {
-  const student = await prisma.student.findUnique({ where: { id: studentId }, select: { batchId: true, semester: true, department: true } });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
 
-  const timetables = await prisma.timetable.findMany({
-    where: {
-      batchId: student.batchId ?? undefined,
-      semester: student.semester,
-      department: student.department,
-      status: 'scheduled',
-    },
-    include: {
-      subjectRef: { select: { id: true, subjectName: true, subjectCode: true } },
-      classroom: { select: { id: true, building: true, roomNumber: true } },
-      faculty: { select: { id: true, fullName: true } },
-    },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+  const timetables = await db.findMany('timetables', {
+    where: [
+      { column: 'batchId', value: student.batchId ?? undefined },
+      { column: 'semester', value: student.semester },
+      { column: 'department', value: student.department },
+      { column: 'status', value: 'scheduled' },
+    ],
+    orderBy: [{ column: 'dayOfWeek', dir: 'asc' }, { column: 'startTime', dir: 'asc' }],
   });
 
   const grouped: Record<string, typeof timetables> = {};
@@ -111,100 +112,108 @@ async function getTimetable(studentId: string) {
 }
 
 async function getAssignments(studentId: string) {
-  const student = await prisma.student.findUnique({ where: { id: studentId }, select: { batchId: true } });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
 
-  const assignments = await prisma.assignment.findMany({
-    where: { batchId: student.batchId ?? '', isDeleted: false, status: 'active' },
-    include: {
-      subject: { select: { id: true, subjectName: true, subjectCode: true } },
-      faculty: { select: { id: true, fullName: true } },
-      submissions: { where: { studentId, isDeleted: false } },
-      _count: { select: { submissions: { where: { studentId } } } },
-    },
-    orderBy: { dueDate: 'asc' },
+  const assignments = await db.findMany('assignments', {
+    where: [
+      { column: 'batchId', value: student.batchId ?? '' },
+      { column: 'isDeleted', value: false },
+      { column: 'status', value: 'active' },
+    ],
+    orderBy: [{ column: 'dueDate', dir: 'asc' }],
   });
 
-  return assignments.map((a) => ({
-    id: a.id,
-    title: a.title,
-    description: a.description,
-    subjectName: a.subject?.subjectName,
-    subjectCode: a.subject?.subjectCode,
-    facultyName: a.faculty?.fullName,
-    totalMarks: a.totalMarks,
-    publishDate: a.publishDate,
-    dueDate: a.dueDate,
-    status: a.status,
-    submitted: a._count.submissions > 0,
-    submission: a.submissions[0] ?? null,
-  }));
+  const submissions = await db.findMany('assignment_submissions', {
+    where: [
+      { column: 'studentId', value: studentId },
+      { column: 'isDeleted', value: false },
+    ],
+  });
+
+  return assignments.map((a: any) => {
+    const sub = submissions.find((s: any) => s.assignmentId === a.id);
+    return {
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      subjectName: a.subjectName,
+      subjectCode: a.subjectCode,
+      facultyName: a.facultyName,
+      totalMarks: a.totalMarks,
+      publishDate: a.publishDate,
+      dueDate: a.dueDate,
+      status: a.status,
+      submitted: !!sub,
+      submission: sub ?? null,
+    };
+  });
 }
 
 async function getMarks(studentId: string) {
-  const submissions = await prisma.assignmentSubmission.findMany({
-    where: { studentId, isDeleted: false, status: 'graded' },
-    include: {
-      assignment: {
-        select: { id: true, title: true, totalMarks: true, subject: { select: { subjectName: true } } },
-      },
-      evaluations: {
-        select: { marksObtained: true, totalMarks: true, grade: true, feedback: true, evaluationDate: true },
-      },
-    },
-    orderBy: { submissionDate: 'desc' },
+  const submissions = await db.findMany('assignment_submissions', {
+    where: [
+      { column: 'studentId', value: studentId },
+      { column: 'isDeleted', value: false },
+      { column: 'status', value: 'graded' },
+    ],
+    orderBy: [{ column: 'submissionDate', dir: 'desc' }],
   });
 
+  const evaluationIds = submissions.filter((s: any) => s.id).map((s: any) => s.id);
+  let evaluations: any[] = [];
+  if (evaluationIds.length > 0) {
+    evaluations = await db.findMany('evaluations', {
+      where: [
+        { column: 'submissionId', operator: 'in', value: evaluationIds },
+      ],
+    });
+  }
+
   return submissions
-    .filter((s) => s.evaluations)
-    .map((s) => ({
-      assignmentTitle: s.assignment.title,
-      subjectName: s.assignment.subject?.subjectName,
-      marksObtained: s.evaluations?.marksObtained,
-      totalMarks: s.evaluations?.totalMarks ?? s.assignment.totalMarks,
-      grade: s.evaluations?.grade,
-      feedback: s.evaluations?.feedback,
-      evaluationDate: s.evaluations?.evaluationDate,
-    }));
+    .map((s: any) => {
+      const evalRecord = evaluations.find((e: any) => e.submissionId === s.id);
+      return {
+        assignmentTitle: s.assignmentTitle,
+        subjectName: s.subjectName,
+        marksObtained: evalRecord?.marksObtained,
+        totalMarks: evalRecord?.totalMarks ?? s.totalMarks,
+        grade: evalRecord?.grade,
+        feedback: evalRecord?.feedback,
+        evaluationDate: evalRecord?.evaluationDate,
+      };
+    });
 }
 
 async function getMaterials(studentId: string) {
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    select: { batchId: true, department: true, course: true, semester: true },
-  });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
 
-  const materials = await prisma.studyMaterial.findMany({
-    where: {
-      OR: [
-        { batchId: student.batchId ?? undefined },
-        { departmentId: student.department },
-        { courseId: student.course },
-      ],
-      semesterId: String(student.semester),
-      visibility: { in: ['PUBLIC', 'STUDENTS_ONLY', 'BATCH_ONLY'] },
-    },
-    include: {
-      subject: { select: { id: true, subjectName: true, subjectCode: true } },
-      chapter: { select: { id: true, chapterName: true } },
-      uploadedBy: { select: { id: true, fullName: true } },
-    },
-    orderBy: { createdAt: 'desc' },
+  const materials = await db.findMany('study_materials', {
+    where: [
+      {
+        column: 'batchSearch',
+        operator: 'raw',
+        value: `batch_id = $1 OR department_id = $2 OR course_id = $3`,
+        params: [student.batchId, student.department, student.course],
+      },
+      { column: 'semesterId', value: String(student.semester) },
+      { column: 'visibility', operator: 'in', value: ['PUBLIC', 'STUDENTS_ONLY', 'BATCH_ONLY'] },
+    ],
+    orderBy: [{ column: 'createdAt', dir: 'desc' }],
   });
 
   return materials;
 }
 
 async function getFees(studentId: string) {
-  const fees = await prisma.fee.findMany({
-    where: { studentId },
-    orderBy: [{ semester: 'asc' }, { dueDate: 'asc' }],
-    include: { student: { select: { fullName: true, rollNumber: true } } },
+  const fees = await db.findMany('fees', {
+    where: [{ column: 'studentId', value: studentId }],
+    orderBy: [{ column: 'semester', dir: 'asc' }, { column: 'dueDate', dir: 'asc' }],
   });
 
   const summary = fees.reduce(
-    (acc, f) => ({
+    (acc: any, f: any) => ({
       totalAmount: acc.totalAmount + Number(f.amount),
       totalPaid: acc.totalPaid + Number(f.paidAmount),
       pending: acc.pending + (Number(f.amount) - Number(f.paidAmount)),
@@ -216,31 +225,91 @@ async function getFees(studentId: string) {
 }
 
 async function getNotifications(studentId: string) {
-  const student = await prisma.student.findUnique({ where: { id: studentId }, select: { batchId: true } });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
 
-  const notifications = await prisma.notification.findMany({
-    where: {
-      OR: [{ studentId }, { studentId: null, batchId: student.batchId ?? undefined }],
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
+  const notifications = await db.findMany('notifications', {
+    where: [
+      {
+        column: 'studentFilter',
+        operator: 'raw',
+        value: `student_id = $1 OR (student_id IS NULL AND batch_id = $2)`,
+        params: [studentId, student.batchId],
+      },
+    ],
+    orderBy: [{ column: 'createdAt', dir: 'desc' }],
+    limit: 50,
   });
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
   return { notifications, unreadCount };
 }
 
 async function markNotificationRead(notificationId: string, studentId: string) {
-  const notification = await prisma.notification.findFirst({
-    where: { id: notificationId, studentId },
+  const notification = await db.findFirst('notifications', {
+    where: [
+      { column: 'id', value: notificationId },
+      { column: 'studentId', value: studentId },
+    ],
   });
   if (!notification) throw AppError.notFound('Notification not found');
 
-  return prisma.notification.update({
-    where: { id: notificationId },
-    data: { isRead: true },
+  return db.update('notifications',
+    [{ column: 'id', value: notificationId }],
+    { isRead: true },
+  );
+}
+
+async function getCertificates(studentId: string) {
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  if (!student) throw AppError.notFound('Student not found');
+
+  const submissions = await db.findMany('assignment_submissions', {
+    where: [
+      { column: 'studentId', value: studentId },
+      { column: 'isDeleted', value: false },
+      { column: 'status', value: 'graded' },
+    ],
+    orderBy: [{ column: 'submissionDate', dir: 'desc' }],
   });
+
+  const evaluationIds = submissions.filter((s: any) => s.id).map((s: any) => s.id);
+  let evaluations: any[] = [];
+  if (evaluationIds.length > 0) {
+    evaluations = await db.findMany('evaluations', {
+      where: [{ column: 'submissionId', operator: 'in', value: evaluationIds }],
+    });
+  }
+
+  const certificates = submissions.map((s: any) => {
+    const evalRecord = evaluations.find((e: any) => e.submissionId === s.id);
+    const marksObtained = evalRecord?.marksObtained ? Number(evalRecord.marksObtained) : 0;
+    const totalMarks = evalRecord?.totalMarks ? Number(evalRecord.totalMarks) : Number(s.totalMarks) || 100;
+    const percentage = totalMarks > 0 ? Math.round((marksObtained / totalMarks) * 100) : 0;
+    const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B+' : percentage >= 60 ? 'B' : percentage >= 50 ? 'C' : 'D';
+
+    return {
+      id: s.id,
+      title: s.assignmentTitle || 'Assignment',
+      subject: s.subjectName || '',
+      marksObtained,
+      totalMarks,
+      percentage,
+      grade,
+      feedback: evalRecord?.feedback || '',
+      issueDate: evalRecord?.evaluationDate || s.gradedAt || s.submissionDate,
+      status: 'completed',
+    };
+  });
+
+  return {
+    certificates,
+    studentName: student.fullName,
+    rollNumber: student.rollNumber,
+    course: student.course,
+    department: student.department,
+    totalCertificates: certificates.length,
+  };
 }
 
 export const studentDashboardService = {
@@ -253,4 +322,5 @@ export const studentDashboardService = {
   getFees,
   getNotifications,
   markNotificationRead,
+  getCertificates,
 };

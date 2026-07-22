@@ -36,14 +36,14 @@ export const attendanceController = {
 
   getTodayAttendance: asyncHandler(async (req: IAuthRequest, res: Response) => {
     const result = await attendanceService.getTodayAttendance(
-      req.user!.facultyId,
+      req.user!.facultyId!,
       req.query.date as string | undefined
     );
     sendSuccess(res, result, 'Today\'s attendance fetched successfully');
   }),
 
   getAttendanceStats: asyncHandler(async (req: IAuthRequest, res: Response) => {
-    const result = await attendanceService.getAttendanceStats(req.user!.facultyId, {
+    const result = await attendanceService.getAttendanceStats(req.user!.facultyId!, {
       subjectId: req.query.subjectId as string | undefined,
       month: req.query.month ? Number(req.query.month) : undefined,
       year: req.query.year ? Number(req.query.year) : undefined,
@@ -98,7 +98,7 @@ export const attendanceController = {
   }),
 
   getActiveQrSessions: asyncHandler(async (req: IAuthRequest, res: Response) => {
-    const sessions = await qrAttendanceService.getActiveSessions(req.user!.facultyId);
+    const sessions = await qrAttendanceService.getActiveSessions(req.user!.facultyId!);
     sendSuccess(res, sessions, 'Active QR sessions fetched');
   }),
 

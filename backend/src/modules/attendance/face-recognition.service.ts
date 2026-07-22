@@ -1,6 +1,5 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
-import { Prisma } from '@prisma/client';
 
 export class FaceRecognitionService {
   async createSession(data: {
@@ -12,47 +11,40 @@ export class FaceRecognitionService {
     deviceId?: string;
     metadata?: Record<string, unknown>;
   }, userId: string) {
-    const session = await prisma.faceRecognition.create({
-      data: {
-        sessionId: data.sessionId,
-        studentId: data.studentId,
-        attendanceId: data.attendanceId,
-        imageUrl: data.imageUrl,
-        confidence: data.confidence ?? 0,
-        deviceId: data.deviceId,
-        metadata: (data.metadata ?? {}) as Prisma.InputJsonValue,
-        recognitionTime: new Date().toISOString(),
-        createdById: userId,
-      },
-      include: { student: true, attendance: true },
+    const session = await db.create('face_recognitions', {
+      sessionId: data.sessionId,
+      studentId: data.studentId,
+      attendanceId: data.attendanceId,
+      imageUrl: data.imageUrl,
+      confidence: data.confidence ?? 0,
+      deviceId: data.deviceId,
+      metadata: data.metadata ?? {},
+      recognitionTime: new Date().toISOString(),
+      createdById: userId,
     });
     return session;
   }
 
   async verifyRecognition(sessionId: string, studentId: string, confidence: number, userId: string) {
-    const record = await prisma.faceRecognition.findFirst({
-      where: { sessionId, studentId },
+    const record = await db.findFirst('face_recognitions', {
+      where: [
+        { column: 'sessionId', value: sessionId },
+        { column: 'studentId', value: studentId },
+      ],
     });
     if (!record) throw AppError.notFound('Face recognition record not found');
 
     const verified = confidence >= 0.7;
-    const updated = await prisma.faceRecognition.update({
-      where: { id: record.id },
-      data: {
-        confidence,
-        status: verified ? 'verified' : 'failed',
-        recognitionTime: new Date().toISOString(),
-      },
-      include: { student: true, attendance: true },
+    const updated = await db.update('face_recognitions', [{ column: 'id', value: record.id }], {
+      confidence,
+      status: verified ? 'verified' : 'failed',
+      recognitionTime: new Date().toISOString(),
     });
     return updated;
   }
 
   async getSession(id: string) {
-    const session = await prisma.faceRecognition.findUnique({
-      where: { id },
-      include: { student: true, attendance: true, createdBy: true },
-    });
+    const session = await db.findUnique('face_recognitions', [{ column: 'id', value: id }]);
     if (!session) throw AppError.notFound('Face recognition session not found');
     return session;
   }

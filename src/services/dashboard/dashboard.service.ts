@@ -11,6 +11,16 @@ const dashboardService = {
     return data;
   },
 
+  async getStudentStats(studentId: string) {
+    const { data } = await api.get(`/dashboard/student/${studentId}`);
+    return data;
+  },
+
+  async getParentStats(parentId: string) {
+    const { data } = await api.get(`/dashboard/parent/${parentId}`);
+    return data;
+  },
+
   async getRecentActivities(limit = 10) {
     const { data } = await api.get('/dashboard/recent-activities', { params: { limit } });
     return data;

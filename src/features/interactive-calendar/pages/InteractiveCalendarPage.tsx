@@ -17,6 +17,16 @@ function pad(n: number): string {
   return n.toString().padStart(2, '0')
 }
 
+function extractDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
+  } catch {}
+  return ''
+}
+
 function dateStr(year: number, month: number, day: number): string {
   return `${year}-${pad(month)}-${pad(day)}`
 }
@@ -27,17 +37,25 @@ function mapToCalendarEvents(apiData: Record<string, unknown>[]): CalendarEvent[
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   return apiData.map((item: Record<string, unknown>, index: number) => {
-    const day = typeof item.day === 'number' ? item.day : ((item.dayOfWeek as number) || ((index % 28) + 1))
+    const startTime = String(item.startTime || '')
+    const date = String(item.date || extractDate(startTime) || dateStr(year, month, (index % 28) + 1))
+    const timeOnly = (iso: string) => {
+      try {
+        const d = new Date(iso)
+        if (!isNaN(d.getTime())) return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+      } catch {}
+      return iso.substring(11, 16) || iso
+    }
     return {
       id: String(item.id || `CE-${String(index + 1).padStart(3, '0')}`),
       title: String(item.title || item.subject || ''),
       subject: String(item.subject || ''),
-      faculty: String(item.faculty || ''),
-      classroom: String(item.classroom || ''),
+      faculty: String(item.faculty || item.facultyName || ''),
+      classroom: String(item.classroom || (item.building ? `${item.building} ${item.roomNumber}` : '') || item.roomNumber || ''),
       building: String(item.building || ''),
-      startTime: String(item.startTime || '09:00'),
-      endTime: String(item.endTime || '10:00'),
-      date: String(item.date || dateStr(year, month, Math.min(day, 31))),
+      startTime: timeOnly(startTime),
+      endTime: String(item.endTime ? timeOnly(String(item.endTime)) : ''),
+      date,
       batch: String(item.batch || ''),
       course: String(item.course || ''),
       department: String(item.department || ''),

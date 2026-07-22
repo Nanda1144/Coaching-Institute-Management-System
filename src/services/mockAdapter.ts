@@ -352,6 +352,88 @@ const recentActivityRows = [
   { type: 'profile_update', description: 'Prof. Ishita Roy updated course preferences', timestamp: '2026-07-07T14:00:00Z', facultyName: 'Prof. Ishita Roy' },
 ]
 
+/* ─── STUDENTS (25 rows) ─── */
+
+const studentRows = Array.from({ length: 25 }, (_, i) => ({
+  id: `STU-${String(i + 1).padStart(3, '0')}`,
+  fullName: ['Aarav Sharma', 'Priya Patel', 'Rahul Verma', 'Sneha Reddy', 'Vikram Singh', 'Ananya Gupta', 'Rohan Joshi', 'Meera Nair', 'Arjun Kumar', 'Divya Mishra', 'Karan Mehta', 'Ishita Roy', 'Amit Singh', 'Neha Kapoor', 'Siddharth Jain', 'Pooja Deshmukh', 'Rajesh Iyer', 'Kavita Bhat', 'Vivek Saxena', 'Swati Agarwal', 'Manish Tiwari', 'Deepa Krishnan', 'Akash Dave', 'Tanvi Shah', 'Sameer Ali'][i],
+  rollNumber: `CS${String(2001 + i)}`,
+  email: `student${i + 1}@college.edu`,
+  department: ['Computer Science', 'Computer Science', 'Computer Science', 'Electronics', 'Mechanical', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biotechnology', 'Business Admin', 'Computer Science', 'Electronics', 'Mechanical', 'Civil', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biotechnology', 'Business Admin', 'Computer Science', 'Electronics', 'Mechanical', 'Civil'][i],
+  batch: `CSE-${String.fromCharCode(65 + (i % 5))}`,
+  year: `${(i % 4) + 1}th Year`,
+  parentName: ['Mr. Rajesh Sharma', 'Mrs. Anjali Patel', 'Mr. Vijay Verma', 'Mr. Suresh Reddy', 'Mr. Deepak Singh'][i % 5],
+  parentId: `PAR-${String(i % 15 + 1).padStart(3, '0')}`,
+  status: ['Active', 'Active', 'Active', 'Active', 'Inactive', 'Active', 'Active', 'Active', 'Active', 'On Leave'][i % 10],
+}))
+
+/* ─── PARENTS (15 rows) ─── */
+
+const parentRows = Array.from({ length: 15 }, (_, i) => ({
+  id: `PAR-${String(i + 1).padStart(3, '0')}`,
+  fullName: ['Mr. Rajesh Sharma', 'Mrs. Anjali Patel', 'Mr. Vijay Verma', 'Mr. Suresh Reddy', 'Mr. Deepak Singh', 'Mrs. Pooja Gupta', 'Mr. Amit Joshi', 'Mrs. Kavita Nair', 'Mr. Rohan Kumar', 'Mrs. Sneha Mishra', 'Mr. Manoj Tiwari', 'Mrs. Neha Kapoor', 'Mr. Akash Dave', 'Mrs. Tanvi Shah', 'Mr. Sameer Bhat'][i],
+  email: `parent${i + 1}@email.com`,
+  phone: `98765${String(43210 + i)}`,
+  linkedStudent: ['Aarav Sharma', 'Priya Patel', 'Rahul Verma', 'Sneha Reddy', 'Vikram Singh', 'Ananya Gupta', 'Rohan Joshi', 'Meera Nair', 'Arjun Kumar', 'Divya Mishra', 'Karan Mehta', 'Ishita Roy', 'Amit Singh', 'Neha Kapoor', 'Siddharth Jain'][i],
+  linkedRoll: `CS${String(2001 + i)}`,
+  address: `${i + 1}${['st', 'nd', 'rd', 'th'][Math.min(i, 3)]} Main Street, City`,
+}))
+
+/* ─── BATCHES (6 rows) ─── */
+
+const batchRows = [
+  { id: 'B-001', name: 'CSE-A', department: 'Computer Science', year: '3rd Year', studentCount: 32, facultyCount: 6, schedule: 'Mon/Wed/Fri 8-10 AM' },
+  { id: 'B-002', name: 'CSE-B', department: 'Computer Science', year: '3rd Year', studentCount: 30, facultyCount: 6, schedule: 'Tue/Thu 8-12 PM' },
+  { id: 'B-003', name: 'CSE-C', department: 'Computer Science', year: '2nd Year', studentCount: 28, facultyCount: 5, schedule: 'Mon/Wed/Fri 10-12 PM' },
+  { id: 'B-004', name: 'ECE-A', department: 'Electronics', year: '3rd Year', studentCount: 25, facultyCount: 4, schedule: 'Tue/Thu/Sat 8-10 AM' },
+  { id: 'B-005', name: 'MECH-A', department: 'Mechanical', year: '3rd Year', studentCount: 22, facultyCount: 5, schedule: 'Mon/Wed 8-11 AM' },
+  { id: 'B-006', name: 'MATH-A', department: 'Mathematics', year: '2nd Year', studentCount: 20, facultyCount: 3, schedule: 'Tue/Thu 10-12 PM' },
+]
+
+/* ─── EXAMS (6 rows) ─── */
+
+const examRows = [
+  { id: 'EX-001', title: 'Data Structures - Mid Term', subject: 'Data Structures', batch: 'CSE-A', date: '2026-08-05', time: '09:00 AM - 12:00 PM', status: 'scheduled', maxMarks: 100, type: 'Mid Term' },
+  { id: 'EX-002', title: 'Operating Systems - Mid Term', subject: 'Operating Systems', batch: 'CSE-A', date: '2026-08-08', time: '09:00 AM - 12:00 PM', status: 'scheduled', maxMarks: 100, type: 'Mid Term' },
+  { id: 'EX-003', title: 'Computer Networks - Mid Term', subject: 'Computer Networks', batch: 'CSE-A', date: '2026-08-12', time: '02:00 PM - 05:00 PM', status: 'scheduled', maxMarks: 100, type: 'Mid Term' },
+  { id: 'EX-004', title: 'DBMS - Mid Term', subject: 'Database Management', batch: 'CSE-A', date: '2026-08-15', time: '09:00 AM - 12:00 PM', status: 'scheduled', maxMarks: 100, type: 'Mid Term' },
+  { id: 'EX-005', title: 'Algorithms - Final', subject: 'Algorithms', batch: 'CSE-B', date: '2026-07-20', time: '09:00 AM - 12:00 PM', status: 'completed', maxMarks: 100, type: 'Final' },
+  { id: 'EX-006', title: 'Digital Logic - Final', subject: 'Digital Logic', batch: 'ECE-A', date: '2026-07-18', time: '09:00 AM - 12:00 PM', status: 'completed', maxMarks: 100, type: 'Final' },
+]
+
+/* ─── FEES ─── */
+
+const feeTransactionRows = [
+  { id: 'TXN-001', student: 'Aarav Sharma', roll: 'CS2001', description: 'Tuition Fee - Sem 5', amount: 50000, date: '2026-04-10', method: 'Online', status: 'paid' },
+  { id: 'TXN-002', student: 'Priya Patel', roll: 'CS2002', description: 'Tuition Fee - Sem 5', amount: 50000, date: '2026-04-10', method: 'Online', status: 'paid' },
+  { id: 'TXN-003', student: 'Rahul Verma', roll: 'CS2003', description: 'Tuition Fee - Sem 5', amount: 50000, date: '2026-04-12', method: 'Cheque', status: 'paid' },
+  { id: 'TXN-004', student: 'Sneha Reddy', roll: 'CS2004', description: 'Lab Fee - Sem 5', amount: 15000, date: '2026-05-01', method: 'Cash', status: 'paid' },
+  { id: 'TXN-005', student: 'Vikram Singh', roll: 'CS2005', description: 'Tuition Fee - Sem 5', amount: 50000, date: '', method: '', status: 'pending' },
+]
+
+const pendingFeeRows = [
+  { student: 'Vikram Singh', roll: 'CS2005', amount: 50000, dueDate: '2026-05-15', daysOverdue: 66 },
+  { student: 'Ananya Gupta', roll: 'CS2006', amount: 35000, dueDate: '2026-05-15', daysOverdue: 66 },
+  { student: 'Rohan Joshi', roll: 'CS2007', amount: 25000, dueDate: '2026-06-01', daysOverdue: 49 },
+]
+
+const feeStructureRows = [
+  { type: 'Tuition Fee', amount: 50000, dueDate: 'May 15, 2026' },
+  { type: 'Lab Fee', amount: 15000, dueDate: 'May 15, 2026' },
+  { type: 'Library Fee', amount: 10000, dueDate: 'May 15, 2026' },
+  { type: 'Sports Fee', amount: 5000, dueDate: 'May 15, 2026' },
+  { type: 'Exam Fee', amount: 5000, dueDate: 'May 15, 2026' },
+]
+
+/* ─── NOTIFICATION HISTORY ─── */
+
+const notificationHistoryRows = [
+  { id: 'H1', title: 'Exam Schedule Published', message: 'Mid Term exam schedule has been published for all batches.', target: 'All', date: '2026-07-15T11:00:00Z' },
+  { id: 'H2', title: 'Fee Reminder', message: 'Semester 6 fee payment is due. Please pay before Aug 1.', target: 'Students', date: '2026-07-14T08:00:00Z' },
+  { id: 'H3', title: 'Faculty Meeting', message: 'Monthly faculty meeting on July 25 at 3 PM in conference room.', target: 'Faculty', date: '2026-07-12T16:00:00Z' },
+  { id: 'H4', title: 'Parent-Teacher Meeting', message: 'PTM scheduled for July 30. Parents are requested to attend.', target: 'Parents', date: '2026-07-10T09:00:00Z' },
+]
+
 /* ─── ROUTE MAP: method → mock handler ─── */
 
 type MockHandler = (_url: string, _params?: Record<string, unknown>, _data?: Record<string, unknown>) => { success: boolean; data: any; message?: string }
@@ -402,11 +484,77 @@ const mockRoutes: Record<string, MockHandler> = {
   'POST /materials': () => ({ success: true, data: { id: 'MAT-NEW' } }),
 
   'GET /dashboard/admin': () => ({ success: true, data: adminDashboardData }),
+  'GET /dashboard/student/:id': () => ({ success: true, data: {
+    attendanceRate: 85,
+    totalAttendance: 120,
+    presentAttendance: 102,
+    upcomingExams: [],
+    pendingAssignments: 2,
+    pendingFees: 1,
+    notifications: 3,
+    enrollment: { department: 'Computer Science', course: 'B.Tech CSE', semester: 3, batch: 'CSE-A' },
+  }}),
+  'GET /dashboard/parent/:id': () => ({ success: true, data: {
+    attendanceRate: 85,
+    pendingFees: 1,
+    upcomingExams: [],
+    pendingAssignments: 2,
+    studentName: 'John Doe',
+    studentRoll: 'CS2001',
+    studentDepartment: 'Computer Science',
+    studentCourse: 'B.Tech CSE',
+    studentSemester: 3,
+  }}),
   'GET /dashboard/recent-activities': () => ({ success: true, data: recentActivityRows }),
 
+  /* ─── Admin: Students ─── */
+  'GET /students': () => ({ success: true, data: studentRows }),
+  'POST /students': (_url, _params, body) => ({ success: true, data: { id: `STU-${String(studentRows.length + 1).padStart(3, '0')}`, ...body }, message: 'Student created successfully' }),
+  'PATCH /students/:id': (_url, _params, body) => ({ success: true, data: { ...studentRows[0], ...body }, message: 'Student updated successfully' }),
+  'DELETE /students/:id': () => ({ success: true, data: { id: 'deleted' }, message: 'Student deleted successfully' }),
+
+  /* ─── Admin: Parents ─── */
+  'GET /parents': () => ({ success: true, data: parentRows }),
+  'POST /parents': (_url, _params, body) => ({ success: true, data: { id: `PAR-${String(parentRows.length + 1).padStart(3, '0')}`, ...body }, message: 'Parent created successfully' }),
+  'PATCH /parents/:id': (_url, _params, body) => ({ success: true, data: { ...parentRows[0], ...body }, message: 'Parent updated successfully' }),
+  'DELETE /parents/:id': () => ({ success: true, data: { id: 'deleted' }, message: 'Parent deleted successfully' }),
+
+  /* ─── Admin: Batches ─── */
+  'GET /batches': () => ({ success: true, data: batchRows }),
+  'POST /batches': (_url, _params, body) => ({ success: true, data: { id: `B-${String(batchRows.length + 1).padStart(3, '0')}`, ...body }, message: 'Batch created successfully' }),
+  'PATCH /batches/:id': (_url, _params, body) => ({ success: true, data: { ...batchRows[0], ...body }, message: 'Batch updated successfully' }),
+  'DELETE /batches/:id': () => ({ success: true, data: { id: 'deleted' }, message: 'Batch deleted successfully' }),
+
+  /* ─── Admin: Exams ─── */
+  'GET /exams': () => ({ success: true, data: examRows }),
+  'POST /exams': (_url, _params, body) => ({ success: true, data: { id: `EX-${String(examRows.length + 1).padStart(3, '0')}`, ...body }, message: 'Exam created successfully' }),
+  'PATCH /exams/:id': (_url, _params, body) => ({ success: true, data: { ...examRows[0], ...body }, message: 'Exam updated successfully' }),
+  'DELETE /exams/:id': () => ({ success: true, data: { id: 'deleted' }, message: 'Exam deleted successfully' }),
+
+  /* ─── Admin: Fees ─── */
+  'GET /fees/transactions': () => ({ success: true, data: feeTransactionRows }),
+  'GET /fees/pending': () => ({ success: true, data: pendingFeeRows }),
+  'GET /fees/structure': () => ({ success: true, data: feeStructureRows }),
+
+  /* ─── Admin: Notifications ─── */
+  'GET /notifications/history': () => ({ success: true, data: notificationHistoryRows }),
+  'POST /notifications/send': (_url, _params, body) => ({ success: true, data: { id: `H${notificationHistoryRows.length + 1}`, ...body }, message: 'Notification sent successfully' }),
+
   'GET /auth/refresh-token': () => ({ success: true, data: { accessToken: 'mock-token' } }),
-  'POST /auth/login': () => ({ success: true, data: { accessToken: 'mock-token', user: { name: 'Admin', role: 'admin' } } }),
-  'GET /auth/me': () => ({ success: true, data: { name: 'Admin User', email: 'admin@college.edu', role: 'admin' } }),
+  'POST /auth/login': (_url: string, _params: any, data: any) => {
+    const email = data?.email || ''
+    let role = 'COLLEGE'
+    let name = 'Admin User'
+    if (email.includes('student')) { role = 'STUDENT'; name = 'Student User' }
+    else if (email.includes('parent')) { role = 'PARENT'; name = 'Parent User' }
+    else if (email.includes('faculty') || email.includes('teacher')) { role = 'FACULTY'; name = 'Faculty User' }
+    return { success: true, data: { accessToken: 'mock-token', user: { name, role } } }
+  },
+  'GET /auth/me': () => {
+    const storedRole = localStorage.getItem('userRole') || 'COLLEGE'
+    const storedName = localStorage.getItem('userName') || (storedRole === 'STUDENT' ? 'Student User' : storedRole === 'PARENT' ? 'Parent User' : 'Admin User')
+    return { success: true, data: { user: { name: storedName, role: storedRole } } }
+  },
 
   'GET /reminders': () => ({ success: true, data: [] }),
   'GET /homework': () => ({ success: true, data: [] }),
@@ -476,4 +624,12 @@ export const seedData = {
   recentActivities: recentActivityRows,
   adminDashboard: adminDashboardData,
   facultyDashboard: facultyDashboardData,
+  students: studentRows,
+  parents: parentRows,
+  batches: batchRows,
+  exams: examRows,
+  feeTransactions: feeTransactionRows,
+  pendingFees: pendingFeeRows,
+  feeStructure: feeStructureRows,
+  notificationHistory: notificationHistoryRows,
 }

@@ -73,13 +73,15 @@ export function normalizeTimetableEntry(raw: unknown): TimetableEntry {
     safeString(obj.startTime) && safeString(obj.endTime)
       ? `${formatTime(safeString(obj.startTime))} - ${formatTime(safeString(obj.endTime))}`
       : safeString(obj.time) || 'TBD'
+  const dayOfWeek = safeString(obj.dayOfWeek) || safeString(obj.day)
   return {
     id: safeString(obj.id),
     time,
+    day: dayOfWeek,
     course: safeString(obj.course) || 'General',
     subject: safeString(obj.subject) || safeString(obj.subjectName) || 'Unknown',
     faculty: getFacultyName(obj.faculty) || getFacultyName(obj) || safeString(obj.faculty) || safeString(obj.facultyName) || 'Unknown',
-    classroom: safeString(obj.classroom) || safeString(obj.roomNumber) || 'TBD',
+    classroom: safeString(obj.classroom) || safeString(obj.building && obj.roomNumber ? `${obj.building} ${obj.roomNumber}` : '') || safeString(obj.roomNumber) || 'TBD',
     batch: safeString(obj.batch) || safeString(obj.batchName) || 'General',
     department: safeString(obj.department) || 'General',
     status: safeEnum(obj.status, TIMETABLE_STATUSES, 'scheduled'),
@@ -344,10 +346,15 @@ export function normalizeDashboardStats(response: unknown): NormalizedDashboardS
 export interface AdminDashboardStats {
   totalFaculty: number
   activeFaculty: number
+  totalStudents: number
+  totalSubjects: number
   totalDepartments: number
   assignedCourses: number
   todayClasses: number
   pendingLeaves: number
+  todayAttendance: number
+  pendingAssignments: number
+  upcomingHolidays: number
 }
 
 export function normalizeAdminDashboardStats(response: unknown): AdminDashboardStats {
@@ -355,10 +362,15 @@ export function normalizeAdminDashboardStats(response: unknown): AdminDashboardS
   return {
     totalFaculty: safeNumber(obj.totalFaculty),
     activeFaculty: safeNumber(obj.activeFaculty),
+    totalStudents: safeNumber(obj.totalStudents),
+    totalSubjects: safeNumber(obj.totalSubjects),
     totalDepartments: safeNumber(obj.totalDepartments),
     assignedCourses: safeNumber(obj.pendingAssignments) || safeNumber(obj.assignedCourses),
     todayClasses: safeNumber(obj.totalClasses) || safeNumber(obj.todayClasses),
     pendingLeaves: safeNumber(obj.upcomingHolidays) || safeNumber(obj.pendingLeaves),
+    todayAttendance: safeNumber(obj.todayAttendance),
+    pendingAssignments: safeNumber(obj.pendingAssignments),
+    upcomingHolidays: safeNumber(obj.upcomingHolidays),
   }
 }
 

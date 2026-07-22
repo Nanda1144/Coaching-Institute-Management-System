@@ -12,7 +12,10 @@ const authService = {
   },
 
   async refreshToken() {
-    const { data } = await refreshApi.post('/auth/refresh-token', {});
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+    const { data } = await refreshApi.post('/auth/refresh-token', {
+      refreshToken: storedRefreshToken,
+    });
     return data;
   },
 

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 
@@ -26,7 +26,7 @@ function generateRefreshToken(student: { id: string }): string {
 }
 
 async function login(email: string, password: string) {
-  const student = await prisma.student.findUnique({ where: { email } });
+  const student = await db.findUnique('students', [{ column: 'email', value: email }]);
   if (!student) {
     throw AppError.unauthorized('Invalid email or password');
   }
@@ -66,12 +66,7 @@ async function login(email: string, password: string) {
 }
 
 async function getProfile(studentId: string) {
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: {
-      batchRef: { select: { id: true, batchName: true } },
-    },
-  });
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
   if (!student) throw AppError.notFound('Student not found');
   return student;
 }
@@ -82,7 +77,7 @@ async function refreshAccessToken(token: string) {
     if (decoded.type !== 'refresh' || decoded.role !== 'STUDENT') {
       throw AppError.unauthorized('Invalid refresh token');
     }
-    const student = await prisma.student.findUnique({ where: { id: decoded.id } });
+    const student = await db.findUnique('students', [{ column: 'id', value: decoded.id }]);
     if (!student) throw AppError.unauthorized('Student not found');
     const accessToken = generateAccessToken(student);
     return { accessToken };

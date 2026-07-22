@@ -1,5 +1,5 @@
 import path from 'path';
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
 
 function generateUniqueFileName(originalName: string): string {
@@ -21,19 +21,17 @@ export const uploadService = {
     const ext = path.extname(file.originalname).toLowerCase();
     const fileName = generateUniqueFileName(file.originalname);
 
-    const upload = await prisma.upload.create({
-      data: {
-        originalName: file.originalname,
-        fileName,
-        mimeType: file.mimetype,
-        extension: ext,
-        size: file.size,
-        url: `/uploads/${fileName}`,
-        uploadedById: userId,
-        uploadedByRole: role,
-        module: module || null,
-        moduleId: moduleId || null,
-      },
+    const upload = await db.create('uploads', {
+      originalName: file.originalname,
+      fileName,
+      mimeType: file.mimetype,
+      extension: ext,
+      size: file.size,
+      url: `/uploads/${fileName}`,
+      uploadedById: userId,
+      uploadedByRole: role,
+      module: module || null,
+      moduleId: moduleId || null,
     });
 
     return upload;
@@ -44,13 +42,13 @@ export const uploadService = {
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      prisma.upload.findMany({
-        where: { isDeleted: false },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
+      db.findMany('uploads', {
+        where: [{ column: 'isDeleted', value: false }],
+        offset: skip,
+        limit,
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
       }),
-      prisma.upload.count({ where: { isDeleted: false } }),
+      db.count('uploads', [{ column: 'isDeleted', value: false }]),
     ]);
 
     return {
@@ -60,18 +58,21 @@ export const uploadService = {
   },
 
   async delete(id: string, userId: string) {
-    const upload = await prisma.upload.findFirst({
-      where: { id, isDeleted: false },
+    const upload = await db.findFirst('uploads', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
 
     if (!upload) {
       throw AppError.notFound('Upload not found');
     }
 
-    const updated = await prisma.upload.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
+    const updated = await db.update('uploads',
+      [{ column: 'id', value: id }],
+      { isDeleted: true, deletedAt: new Date() },
+    );
 
     return updated;
   },

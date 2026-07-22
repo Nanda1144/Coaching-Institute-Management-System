@@ -1,5 +1,6 @@
-import { prisma } from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+const prisma = new PrismaClient();
 
 async function main() {
   const usersData = [
@@ -81,7 +82,7 @@ async function main() {
       username: 'faculty',
       password: 'Faculty@123',
       role: 'FACULTY',
-      permissions: [],
+      permissions: ['READ_STUDENT', 'READ_FACULTY', 'READ_NOTIFICATION', 'READ_MATERIAL', 'READ_EVALUATION', 'CREATE_ATTENDANCE', 'CREATE_ASSIGNMENT', 'CREATE_MATERIAL', 'GRADE_SUBMISSION'],
       status: 'active',
     },
     {
@@ -108,30 +109,31 @@ async function main() {
       username: 'john.doe',
       password: 'John@123',
       role: 'FACULTY',
-      permissions: [],
+      permissions: ['READ_STUDENT', 'READ_FACULTY', 'READ_NOTIFICATION', 'READ_MATERIAL', 'READ_EVALUATION', 'CREATE_ATTENDANCE', 'CREATE_ASSIGNMENT', 'CREATE_MATERIAL', 'GRADE_SUBMISSION'],
       status: 'active',
     },
   ];
 
-  const usernames = usersData.map((u) => u.username);
-  await prisma.faculty.deleteMany({
-    where: { username: { in: usernames } },
-  });
-
   for (const userData of usersData) {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    const user = await prisma.faculty.create({
-      data: {
+    const user = await prisma.faculty.upsert({
+      where: { email: userData.email },
+      update: {
+        password: hashedPassword,
+        role: userData.role,
+        status: userData.status,
+      },
+      create: {
         ...userData,
         password: hashedPassword,
       },
     });
 
-    console.log(`Created user: ${user.email} (${user.role})`);
+    console.log(`Upserted user: ${user.email} (${user.role})`);
   }
 
-  console.log('\nAll 4 users created successfully.');
+  console.log('\nAll 4 users upserted successfully.');
 }
 
 main()

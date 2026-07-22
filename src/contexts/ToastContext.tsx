@@ -4,13 +4,14 @@ import Toast from '../components/Toast'
 interface ToastItem {
   id: number
   message: string
-  type: 'success' | 'error' | 'warning'
+  type: 'success' | 'error' | 'warning' | 'info'
 }
 
 interface ToastContextValue {
   showSuccess: (message: string) => void
   showError: (message: string) => void
   showWarning: (message: string) => void
+  showInfo: (message: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -35,9 +36,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showSuccess = useCallback((message: string) => addToast(message, 'success'), [addToast])
   const showError = useCallback((message: string) => addToast(message, 'error'), [addToast])
   const showWarning = useCallback((message: string) => addToast(message, 'warning'), [addToast])
+  const showInfo = useCallback((message: string) => addToast(message, 'info'), [addToast])
 
   return (
-    <ToastContext.Provider value={{ showSuccess, showError, showWarning }}>
+    <ToastContext.Provider value={{ showSuccess, showError, showWarning, showInfo }}>
       {children}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2">
         {toasts.map((toast) => (

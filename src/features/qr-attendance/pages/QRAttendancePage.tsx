@@ -28,7 +28,7 @@ export default function QRAttendancePage() {
     const fetchRecords = async () => {
       try {
         setLoading(true)
-        const res = await attendanceService.getAll({ type: 'qr', limit: 12 })
+        const res = await attendanceService.getAll({ method: 'qr_code', limit: 12 })
         const rawData = res?.data ?? []
         const recs = Array.isArray(rawData) ? rawData : (rawData?.data ?? [])
         setRecords(Array.isArray(recs) ? recs : [])

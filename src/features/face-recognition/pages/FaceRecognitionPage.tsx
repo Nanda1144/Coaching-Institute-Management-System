@@ -29,13 +29,13 @@ export default function FaceRecognitionPage() {
         setLoading(true)
         const [statsRes, recordsRes] = await Promise.all([
           attendanceService.getAttendanceStats({ type: 'face' }),
-          attendanceService.getAll({ type: 'face-recognition', limit: 10 }),
+          attendanceService.getAll({ method: 'face_recognition', limit: 10 }),
         ])
         const s = statsRes?.data || statsRes || {}
         setStats({
-          facesDetected: s.facesDetected || 0,
-          attendanceMarked: s.attendanceMarked || 0,
-          accuracy: s.accuracy || 0,
+          facesDetected: s.total || 0,
+          attendanceMarked: s.present || 0,
+          accuracy: s.percentage || 0,
         })
         const recordsRaw = recordsRes?.data ?? []
         const recs = Array.isArray(recordsRaw) ? recordsRaw : (recordsRaw?.data ?? [])

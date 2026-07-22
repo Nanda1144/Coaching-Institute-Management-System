@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { handleMockRequest, enableMock } from './mockAdapter';
+import { handleMockRequest, enableMock, isMockEnabled } from './mockAdapter';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -21,6 +21,10 @@ function processQueue(error: any, token: string | null = null) {
     }
   })
   failedQueue = []
+}
+
+function getRefreshToken(): string | null {
+  return localStorage.getItem('refreshToken')
 }
 
 const refreshApi = axios.create({
@@ -55,7 +59,19 @@ export function deduplicateRequest<T>(key: string, requestFn: () => Promise<T>):
   return promise;
 }
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  // If mock is enabled and route is mocked, return mock data directly
+  if (isMockEnabled()) {
+    const method = (config.method || 'get').toUpperCase();
+    const url = config.url || '';
+    const result = await handleMockRequest(method, url, config.params, config.data);
+    if (result.handled) {
+      // Signal that mock handled this request so response interceptor skips it
+      (config as any)._mockHandled = true;
+      return Promise.reject({ ...new Error('Mock handled'), config, _mockHandled: true });
+    }
+  }
+
   const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -71,12 +87,21 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    // If we're using mock and network succeeded, also cache the data shape
     return response;
   },
   async (error) => {
+    // Handle mock interception (request interceptor sends mock as rejection)
+    if (error._mockHandled) {
+      const result = await handleMockRequest(
+        (error.config?.method || 'get').toUpperCase(),
+        error.config?.url || '',
+        error.config?.params,
+        error.config?.data,
+      );
+      if (result.handled) return result.response;
+    }
+
     if (axios.isCancel(error) || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
-      // Try mock fallback
       const mockResult = await tryMockFallback(error.config);
       if (mockResult) return mockResult;
       return Promise.reject(error);
@@ -84,7 +109,6 @@ api.interceptors.response.use(
 
     const originalRequest = error.config;
     if (!originalRequest) {
-      // Try mock fallback
       const mockResult = await tryMockFallback(null);
       if (mockResult) return mockResult;
       return Promise.reject(error);
@@ -124,8 +148,17 @@ api.interceptors.response.use(
       originalRequest._retry = true
       isRefreshing = true
 
+      const storedRefreshToken = getRefreshToken()
+      if (!storedRefreshToken) {
+        processQueue(null, null)
+        isRefreshing = false
+        return Promise.reject(error)
+      }
+
       try {
-        const { data } = await refreshApi.post('/auth/refresh-token', {});
+        const { data } = await refreshApi.post('/auth/refresh-token', {
+          refreshToken: storedRefreshToken,
+        });
         const newToken = data.data?.accessToken
         if (newToken) {
           localStorage.setItem('accessToken', newToken);
@@ -137,6 +170,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

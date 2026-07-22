@@ -16,5 +16,23 @@ export const gradeSubmissionSchema = z.object({
   remarks: z.string().optional(),
 });
 
+export const createSubmissionSchema = z.object({
+  assignmentId: z.string().uuid('Assignment ID must be a valid UUID'),
+  studentId: z.string().uuid('Student ID must be a valid UUID'),
+  attemptNumber: z.number().int().positive().optional().default(1),
+  status: z.enum(['submitted', 'late', 'resubmitted']).optional().default('submitted'),
+  remarks: z.string().optional(),
+  lateFlag: z.boolean().optional().default(false),
+});
+
+export const updateSubmissionSchema = z.object({
+  status: z.enum(['submitted', 'late', 'resubmitted', 'graded', 'returned']).optional(),
+  remarks: z.string().optional(),
+  attemptNumber: z.number().int().positive().optional(),
+  lateFlag: z.boolean().optional(),
+});
+
 export type SubmissionQueryInput = z.infer<typeof submissionQuerySchema>;
 export type GradeSubmissionInput = z.infer<typeof gradeSubmissionSchema>;
+export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>;
+export type UpdateSubmissionInput = z.infer<typeof updateSubmissionSchema>;

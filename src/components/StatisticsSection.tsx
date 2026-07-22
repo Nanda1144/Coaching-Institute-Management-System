@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, Component, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,6 +11,27 @@ import type { Faculty } from '../features/faculty/types/faculty.types'
 interface AttendanceStat {
   month: string
   rate: number
+}
+
+class ChartErrorBoundary extends Component<{ children: ReactNode; title: string }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode; title: string }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() { return { hasError: true } }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-60 text-center">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center mb-2">
+            <MdErrorOutline className="text-red-500 text-lg" />
+          </div>
+          <p className="text-xs text-gray-500">Failed to render {this.props.title}</p>
+        </div>
+      )
+    }
+    return this.props.children
+  }
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -121,15 +142,19 @@ export default function StatisticsSection() {
         ) : facultyByDept.length === 0 ? (
           <div className="flex items-center justify-center h-60 text-sm text-gray-400">No faculty data</div>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={facultyByDept} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="department" tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary title="Faculty by Department chart">
+            <div className="relative" style={{ minHeight: 260 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={facultyByDept} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="department" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartErrorBoundary>
         )}
       </motion.div>
 
@@ -145,22 +170,26 @@ export default function StatisticsSection() {
         ) : attendanceData.length === 0 ? (
           <div className="flex items-center justify-center h-60 text-sm text-gray-400">No attendance data</div>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={attendanceData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[70, 100]} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="rate"
-                stroke="#0ea5e9"
-                strokeWidth={3}
-                dot={{ fill: '#0ea5e9', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: '#0ea5e9' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary title="Attendance Overview chart">
+            <div className="relative" style={{ minHeight: 260 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={attendanceData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} domain={[70, 100]} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="rate"
+                    stroke="#0ea5e9"
+                    strokeWidth={3}
+                    dot={{ fill: '#0ea5e9', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#0ea5e9' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartErrorBoundary>
         )}
       </motion.div>
 
@@ -176,29 +205,33 @@ export default function StatisticsSection() {
         ) : distribution.length === 0 || distribution.every(d => d.value === 0) ? (
           <div className="flex items-center justify-center h-60 text-sm text-gray-400">No faculty data</div>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={distribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={90}
-                paddingAngle={4}
-                dataKey="value"
-              >
-                {distribution.filter(d => d.value > 0).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value) => <span className="text-xs text-gray-600">{value}</span>}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary title="Faculty Distribution chart">
+            <div className="relative" style={{ minHeight: 260 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={distribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {distribution.filter(d => d.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value) => <span className="text-xs text-gray-600">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartErrorBoundary>
         )}
       </motion.div>
     </div>

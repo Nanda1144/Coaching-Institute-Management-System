@@ -1,47 +1,45 @@
-import { useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { MdCheckCircle, MdClose, MdError, MdWarning } from 'react-icons/md'
+import { motion } from 'framer-motion'
+import { MdCheckCircle, MdError, MdWarning, MdInfo, MdClose } from 'react-icons/md'
 
 interface ToastProps {
   message: string
+  type?: 'success' | 'error' | 'warning' | 'info'
   isVisible: boolean
   onClose: () => void
-  duration?: number
-  type?: 'success' | 'error' | 'warning'
 }
 
-export default function Toast({ message, isVisible, onClose, duration = 3000, type = 'success' }: ToastProps) {
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(onClose, duration)
-      return () => clearTimeout(timer)
-    }
-  }, [isVisible, onClose, duration])
+const icons: Record<string, React.ComponentType<{ className?: string }>> = {
+  success: MdCheckCircle,
+  error: MdError,
+  warning: MdWarning,
+  info: MdInfo,
+}
 
-  const styles = {
-    success: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: MdCheckCircle, iconColor: 'text-emerald-500', hoverBg: 'hover:bg-emerald-100' },
-    error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: MdError, iconColor: 'text-red-500', hoverBg: 'hover:bg-red-100' },
-    warning: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: MdWarning, iconColor: 'text-amber-500', hoverBg: 'hover:bg-amber-100' },
-  }[type]
+const colors: Record<string, string> = {
+  success: 'border-l-success bg-success/10',
+  error: 'border-l-danger bg-danger/10',
+  warning: 'border-l-warning bg-warning/10',
+  info: 'border-l-info bg-info/10',
+}
 
-  const Icon = styles.icon
+export default function Toast({ message, type, isVisible, onClose }: ToastProps) {
+  if (!isVisible) return null
+  const toastType = type || 'success'
+  const Icon = icons[toastType]
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 50, x: '-50%' }}
-          animate={{ opacity: 1, y: 0, x: '-50%' }}
-          exit={{ opacity: 0, y: 50, x: '-50%' }}
-          className={`fixed bottom-6 left-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl ${styles.bg} ${styles.border} border shadow-xl`}
-        >
-          <Icon className={`${styles.iconColor} text-xl flex-shrink-0`} />
-          <span className={`text-sm font-medium ${styles.text}`}>{message}</span>
-          <button onClick={onClose} className={`p-1 rounded-lg ${styles.hoverBg} transition-colors ml-2`}>
-            <MdClose className={`${styles.iconColor} text-sm`} />
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className={`flex items-start gap-3 px-4 py-3.5 rounded-xl border-l-4 shadow-dropdown bg-white border border-neutral-200 min-w-72 max-w-sm ${colors[toastType]}`}
+    >
+      <Icon className={`text-xl mt-0.5 shrink-0 ${toastType === 'success' ? 'text-success' : toastType === 'error' ? 'text-danger' : toastType === 'info' ? 'text-info' : 'text-warning'}`} />
+      <p className="flex-1 text-sm font-medium text-neutral-700">{message}</p>
+      <button onClick={onClose} className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400 shrink-0 transition-colors">
+        <MdClose className="text-sm" />
+      </button>
+    </motion.div>
   )
 }

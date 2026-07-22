@@ -279,6 +279,23 @@ async function main() {
   });
   console.log(`  Courses: ${COURSES_LIST.length}`);
 
+  // Course prerequisites
+  const prereqList: { courseId: string; prerequisiteCourseId: string }[] = [];
+  const cId = (idx: number) => pid('crs', idx + 1);
+  const prereqDefs: [number, number][] = [
+    [13, 0],   // M.Tech CS requires B.Tech CS
+    [9, 0],    // B.Tech AI&ML requires B.Tech CS
+    [10, 0],   // B.Tech Data Science requires B.Tech CS
+    [10, 8],   // B.Tech Data Science also requires B.Tech IT
+    [11, 2],   // B.Tech Robotics requires B.Tech Mechanical
+    [11, 1],   // B.Tech Robotics requires B.Tech Electronics
+  ];
+  for (const [courseIdx, prereqIdx] of prereqDefs) {
+    prereqList.push({ courseId: cId(courseIdx), prerequisiteCourseId: cId(prereqIdx) });
+  }
+  await prisma.coursePrerequisite.createMany({ data: prereqList, skipDuplicates: true });
+  console.log(`  Course Prerequisites: ${prereqList.length}`);
+
   // =====================================================================
   // 3. SEMESTERS (8)
   // =====================================================================
@@ -1304,6 +1321,347 @@ async function main() {
   console.log(`  Uploads: ${uploadList.length}`);
 
   // =====================================================================
+  // 32. BRANCHES (5)
+  // =====================================================================
+  console.log('\n--- 32. Branches ---');
+  interface BranchSeed {
+    id: string; branchName: string; branchCode: string; address: string; city: string;
+    state: string; country: string; contactPerson: string; contactNumber: string;
+    email: string; branchHead: string; maximumCapacity: number; openingDate: Date;
+    status: string; studentCount: number; facultyCount: number;
+  }
+  const BRANCH_SEEDS = [
+    { name: 'Main Campus', code: 'MNC', city: 'Bangalore', state: 'Karnataka', capacity: 2000, headIdx: 0 },
+    { name: 'East Campus', code: 'EST', city: 'Mysore', state: 'Karnataka', capacity: 800, headIdx: 1 },
+    { name: 'West Campus', code: 'WST', city: 'Mangalore', state: 'Karnataka', capacity: 600, headIdx: 2 },
+    { name: 'North Campus', code: 'NTH', city: 'Hubli', state: 'Karnataka', capacity: 500, headIdx: 3 },
+    { name: 'South Campus', code: 'STH', city: 'Belgaum', state: 'Karnataka', capacity: 400, headIdx: 4 },
+  ];
+  const branchList: BranchSeed[] = [];
+  for (let i = 0; i < BRANCH_SEEDS.length; i++) {
+    const b = BRANCH_SEEDS[i];
+    branchList.push({
+      id: pid('brn', i + 1),
+      branchName: b.name,
+      branchCode: b.code,
+      address: `${randInt(1, 999)} ${pick(STREET_NAMES)}, ${b.city}`,
+      city: b.city,
+      state: b.state,
+      country: 'India',
+      contactPerson: `${pick(INDIAN_FIRST_NAMES)} ${pick(INDIAN_LAST_NAMES)}`,
+      contactNumber: `9${String(randInt(100000000, 999999999))}`,
+      email: `contact.${b.code.toLowerCase()}@college.edu`,
+      branchHead: facultyList[Math.min(b.headIdx, facultyList.length - 1)].fullName,
+      maximumCapacity: b.capacity,
+      openingDate: new Date(2005 + randInt(0, 15), randInt(0, 11), randInt(1, 28)),
+      status: 'active',
+      studentCount: randInt(50, 300),
+      facultyCount: randInt(5, 25),
+    });
+  }
+  await prisma.branch.createMany({ data: branchList, skipDuplicates: true });
+  console.log(`  Branches: ${branchList.length}`);
+
+  // =====================================================================
+  // 33. PAYMENTS (50)
+  // =====================================================================
+  console.log('\n--- 33. Payments ---');
+  interface PaymentSeed {
+    id: string; studentId: string; studentName: string; amount: number;
+    paymentMethod: string; transactionId: string; description: string;
+    status: string; createdAt: Date;
+  }
+  const paymentMethodPool = ['cash', 'card', 'upi', 'net_banking', 'cheque'];
+  const paymentDescriptions = [
+    'Tuition Fee - Semester 1', 'Tuition Fee - Semester 2', 'Registration Fee',
+    'Exam Fee', 'Library Fee', 'Lab Fee', 'Sports Fee', 'Hostel Fee',
+    'Transport Fee', 'Development Fee',
+  ];
+  const paymentList: PaymentSeed[] = [];
+  for (let i = 0; i < 50; i++) {
+    const student = studentList[i % studentList.length];
+    const isRefunded = i >= 45;
+    paymentList.push({
+      id: pid('pay', i + 1),
+      studentId: student.id,
+      studentName: student.fullName,
+      amount: randInt(500, 50000),
+      paymentMethod: pick(paymentMethodPool),
+      transactionId: isRefunded ? `TXN-${String(900000 + i)}` : `TXN-${String(700000 + i)}`,
+      description: pick(paymentDescriptions),
+      status: isRefunded ? 'refunded' : 'completed',
+      createdAt: randDate(pastDays(180), new Date()),
+    });
+  }
+  await prisma.payment.createMany({ data: paymentList, skipDuplicates: true });
+  console.log(`  Payments: ${paymentList.length}`);
+
+  // =====================================================================
+  // 34. CERTIFICATES (50)
+  // =====================================================================
+  console.log('\n--- 34. Certificates ---');
+  interface CertificateSeed {
+    id: string; studentId: string; studentName: string; courseName: string;
+    completionDate: Date; grade: string; certificateNumber: string;
+    templateName: string; templateStyle: string; issueDate: Date; status: string;
+  }
+  const GRADES = ['A+', 'A', 'B+', 'B', 'C+', 'C'];
+  const COURSE_NAMES_FOR_CERT = [
+    'B.Tech Computer Science', 'B.Tech Electronics', 'B.Tech Mechanical',
+    'B.Com', 'BBA', 'BCA', 'MCA', 'MBA', 'M.Tech Data Science',
+  ];
+  const certificateList: CertificateSeed[] = [];
+  for (let i = 0; i < 50; i++) {
+    const student = studentList[i % studentList.length];
+    const completed = randDate(pastDays(365), pastDays(1));
+    certificateList.push({
+      id: pid('cert', i + 1),
+      studentId: student.id,
+      studentName: student.fullName,
+      courseName: pick(COURSE_NAMES_FOR_CERT),
+      completionDate: completed,
+      grade: pick(GRADES),
+      certificateNumber: `CERT-${String(20240001 + i)}`,
+      templateName: pick(['Standard', 'Premium', 'Executive', 'Academic']),
+      templateStyle: pick(['classic', 'modern', 'elegant', 'minimal']),
+      issueDate: futureDays(randInt(1, 30)),
+      status: pick(['active', 'active', 'active', 'revoked']),
+    });
+  }
+  await prisma.certificate.createMany({ data: certificateList, skipDuplicates: true });
+  console.log(`  Certificates: ${certificateList.length}`);
+
+  // =====================================================================
+  // 35. ENROLLMENTS (80)
+  // =====================================================================
+  console.log('\n--- 35. Enrollments ---');
+  const enrollmentList: { id: string; studentId: string; courseId: string; enrollmentDate: Date; status: string }[] = [];
+  const enrolledPairs = new Set<string>();
+  for (let i = 0; i < 80; i++) {
+    const student = studentList[i % studentList.length];
+    const courseIdx = i % courseIds.length;
+    const courseId = courseIds[courseIdx];
+    const key = `${student.id}:${courseId}`;
+    if (enrolledPairs.has(key)) continue;
+    enrolledPairs.add(key);
+    enrollmentList.push({
+      id: pid('enr', i + 1),
+      studentId: student.id,
+      courseId,
+      enrollmentDate: randDate(pastDays(365), new Date()),
+      status: pick(['enrolled', 'enrolled', 'enrolled', 'completed', 'dropped']),
+    });
+  }
+  await prisma.enrollment.createMany({ data: enrollmentList, skipDuplicates: true });
+  console.log(`  Enrollments: ${enrollmentList.length}`);
+
+  // Update enrolled_count on courses
+  for (const courseId of courseIds) {
+    const count = enrollmentList.filter((e) => e.courseId === courseId).length;
+    await prisma.course.update({ where: { id: courseId }, data: { enrolledCount: count } });
+  }
+  console.log('  Course enrolled_counts updated');
+
+  // =====================================================================
+  // 36. FEE STRUCTURES WITH INSTALLMENTS (15 fee structures + installments)
+  // =====================================================================
+  console.log('\n--- 36. Fee Structures & Installments ---');
+  const feeStructureSeedList: any[] = [];
+  const installmentSeedList: any[] = [];
+  for (let i = 0; i < 15; i++) {
+    const courseId = courseIds[i % courseIds.length];
+    const regFee = randInt(500, 2000);
+    const tuitFee = randInt(5000, 25000);
+    const examFee = randInt(500, 3000);
+    const miscFee = randInt(200, 2000);
+    const total = regFee + tuitFee + examFee + miscFee;
+    const installmentCount = pick([1, 2, 3, 4]);
+    const fsId = pid('fs', i + 1);
+    feeStructureSeedList.push({
+      id: fsId,
+      type: pick(['Tuition', 'Annual', 'Semester', 'Comprehensive']),
+      amount: total,
+      dueDate: formatDate(futureDays(randInt(30, 180))),
+      semester: String(randInt(1, 8)),
+      courseId,
+      batchId: batchList[i % batchList.length].id,
+      academicYear: '2024-2025',
+      registrationFee: regFee,
+      tuitionFee: tuitFee,
+      examinationFee: examFee,
+      miscellaneousFee: miscFee,
+      totalFee: total,
+      installmentCount,
+      status: 'active',
+    });
+    if (installmentCount > 1) {
+      const perInstallment = Math.round((total / installmentCount) * 100) / 100;
+      const baseDate = futureDays(30);
+      for (let j = 0; j < installmentCount; j++) {
+        const due = new Date(baseDate);
+        due.setMonth(due.getMonth() + j * 3);
+        installmentSeedList.push({
+          id: pid('inst', installmentSeedList.length + 1),
+          feeStructureId: fsId,
+          installmentNumber: j + 1,
+          dueDate: due,
+          amount: j === installmentCount - 1 ? total - perInstallment * (installmentCount - 1) : perInstallment,
+          status: pick(['pending', 'paid', 'pending', 'pending']),
+          paidDate: Math.random() > 0.5 ? randDate(pastDays(60), new Date()) : undefined,
+        });
+      }
+    }
+  }
+  await prisma.feeStructure.createMany({ data: feeStructureSeedList, skipDuplicates: true });
+  console.log(`  Fee Structures: ${feeStructureSeedList.length}`);
+  if (installmentSeedList.length > 0) {
+    await prisma.installment.createMany({ data: installmentSeedList, skipDuplicates: true });
+    console.log(`  Installments: ${installmentSeedList.length}`);
+  }
+
+  // =====================================================================
+  // 37. BATCH STUDENTS & TRANSFERS
+  // =====================================================================
+  console.log('\n--- 37. Batch Students & Transfers ---');
+  const batchStudentList: { id: string; batchId: string; studentId: string; allocatedAt: Date }[] = [];
+  const allocatedPairs = new Set<string>();
+  for (let i = 0; i < 80; i++) {
+    const student = studentList[i % studentList.length];
+    const batch = batchList[i % batchList.length];
+    const key = `${student.id}:${batch.id}`;
+    if (allocatedPairs.has(key)) continue;
+    allocatedPairs.add(key);
+    batchStudentList.push({
+      id: pid('bs', i + 1),
+      batchId: batch.id,
+      studentId: student.id,
+      allocatedAt: randDate(pastDays(180), new Date()),
+    });
+  }
+  await prisma.batchStudent.createMany({ data: batchStudentList, skipDuplicates: true });
+  console.log(`  Batch Students: ${batchStudentList.length}`);
+
+  const batchTransferList: { id: string; studentId: string; oldBatchId: string; newBatchId: string; transferDate: Date; reason: string | null }[] = [];
+  for (let i = 0; i < 10; i++) {
+    const student = studentList[i % studentList.length];
+    const oldBatch = batchList[i % batchList.length];
+    const newBatch = batchList[(i + 3) % batchList.length];
+    if (oldBatch.id === newBatch.id) continue;
+    batchTransferList.push({
+      id: pid('bt', i + 1),
+      studentId: student.id,
+      oldBatchId: oldBatch.id,
+      newBatchId: newBatch.id,
+      transferDate: randDate(pastDays(90), pastDays(1)),
+      reason: pick(['Schedule conflict', 'Level mismatch', 'Student request', 'Performance based', 'Parent request']),
+    });
+  }
+  await prisma.batchTransfer.createMany({ data: batchTransferList, skipDuplicates: true });
+  console.log(`  Batch Transfers: ${batchTransferList.length}`);
+
+  // Update current_strength on batches
+  for (const batch of batchList) {
+    const count = batchStudentList.filter((bs) => bs.batchId === batch.id).length;
+    await prisma.batch.update({ where: { id: batch.id }, data: { currentStrength: count, capacity: Math.max(count + randInt(5, 30), 20) } });
+  }
+  console.log('  Batch capacities & strengths updated');
+
+  // =====================================================================
+  // 38. REVALUATION REQUESTS & TIMELINES (15 requests)
+  // =====================================================================
+  console.log('\n--- 38. Revaluation Requests & Timelines ---');
+  const revaluationReasonPool = [
+    'Marks do not match expected performance',
+    'Answer script not properly evaluated',
+    'Calculation error in total marks',
+    'Answer not considered for evaluation',
+    'Partial marking not applied correctly',
+  ];
+  const revaList: { id: string; examId: string; studentId: string; subjectId: string | null; currentMarks: number; expectedMarks: number; reason: string; status: string; reviewedById: string | null; reviewedAt: Date | null; remarks: string | null; revisedMarks: number | null }[] = [];
+  const revaTimelineList: { id: string; revaluationId: string; action: string; comment: string | null; performedBy: string | null }[] = [];
+  const examIds = (await prisma.$queryRawUnsafe<{ id: string }[]>('SELECT id FROM exam_schedules LIMIT 10')).map((r: any) => r.id);
+  const subjectIds = (await prisma.$queryRawUnsafe<{ id: string }[]>('SELECT id FROM subjects LIMIT 30')).map((r: any) => r.id);
+  for (let i = 0; i < 15; i++) {
+    const student = studentList[i % studentList.length];
+    const examId = examIds[i % examIds.length];
+    const subjectId = subjectIds[i % subjectIds.length];
+    const currentMarks = randInt(15, 65);
+    const expectedMarks = currentMarks + randInt(5, 30);
+    const status = pick(['pending', 'pending', 'approved', 'rejected', 'in_review', 'completed']);
+    const revaId = pid('rev', i + 1);
+
+    revaList.push({
+      id: revaId,
+      examId,
+      studentId: student.id,
+      subjectId,
+      currentMarks,
+      expectedMarks,
+      reason: pick(revaluationReasonPool),
+      status,
+      reviewedById: status !== 'pending' ? facultyList[i % facultyList.length].id : null,
+      reviewedAt: status !== 'pending' ? randDate(pastDays(30), pastDays(1)) : null,
+      remarks: status === 'rejected' ? 'Insufficient evidence for mark revision' : status === 'approved' ? 'Marks revised as per re-evaluation' : null,
+      revisedMarks: status === 'completed' || status === 'approved' ? expectedMarks - randInt(0, 5) : null,
+    });
+
+    revaTimelineList.push({
+      id: pid('rtl', i * 2 + 1),
+      revaluationId: revaId,
+      action: 'submitted',
+      comment: 'Revaluation request submitted',
+      performedBy: student.id,
+    });
+    if (status !== 'pending') {
+      revaTimelineList.push({
+        id: pid('rtl', i * 2 + 2),
+        revaluationId: revaId,
+        action: status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'in_review',
+        comment: status === 'approved' ? 'Request approved. Marks will be revised.' : status === 'rejected' ? 'Request rejected.' : 'Under review by examination board.',
+        performedBy: facultyList[i % facultyList.length].id,
+      });
+    }
+  }
+  await prisma.revaluationRequest.createMany({ data: revaList, skipDuplicates: true });
+  console.log(`  Revaluation Requests: ${revaList.length}`);
+  await prisma.revaluationTimeline.createMany({ data: revaTimelineList, skipDuplicates: true });
+  console.log(`  Revaluation Timelines: ${revaTimelineList.length}`);
+
+  // =====================================================================
+  // 39. SCHOLARSHIPS (20)
+  // =====================================================================
+  console.log('\n--- 39. Scholarships ---');
+  const scholarshipNames = [
+    'Merit Scholarship', 'Need Based Scholarship', 'Sports Excellence',
+    'Academic Excellence Award', 'STEM Scholarship', 'Girl Child Education Fund',
+    'Merit cum Means', 'Research Fellowship', 'Cultural Achievement',
+    'Community Service Award',
+  ];
+  const scholarshipTypes = ['merit', 'need', 'sports', 'other'];
+  const scholarshipList: { id: string; studentId: string; scholarshipName: string; type: string; amount: number; percentage: number | null; startDate: Date; endDate: Date | null; status: string; description: string | null }[] = [];
+  for (let i = 0; i < 20; i++) {
+    const student = studentList[i % studentList.length];
+    const type = pick(scholarshipTypes);
+    const amount = type === 'merit' ? randInt(10000, 50000) : type === 'need' ? randInt(5000, 25000) : randInt(3000, 20000);
+    const startDate = randDate(pastDays(365), pastDays(30));
+    const endDate = Math.random() > 0.3 ? new Date(startDate.getTime() + randInt(180, 365) * 86400000) : null;
+    scholarshipList.push({
+      id: pid('sch', i + 1),
+      studentId: student.id,
+      scholarshipName: pick(scholarshipNames),
+      type,
+      amount,
+      percentage: type === 'merit' ? randInt(25, 100) : null,
+      startDate,
+      endDate,
+      status: pick(['active', 'active', 'active', 'expired', 'cancelled']),
+      description: `${pick(scholarshipNames)} provided to ${student.fullName}`,
+    });
+  }
+  await prisma.scholarship.createMany({ data: scholarshipList, skipDuplicates: true });
+  console.log(`  Scholarships: ${scholarshipList.length}`);
+
+  // =====================================================================
   // VERIFICATION
   // =====================================================================
   console.log('\n' + '='.repeat(60));
@@ -1343,6 +1701,18 @@ async function main() {
     materialSearchLogs: await prisma.materialSearchLog.count(),
     assignmentReminders: await prisma.assignmentReminder.count(),
     uploads: await prisma.upload.count(),
+    branches: await prisma.branch.count(),
+    payments: await prisma.payment.count(),
+    certificates: await prisma.certificate.count(),
+    coursePrerequisites: await prisma.coursePrerequisite.count(),
+    enrollments: await prisma.enrollment.count(),
+    feeStructures: await prisma.feeStructure.count(),
+    installments: await prisma.installment.count(),
+    batchStudents: await prisma.batchStudent.count(),
+    batchTransfers: await prisma.batchTransfer.count(),
+    revaluationRequests: await prisma.revaluationRequest.count(),
+    revaluationTimelines: await prisma.revaluationTimeline.count(),
+    scholarships: await prisma.scholarship.count(),
   };
 
   console.log('\n  Row Counts:');
@@ -1359,8 +1729,20 @@ async function main() {
     faceRecognitions: faceList.length, fingerprintAttendances: fpList.length,
     attendanceCorrections: corrList.length, facultyTransfers: transferList.length,
     assignmentLogs: logList.length, materialDownloads: dlList.length,
-    materialSearchLogs: searchLogList.length, assignmentReminders: remindList.length,
+    materialSearchLogs: searchLogList.length,     assignmentReminders: remindList.length,
     uploads: uploadList.length,
+    branches: branchList.length,
+    payments: paymentList.length,
+    certificates: certificateList.length,
+    coursePrerequisites: prereqList.length,
+    enrollments: enrollmentList.length,
+    feeStructures: feeStructureSeedList.length,
+    installments: installmentSeedList.length,
+    batchStudents: batchStudentList.length,
+    batchTransfers: batchTransferList.length,
+    revaluationRequests: revaList.length,
+    revaluationTimelines: revaTimelineList.length,
+    scholarships: scholarshipList.length,
   };
 
   let allPassed = true;
@@ -1471,8 +1853,9 @@ async function main() {
   console.log('  - 200 Material Search Logs for search analytics');
   console.log('  - 50 Attendance Corrections with approval workflow');
   console.log('  - 25 Faculty Transfers across departments');
-  console.log('  - All 32 tables seeded with relational integrity');
+  console.log('  - All 39 tables seeded with relational integrity');
   console.log('  - Models NOT in schema (cannot seed): Parent, Fee, Exam, Marks, Notification, InstituteSettings');
+  console.log('  - NEW: 5 Branches + 50 Payments + 50 Certificates + 80 Enrollments + 15 FeeStructures + 28 Installments');
 }
 
 main()

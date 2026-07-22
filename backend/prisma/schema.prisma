@@ -34,10 +34,21 @@ model Subject {
 model Batch {
   id                 String             @id @default(uuid()) @map("id")
   batchName          String             @map("batch_name")
+  batchCode          String?            @unique @map("batch_code")
   department         String
   course             String
+  courseId           String?            @map("course_id")
   semester           Int
   academicYear       String             @map("academic_year")
+  capacity           Int?
+  currentStrength    Int?               @default(0) @map("current_strength")
+  batchTiming        String?            @map("batch_timing")
+  classroom          String?
+  mode               String?            @default("offline")
+  facultyId          String?            @map("faculty_id")
+  startDate          DateTime?          @map("start_date")
+  endDate            DateTime?          @map("end_date")
+  status             String?            @default("active")
   isDeleted          Boolean            @default(false) @map("is_deleted")
   deletedAt          DateTime?          @map("deleted_at")
   createdAt          DateTime           @default(now()) @map("created_at")
@@ -50,8 +61,43 @@ model Batch {
   students           Student[]
   studyMaterials     StudyMaterial[]
   timetables         Timetable[]        @relation("TimetableBatch")
+  batchStudents      BatchStudent[]
+  transferHistoryOld BatchTransfer[]    @relation("OldBatchTransfer")
+  transferHistoryNew BatchTransfer[]    @relation("NewBatchTransfer")
 
+  @@index([facultyId])
+  @@index([status])
   @@map("batches")
+}
+
+model BatchStudent {
+  id          String   @id @default(uuid()) @map("id")
+  batchId     String   @map("batch_id")
+  studentId   String   @map("student_id")
+  allocatedAt DateTime @default(now()) @map("allocated_at")
+  batch       Batch    @relation(fields: [batchId], references: [id])
+
+  @@unique([batchId, studentId])
+  @@index([batchId])
+  @@index([studentId])
+  @@map("batch_students")
+}
+
+model BatchTransfer {
+  id          String   @id @default(uuid()) @map("id")
+  studentId   String   @map("student_id")
+  oldBatchId  String   @map("old_batch_id")
+  newBatchId  String   @map("new_batch_id")
+  transferDate DateTime @default(now()) @map("transfer_date")
+  reason      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  oldBatch    Batch    @relation("OldBatchTransfer", fields: [oldBatchId], references: [id])
+  newBatch    Batch    @relation("NewBatchTransfer", fields: [newBatchId], references: [id])
+
+  @@index([studentId])
+  @@index([oldBatchId])
+  @@index([newBatchId])
+  @@map("batch_transfers")
 }
 
 model Classroom {
@@ -187,6 +233,8 @@ model Student {
   updatedById            String?                 @map("updated_by_id")
   createdAt              DateTime                @default(now()) @map("created_at")
   updatedAt              DateTime                @updatedAt @map("updated_at")
+  password               String?
+  role                   String?                 @default("STUDENT")
   reminders              AssignmentReminder[]
   submissions            AssignmentSubmission[]
   corrections            AttendanceCorrection[]
@@ -197,6 +245,7 @@ model Student {
   batchRef               Batch?                  @relation(fields: [batchId], references: [id])
   createdBy              Faculty?                @relation("StudentCreatedBy", fields: [createdById], references: [id])
   updatedBy              Faculty?                @relation("StudentUpdatedBy", fields: [updatedById], references: [id])
+  parents                ParentStudent[]
 
   @@index([batchId])
   @@index([createdById])
@@ -312,6 +361,8 @@ model FacultyTransfer {
   performedBy     String                   @map("performed_by")
   createdAt       DateTime                 @default(now()) @map("created_at")
   updatedAt       DateTime                 @updatedAt @map("updated_at")
+  deletedAt       DateTime?                @map("deleted_at")
+  isDeleted       Boolean                  @default(false) @map("is_deleted")
   faculty         Faculty                  @relation("FacultyTransferFaculty", fields: [facultyId], references: [id])
   performedByUser Faculty                  @relation("FacultyTransferPerformedBy", fields: [performedBy], references: [id])
 
@@ -323,19 +374,21 @@ model FacultyTransfer {
 }
 
 model AssignmentLog {
-  id              String   @id @default(uuid()) @map("id")
-  facultyId       String   @map("faculty_id")
+  id              String    @id @default(uuid()) @map("id")
+  facultyId       String    @map("faculty_id")
   action          String
-  entityType      String   @map("entity_type")
-  entityId        String?  @map("entity_id")
-  entityName      String?  @map("entity_name")
-  oldValue        Json?    @map("old_value")
-  newValue        Json?    @map("new_value")
-  performedBy     String   @map("performed_by")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  faculty         Faculty  @relation("AssignmentFaculty", fields: [facultyId], references: [id])
-  performedByUser Faculty  @relation("AssignmentPerformedBy", fields: [performedBy], references: [id])
+  entityType      String    @map("entity_type")
+  entityId        String?   @map("entity_id")
+  entityName      String?   @map("entity_name")
+  oldValue        Json?     @map("old_value")
+  newValue        Json?     @map("new_value")
+  performedBy     String    @map("performed_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  isDeleted       Boolean   @default(false) @map("is_deleted")
+  faculty         Faculty   @relation("AssignmentFaculty", fields: [facultyId], references: [id])
+  performedByUser Faculty   @relation("AssignmentPerformedBy", fields: [performedBy], references: [id])
 
   @@index([facultyId])
   @@index([performedBy])
@@ -382,6 +435,8 @@ model FaceRecognition {
   createdById     String            @map("created_by_id")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+  isDeleted       Boolean           @default(false) @map("is_deleted")
   attendance      Attendance?       @relation(fields: [attendanceId], references: [id])
   createdBy       Faculty           @relation("FaceRecognitionCreatedBy", fields: [createdById], references: [id])
   student         Student           @relation(fields: [studentId], references: [id])
@@ -407,6 +462,8 @@ model FingerprintAttendance {
   createdById        String            @map("created_by_id")
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
+  deletedAt          DateTime?         @map("deleted_at")
+  isDeleted          Boolean           @default(false) @map("is_deleted")
   attendance         Attendance?       @relation(fields: [attendanceId], references: [id])
   createdBy          Faculty           @relation("FingerprintCreatedBy", fields: [createdById], references: [id])
   student            Student           @relation(fields: [studentId], references: [id])
@@ -434,6 +491,8 @@ model QRSession {
   createdById    String    @map("created_by_id")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
   scans          QRScan[]
   batch          Batch     @relation(fields: [batchId], references: [id])
   classroom      Classroom @relation(fields: [classroomId], references: [id])
@@ -459,8 +518,10 @@ model QRScan {
   status       QRScanStatus @default(pending)
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
+  deletedAt    DateTime?    @map("deleted_at")
+  isDeleted    Boolean      @default(false) @map("is_deleted")
   attendance   Attendance?  @relation(fields: [attendanceId], references: [id])
-  qrSession    QRSession    @relation(fields: [qrSessionId], references: [id])
+  qrSession    QRSession    @relation(fields: [qrSessionId], references: [id], onDelete: Cascade)
   student      Student      @relation(fields: [studentId], references: [id])
 
   @@index([qrSessionId])
@@ -484,8 +545,10 @@ model AttendanceCorrection {
   createdById     String                   @map("created_by_id")
   createdAt       DateTime                 @default(now()) @map("created_at")
   updatedAt       DateTime                 @updatedAt @map("updated_at")
+  deletedAt       DateTime?                @map("deleted_at")
+  isDeleted       Boolean                  @default(false) @map("is_deleted")
   approvedBy      Faculty?                 @relation("CorrectionApprovedBy", fields: [approvedById], references: [id])
-  attendance      Attendance               @relation(fields: [attendanceId], references: [id])
+  attendance      Attendance               @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   createdBy       Faculty                  @relation("CorrectionCreatedBy", fields: [createdById], references: [id])
   student         Student                  @relation(fields: [studentId], references: [id])
 
@@ -503,6 +566,8 @@ model Department {
   code               String             @unique
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
+  isDeleted          Boolean            @default(false) @map("is_deleted")
   assignments        Assignment[]
   homeworks          Homework[]
   materialCategories MaterialCategory[]
@@ -512,18 +577,43 @@ model Department {
 }
 
 model Course {
-  id                 String             @id @default(uuid()) @map("id")
-  name               String             @unique
-  code               String             @unique
-  duration           Int?
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  assignments        Assignment[]
-  homeworks          Homework[]
-  materialCategories MaterialCategory[]
-  studyMaterials     StudyMaterial[]
+  id                    String                 @id @default(uuid()) @map("id")
+  name                  String                 @unique
+  code                  String                 @unique
+  description           String?
+  duration              Int?
+  durationUnit          String?                @default("months") @map("duration_unit")
+  category              String?
+  fee                   Decimal?               @default(0)
+  maximumCapacity       Int?                   @map("maximum_capacity")
+  enrolledCount         Int?                   @default(0) @map("enrolled_count")
+  minAge                Int?                   @map("min_age")
+  maxAge                Int?                   @map("max_age")
+  requiredQualification String?                @map("required_qualification")
+  isActive              Boolean                @default(true) @map("is_active")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  deletedAt             DateTime?              @map("deleted_at")
+  isDeleted             Boolean                @default(false) @map("is_deleted")
+  assignments           Assignment[]
+  homeworks             Homework[]
+  materialCategories    MaterialCategory[]
+  studyMaterials        StudyMaterial[]
+  enrollments           Enrollment[]
 
   @@map("courses")
+}
+
+model CoursePrerequisite {
+  id                    String   @id @default(uuid()) @map("id")
+  courseId              String   @map("course_id")
+  prerequisiteCourseId  String   @map("prerequisite_course_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@unique([courseId, prerequisiteCourseId])
+  @@index([courseId])
+  @@index([prerequisiteCourseId])
+  @@map("course_prerequisites")
 }
 
 model Semester {
@@ -532,6 +622,8 @@ model Semester {
   name               String
   createdAt          DateTime           @default(now()) @map("created_at")
   updatedAt          DateTime           @updatedAt @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
+  isDeleted          Boolean            @default(false) @map("is_deleted")
   assignments        Assignment[]
   materialCategories MaterialCategory[]
   studyMaterials     StudyMaterial[]
@@ -599,7 +691,7 @@ model AssignmentAttachment {
   fileSize     Int?       @map("file_size")
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 
   @@index([assignmentId])
   @@map("assignment_attachments")
@@ -648,7 +740,7 @@ model HomeworkAttachment {
   fileSize   Int?     @map("file_size")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
-  homework   Homework @relation(fields: [homeworkId], references: [id])
+  homework   Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
 
   @@index([homeworkId])
   @@map("homework_attachments")
@@ -694,7 +786,7 @@ model SubmissionAttachment {
   fileSize     Int?                 @map("file_size")
   createdAt    DateTime             @default(now()) @map("created_at")
   updatedAt    DateTime             @updatedAt @map("updated_at")
-  submission   AssignmentSubmission @relation(fields: [submissionId], references: [id])
+  submission   AssignmentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@index([submissionId])
   @@map("submission_attachments")
@@ -719,7 +811,7 @@ model Evaluation {
   deletedAt       DateTime?            @map("deleted_at")
   createdBy       Faculty              @relation("EvaluationCreatedBy", fields: [createdById], references: [id])
   faculty         Faculty              @relation("EvaluationFaculty", fields: [facultyId], references: [id])
-  submission      AssignmentSubmission @relation(fields: [submissionId], references: [id])
+  submission      AssignmentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   updatedBy       Faculty              @relation("EvaluationUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([submissionId])
@@ -856,7 +948,9 @@ model MaterialAttachment {
   fileType        String        @map("file_type")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
-  studyMaterial   StudyMaterial @relation(fields: [studyMaterialId], references: [id])
+  deletedAt       DateTime?     @map("deleted_at")
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+  studyMaterial   StudyMaterial @relation(fields: [studyMaterialId], references: [id], onDelete: Cascade)
 
   @@index([studyMaterialId])
   @@map("material_attachments")
@@ -872,7 +966,9 @@ model MaterialDownload {
   deviceInfo       String?       @map("device_info")
   userAgent        String?       @map("user_agent")
   createdAt        DateTime      @default(now()) @map("created_at")
-  studyMaterial    StudyMaterial @relation(fields: [studyMaterialId], references: [id])
+  deletedAt        DateTime?     @map("deleted_at")
+  isDeleted        Boolean       @default(false) @map("is_deleted")
+  studyMaterial    StudyMaterial @relation(fields: [studyMaterialId], references: [id], onDelete: Cascade)
 
   @@index([studyMaterialId])
   @@index([downloadedById])
@@ -880,13 +976,15 @@ model MaterialDownload {
 }
 
 model MaterialSearchLog {
-  id          String   @id @default(uuid()) @map("id")
-  userId      String   @map("user_id")
+  id          String    @id @default(uuid()) @map("id")
+  userId      String    @map("user_id")
   query       String
-  filters     Json     @default("{}")
-  resultCount Int?     @map("result_count")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  filters     Json      @default("{}")
+  resultCount Int?      @map("result_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
 
   @@index([userId])
   @@index([query])
@@ -912,7 +1010,7 @@ model AssignmentReminder {
   updatedAt            DateTime            @updatedAt @map("updated_at")
   isDeleted            Boolean             @default(false) @map("is_deleted")
   deletedAt            DateTime?           @map("deleted_at")
-  assignment           Assignment          @relation(fields: [assignmentId], references: [id])
+  assignment           Assignment          @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   createdBy            Faculty             @relation("ReminderCreatedBy", fields: [createdById], references: [id])
   student              Student?            @relation(fields: [studentId], references: [id])
 
@@ -923,6 +1021,176 @@ model AssignmentReminder {
   @@index([reminderType])
   @@index([reminderDate])
   @@map("assignment_reminders")
+}
+
+model Parent {
+  id            String    @id @default(uuid()) @map("id")
+  fullName      String    @map("full_name")
+  email         String    @unique
+  phone         String
+  address       String?
+  linkedStudent String?   @map("linked_student")
+  linkedRoll    String?   @map("linked_roll")
+  relationship  String?
+  isDeleted              Boolean   @default(false) @map("is_deleted")
+  deletedAt              DateTime? @map("deleted_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  password               String?
+  role                   String?   @default("PARENT")
+  status                 String?   @default("active")
+  notificationPrefs      Json?     @default("{}") @map("notification_prefs")
+
+  students ParentStudent[]
+
+  @@index([email])
+  @@index([linkedRoll])
+  @@map("parents")
+}
+
+model ParentStudent {
+  parentId     String   @map("parent_id")
+  studentId    String   @map("student_id")
+  relationship String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  parent  Parent  @relation(fields: [parentId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@id([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+  @@map("parent_students")
+}
+
+model Exam {
+  id        String    @id @default(uuid()) @map("id")
+  title     String
+  subject   String
+  batch     String
+  date      DateTime
+  time      String
+  status    String    @default("scheduled")
+  maxMarks  Int?      @map("max_marks")
+  type      String?
+  location  String?
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([date])
+  @@map("exams")
+}
+
+model FeeTransaction {
+  id          String    @id @default(uuid()) @map("id")
+  student     String
+  roll        String    @map("roll")
+  description String
+  amount      Int
+  date        DateTime?
+  method      String?
+  status      String    @default("paid")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([roll])
+  @@index([status])
+  @@map("fee_transactions")
+}
+
+model FeePending {
+  id          String    @id @default(uuid()) @map("id")
+  student     String
+  roll        String    @map("roll")
+  amount      Int
+  dueDate     DateTime  @map("due_date")
+  daysOverdue Int       @map("days_overdue")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([roll])
+  @@map("fee_pending")
+}
+
+model FeeStructure {
+  id                 String              @id @default(uuid()) @map("id")
+  type               String
+  amount             Int
+  dueDate            String              @map("due_date")
+  semester           String?
+  courseId           String?             @map("course_id")
+  batchId            String?             @map("batch_id")
+  academicYear       String?             @map("academic_year")
+  registrationFee    Decimal?            @default(0) @map("registration_fee")
+  tuitionFee         Decimal?            @default(0) @map("tuition_fee")
+  examinationFee     Decimal?            @default(0) @map("examination_fee")
+  miscellaneousFee   Decimal?            @default(0) @map("miscellaneous_fee")
+  totalFee           Decimal?            @default(0) @map("total_fee")
+  installmentCount   Int?                @default(1) @map("installment_count")
+  status             String?             @default("active")
+  isDeleted          Boolean             @default(false) @map("is_deleted")
+  deletedAt          DateTime?           @map("deleted_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  installments       Installment[]
+
+  @@map("fee_structure")
+}
+
+model Installment {
+  id              String    @id @default(uuid()) @map("id")
+  feeStructureId  String          @map("fee_structure_id")
+  feeStructure    FeeStructure    @relation(fields: [feeStructureId], references: [id])
+  installmentNumber Int           @map("installment_number")
+  dueDate         DateTime  @map("due_date")
+  amount          Decimal
+  status          String    @default("pending")
+  paidDate        DateTime? @map("paid_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([feeStructureId])
+  @@map("installments")
+}
+
+model Enrollment {
+  id              String   @id @default(uuid()) @map("id")
+  studentId       String   @map("student_id")
+  courseId        String   @map("course_id")
+  enrollmentDate  DateTime @default(now()) @map("enrollment_date")
+  status          String   @default("enrolled")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  course          Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+model NotificationBroadcast {
+  id        String    @id @default(uuid()) @map("id")
+  title     String
+  message   String
+  target    String
+  sentBy    String?   @map("sent_by")
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  readAt    DateTime? @map("read_at")
+
+  @@index([createdAt])
+  @@map("notification_broadcasts")
 }
 
 model Upload {
@@ -950,6 +1218,184 @@ model Upload {
   @@index([module])
   @@index([moduleId])
   @@map("uploads")
+}
+
+model BlacklistedToken {
+  id        String   @id @default(uuid()) @map("id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("blacklisted_tokens")
+}
+
+model AuditLog {
+  id        String      @id @default(uuid()) @map("id")
+  actorId   String?     @map("actor_id")
+  actorRole String?     @map("actor_role")
+  action    AuditAction
+  entity    String
+  entityId  String?     @map("entity_id")
+  oldValue  Json?       @map("old_value")
+  newValue  Json?       @map("new_value")
+  ipAddress String?     @map("ip_address")
+  userAgent String?     @map("user_agent")
+  metadata  Json?       @default("{}")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([entity])
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model StudentRegistrationRequest {
+  id                 String             @id @default(uuid()) @map("id")
+  firstName          String             @map("first_name")
+  lastName           String             @map("last_name")
+  fullName           String             @map("full_name")
+  email              String             @unique
+  phone              String
+  password           String?
+  gender             String?
+  dateOfBirth        DateTime?          @map("date_of_birth")
+  address            Json?
+  department         String
+  course             String?
+  semester           Int?
+  batch              String?
+  preferredFacultyId String?            @map("preferred_faculty_id")
+  parentName         String?            @map("parent_name")
+  parentEmail        String?            @map("parent_email")
+  parentPhone        String?            @map("parent_phone")
+  profileImage       String?            @map("profile_image")
+  documents          Json?              @default("[]")
+  status             RegistrationStatus @default(PENDING)
+  reviewedById       String?            @map("reviewed_by_id")
+  reviewedAt         DateTime?          @map("reviewed_at")
+  remarks            String?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("student_registration_requests")
+}
+
+model Branch {
+  id              String    @id @default(uuid()) @map("id")
+  branchName      String    @map("branch_name")
+  branchCode      String    @unique @map("branch_code")
+  address         String
+  city            String
+  state           String
+  country         String    @default("India")
+  contactPerson   String    @map("contact_person")
+  contactNumber   String    @map("contact_number")
+  email           String?
+  branchHead      String?   @map("branch_head")
+  maximumCapacity Int?      @map("maximum_capacity")
+  openingDate     DateTime? @map("opening_date")
+  status          String    @default("active")
+  studentCount    Int?      @default(0) @map("student_count")
+  facultyCount    Int?      @default(0) @map("faculty_count")
+  isDeleted       Boolean   @default(false) @map("is_deleted")
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("branches")
+}
+
+model Payment {
+  id                    String    @id @default(uuid()) @map("id")
+  studentId             String    @map("student_id")
+  studentName           String    @map("student_name")
+  amount                Decimal   @map("amount")
+  paymentMethod         String?   @map("payment_method")
+  transactionId         String?   @unique @map("transaction_id")
+  description           String?
+  status                String    @default("created")
+  refundedAmount        Decimal?  @default(0) @map("refunded_amount")
+  refundReason          String?   @map("refund_reason")
+  refundedAt            DateTime? @map("refunded_at")
+  refundedBy            String?   @map("refunded_by")
+  // Gateway-specific fields
+  gateway               String?   @map("gateway")
+  gatewayOrderId        String?   @map("gateway_order_id")
+  gatewayPaymentId      String?   @map("gateway_payment_id")
+  gatewaySignature      String?   @map("gateway_signature")
+  providerReferenceId   String?   @map("provider_reference_id")
+  merchantOrderId       String?   @map("merchant_order_id")
+  stripePaymentIntentId String?   @map("stripe_payment_intent_id")
+  stripeClientSecret    String?   @map("stripe_client_secret")
+  currency              String?   @default("INR")
+  receiptUrl            String?   @map("receipt_url")
+  verifiedAt            DateTime? @map("verified_at")
+  verifiedBy            String?   @map("verified_by")
+  verificationMode      String?   @map("verification_mode")
+  notes                 Json?     @default("{}")
+  rawResponse           Json?     @default("{}")
+  isDeleted             Boolean   @default(false) @map("is_deleted")
+  deletedAt             DateTime? @map("deleted_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([gateway])
+  @@index([gatewayOrderId])
+  @@index([stripePaymentIntentId])
+  @@map("payments")
+}
+
+model Certificate {
+  id                String    @id @default(uuid()) @map("id")
+  studentId         String    @map("student_id")
+  studentName       String    @map("student_name")
+  courseName        String    @map("course_name")
+  completionDate    DateTime? @map("completion_date")
+  grade             String?
+  certificateNumber String?   @unique @map("certificate_number")
+  templateName      String    @default("Standard") @map("template_name")
+  templateStyle     String    @default("classic") @map("template_style")
+  issueDate         DateTime? @map("issue_date")
+  status            String    @default("active")
+  isDeleted         Boolean   @default(false) @map("is_deleted")
+  deletedAt         DateTime? @map("deleted_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@map("certificates")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  APPROVE
+  REJECT
+  HOLD
+  UPLOAD
+  DOWNLOAD
+  OTHER
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  HOLD
+  REJECTED
 }
 
 enum AttendanceStatus {
@@ -1072,6 +1518,101 @@ enum MaterialType {
   VIDEO
   ZIP
   NOTES
+}
+
+model RevaluationRequest {
+  id             String   @id @default(uuid()) @map("id")
+  examId         String   @map("exam_id")
+  studentId      String   @map("student_id")
+  subjectId      String?  @map("subject_id")
+  currentMarks   Float    @map("current_marks")
+  expectedMarks  Float    @map("expected_marks")
+  reason         String
+  status         String   @default("pending")
+  reviewedById   String?  @map("reviewed_by_id")
+  reviewedAt     DateTime? @map("reviewed_at")
+  remarks        String?
+  revisedMarks   Float?   @map("revised_marks")
+  isDeleted      Boolean  @default(false) @map("is_deleted")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([examId])
+  @@index([studentId])
+  @@index([status])
+  @@map("revaluation_requests")
+}
+
+model RevaluationTimeline {
+  id             String   @id @default(uuid()) @map("id")
+  revaluationId  String   @map("revaluation_id")
+  action         String
+  comment        String?
+  performedBy    String?  @map("performed_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([revaluationId])
+  @@map("revaluation_timelines")
+}
+
+model Scholarship {
+  id              String   @id @default(uuid()) @map("id")
+  studentId       String   @map("student_id")
+  scholarshipName String   @map("scholarship_name")
+  type            String
+  amount          Float
+  percentage      Float?
+  startDate       DateTime @map("start_date")
+  endDate         DateTime? @map("end_date")
+  status          String   @default("active")
+  description     String?
+  isDeleted       Boolean  @default(false) @map("is_deleted")
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([status])
+  @@map("scholarships")
+}
+
+model CloudDocument {
+  id               String   @id @default(uuid()) @map("id")
+  studentId        String   @map("student_id")
+  documentType     String   @map("document_type")
+  cloudProvider    String   @map("cloud_provider")
+  cloudFileId      String   @map("cloud_file_id")
+  fileUrl          String   @map("file_url")
+  mimeType         String   @map("mime_type")
+  fileSize         Int      @map("file_size")
+  originalFileName String   @map("original_file_name")
+  uploadDate       DateTime @default(now()) @map("upload_date")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([cloudProvider])
+  @@index([cloudFileId])
+  @@map("cloud_documents")
+}
+
+model StudentDocument {
+  id                String   @id @default(uuid()) @map("id")
+  studentId         String   @map("student_id")
+  documentType      String   @map("document_type")
+  originalFileName  String   @map("original_file_name")
+  storedFileName    String   @map("stored_file_name")
+  filePath          String   @map("file_path")
+  mimeType          String   @map("mime_type")
+  fileSize          Int      @map("file_size")
+  uploadedBy        String?  @map("uploaded_by")
+  uploadDate        DateTime @default(now()) @map("upload_date")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([documentType])
+  @@map("student_documents")
 }
 
 enum MaterialVisibility {

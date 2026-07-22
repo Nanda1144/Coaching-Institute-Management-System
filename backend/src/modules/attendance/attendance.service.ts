@@ -1,7 +1,6 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
-import { AttendanceMethod, AttendanceStatus, Prisma } from '@prisma/client';
-import { InputJsonValue } from '@prisma/client/runtime/library';
+import { sendNotification } from '../../shared/utils/notification-helper';
 
 function generateAttendanceCode(): string {
   const now = new Date();
@@ -15,30 +14,29 @@ function generateAttendanceCode(): string {
 export class AttendanceService {
   async create(data: any, userId: string) {
     const attendanceCode = generateAttendanceCode();
-    const attendance = await prisma.attendance.create({
-      data: {
-        attendanceCode,
-        studentId: data.studentId,
-        facultyId: userId,
-        subjectId: data.subjectId,
-        batchId: data.batchId,
-        classroomId: data.classroomId ?? '',
-        attendanceDate: new Date(data.attendanceDate).toISOString(),
-        startTime: data.startTime,
-        endTime: data.endTime,
-        attendanceMethod: data.attendanceMethod as AttendanceMethod,
-        attendanceStatus: data.attendanceStatus as AttendanceStatus,
-        remarks: data.remarks,
-        createdById: userId,
-        updatedById: userId,
-      },
-      include: {
-        student: true,
-        subject: true,
-        batch: true,
-        classroom: true,
-      },
+    const attendance = await db.create('attendances', {
+      attendanceCode,
+      studentId: data.studentId,
+      facultyId: userId,
+      subjectId: data.subjectId,
+      batchId: data.batchId,
+      classroomId: data.classroomId ?? '',
+      attendanceDate: new Date(data.attendanceDate).toISOString(),
+      startTime: data.startTime,
+      endTime: data.endTime,
+      attendanceMethod: data.attendanceMethod,
+      attendanceStatus: data.attendanceStatus,
+      remarks: data.remarks,
+      createdById: userId,
+      updatedById: userId,
     });
+
+    await sendNotification(
+      'Attendance Marked',
+      `Your attendance has been marked for ${new Date(data.attendanceDate).toLocaleDateString()} - ${data.attendanceStatus}`,
+      data.studentId
+    );
+
     return attendance;
   }
 
@@ -47,76 +45,64 @@ export class AttendanceService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.AttendanceWhereInput = {
-      isDeleted: false,
-    };
+    const whereConditions: { column: string; operator?: string; value: any }[] = [
+      { column: 'isDeleted', value: false },
+    ];
 
-    if (query.facultyId) where.facultyId = query.facultyId;
-    if (query.subjectId) where.subjectId = query.subjectId;
-    if (query.batchId) where.batchId = query.batchId;
-    if (query.status) where.attendanceStatus = query.status as AttendanceStatus;
-    if (query.method) where.attendanceMethod = query.method as AttendanceMethod;
+    if (query.facultyId) whereConditions.push({ column: 'facultyId', value: query.facultyId });
+    if (query.subjectId) whereConditions.push({ column: 'subjectId', value: query.subjectId });
+    if (query.batchId) whereConditions.push({ column: 'batchId', value: query.batchId });
+    if (query.status) whereConditions.push({ column: 'attendanceStatus', value: query.status });
+    if (query.method) whereConditions.push({ column: 'attendanceMethod', value: query.method });
+
     if (query.date) {
       const d = new Date(query.date);
-      where.attendanceDate = {
-        gte: new Date(d.setHours(0, 0, 0, 0)),
-        lte: new Date(d.setHours(23, 59, 59, 999)),
-      };
+      const startOfDay = new Date(d.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(d.setHours(23, 59, 59, 999));
+      whereConditions.push({ column: 'attendanceDate', operator: '>=', value: startOfDay });
+      whereConditions.push({ column: 'attendanceDate', operator: '<=', value: endOfDay });
     }
-    if (query.startDate || query.endDate) {
-      where.attendanceDate = {
-        ...(where.attendanceDate as object || {}),
-        ...(query.startDate ? { gte: new Date(query.startDate) } : {}),
-        ...(query.endDate ? { lte: new Date(query.endDate) } : {}),
-      };
+    if (query.startDate) {
+      whereConditions.push({ column: 'attendanceDate', operator: '>=', value: new Date(query.startDate) });
+    }
+    if (query.endDate) {
+      whereConditions.push({ column: 'attendanceDate', operator: '<=', value: new Date(query.endDate) });
     }
 
     const [data, total] = await Promise.all([
-      prisma.attendance.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          student: true,
-          subject: true,
-          batch: true,
-          classroom: true,
-          createdBy: true,
-        },
+      db.findMany('attendances', {
+        where: whereConditions,
+        offset: skip,
+        limit,
+        orderBy: [{ column: 'createdAt', dir: 'DESC' }],
       }),
-      prisma.attendance.count({ where }),
+      db.count('attendances', whereConditions),
     ]);
 
     return {
-      data,
+      data: data ?? [],
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: total ?? 0,
+        totalPages: Math.ceil((total ?? 0) / limit),
       },
     };
   }
 
   async findById(id: string) {
-    const attendance = await prisma.attendance.findFirst({
-      where: { id, isDeleted: false },
-      include: {
-        student: true,
-        subject: true,
-        batch: true,
-        classroom: true,
-        createdBy: true,
-        updatedBy: true,
-      },
+    const attendance = await db.findFirst('attendances', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!attendance) throw AppError.notFound('Attendance record not found');
     return attendance;
   }
 
   async update(id: string, data: any, userId: string) {
-    const existing = await this.findById(id);
+    await this.findById(id);
     const updateData: any = { updatedById: userId };
     if (data.studentId !== undefined) updateData.studentId = data.studentId;
     if (data.subjectId !== undefined) updateData.subjectId = data.subjectId;
@@ -129,24 +115,16 @@ export class AttendanceService {
     if (data.attendanceStatus !== undefined) updateData.attendanceStatus = data.attendanceStatus;
     if (data.remarks !== undefined) updateData.remarks = data.remarks;
 
-    const attendance = await prisma.attendance.update({
-      where: { id },
-      data: updateData,
-      include: {
-        student: true,
-        subject: true,
-        batch: true,
-        classroom: true,
-      },
-    });
+    const attendance = await db.update('attendances', [{ column: 'id', value: id }], updateData);
     return attendance;
   }
 
   async delete(id: string, userId: string) {
     await this.findById(id);
-    await prisma.attendance.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date(), updatedById: userId },
+    await db.update('attendances', [{ column: 'id', value: id }], {
+      isDeleted: true,
+      deletedAt: new Date(),
+      updatedById: userId,
     });
   }
 
@@ -155,68 +133,68 @@ export class AttendanceService {
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-    const records = await prisma.attendance.findMany({
-      where: {
-        facultyId,
-        attendanceDate: { gte: startOfDay, lte: endOfDay },
-        isDeleted: false,
-      },
-      include: {
-        student: true,
-        subject: true,
-        batch: true,
-      },
+    const records = await db.findMany('attendances', {
+      where: [
+        { column: 'facultyId', value: facultyId },
+        { column: 'isDeleted', value: false },
+        { column: 'attendanceDate', operator: '>=', value: startOfDay },
+        { column: 'attendanceDate', operator: '<=', value: endOfDay },
+      ],
     });
 
-    const total = records.length;
-    const present = records.filter((r) => r.attendanceStatus === 'present').length;
-    const absent = records.filter((r) => r.attendanceStatus === 'absent').length;
-    const late = records.filter((r) => r.attendanceStatus === 'late').length;
-    const halfDay = records.filter((r) => r.attendanceStatus === 'half_day').length;
-    const leave = records.filter((r) => r.attendanceStatus === 'leave').length;
+    const allRecords = records ?? [];
+    const total = allRecords.length;
+    const present = allRecords.filter((r: any) => r.attendanceStatus === 'present').length;
+    const absent = allRecords.filter((r: any) => r.attendanceStatus === 'absent').length;
+    const late = allRecords.filter((r: any) => r.attendanceStatus === 'late').length;
+    const halfDay = allRecords.filter((r: any) => r.attendanceStatus === 'half_day').length;
+    const leave = allRecords.filter((r: any) => r.attendanceStatus === 'leave').length;
 
     return {
       date: startOfDay,
       summary: { total, present, absent, late, halfDay, leave },
-      records,
+      records: allRecords,
     };
   }
 
   async getAttendanceStats(facultyId: string, params: { subjectId?: string; month?: number; year?: number }) {
-    const where: Prisma.AttendanceWhereInput = {
-      facultyId,
-      isDeleted: false,
-    };
-    if (params.subjectId) where.subjectId = params.subjectId;
+    const whereConditions: { column: string; value: any }[] = [
+      { column: 'facultyId', value: facultyId },
+      { column: 'isDeleted', value: false },
+    ];
+    if (params.subjectId) whereConditions.push({ column: 'subjectId', value: params.subjectId });
+
+    let extraWhere: { sql: string; params: any[] } | undefined;
     if (params.month || params.year) {
-      const dateFilter: any = {};
       if (params.year) {
         const m = params.month ?? 1;
-        dateFilter.gte = new Date(params.year, m - 1, 1);
-        dateFilter.lt = new Date(params.year, m, 1);
+        const start = new Date(params.year, m - 1, 1);
+        const end = new Date(params.year, m, 1);
+        extraWhere = { sql: `"attendance_date" >= $1 AND "attendance_date" < $2`, params: [start.toISOString(), end.toISOString()] };
       } else if (params.month) {
         const now = new Date();
-        dateFilter.gte = new Date(now.getFullYear(), params.month - 1, 1);
-        dateFilter.lt = new Date(now.getFullYear(), params.month, 1);
+        const start = new Date(now.getFullYear(), params.month - 1, 1);
+        const end = new Date(now.getFullYear(), params.month, 1);
+        extraWhere = { sql: `"attendance_date" >= $1 AND "attendance_date" < $2`, params: [start.toISOString(), end.toISOString()] };
       }
-      where.attendanceDate = dateFilter;
     }
 
-    const records = await prisma.attendance.findMany({
-      where,
-      include: { subject: true },
+    const records = await db.findMany('attendances', {
+      where: whereConditions,
+      extraWhere,
     });
 
-    const total = records.length;
-    const present = records.filter((r) => r.attendanceStatus === 'present').length;
-    const absent = records.filter((r) => r.attendanceStatus === 'absent').length;
-    const late = records.filter((r) => r.attendanceStatus === 'late').length;
-    const halfDay = records.filter((r) => r.attendanceStatus === 'half_day').length;
-    const leave = records.filter((r) => r.attendanceStatus === 'leave').length;
+    const allRecords = records ?? [];
+    const total = allRecords.length;
+    const present = allRecords.filter((r: any) => r.attendanceStatus === 'present').length;
+    const absent = allRecords.filter((r: any) => r.attendanceStatus === 'absent').length;
+    const late = allRecords.filter((r: any) => r.attendanceStatus === 'late').length;
+    const halfDay = allRecords.filter((r: any) => r.attendanceStatus === 'half_day').length;
+    const leave = allRecords.filter((r: any) => r.attendanceStatus === 'leave').length;
     const percentage = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
 
     const subjectMap = new Map<string, { subjectId: string; subjectName: string; total: number; present: number; absent: number; late: number; halfDay: number; leave: number }>();
-    for (const r of records) {
+    for (const r of allRecords) {
       const sid = r.subjectId;
       if (!subjectMap.has(sid)) {
         subjectMap.set(sid, {
@@ -240,7 +218,7 @@ export class AttendanceService {
     }));
 
     const monthMap = new Map<string, { month: number; year: number; total: number; present: number; absent: number; late: number; halfDay: number; leave: number }>();
-    for (const r of records) {
+    for (const r of allRecords) {
       const d = new Date(r.attendanceDate);
       const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
       if (!monthMap.has(key)) {

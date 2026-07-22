@@ -118,7 +118,7 @@ export default function FacultyListPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <FacultyHeader onAdd={() => navigate('/faculty/add')} onExportCSV={handleExportCSV} onExportXLSX={handleExportXLSX} />
+      <FacultyHeader onAdd={() => navigate('/dashboard/faculty/add')} onExportCSV={handleExportCSV} onExportXLSX={handleExportXLSX} />
 
       <FacultyFilters
         filters={filters}
@@ -149,7 +149,7 @@ export default function FacultyListPage() {
           </p>
           {facultyList.length === 0 && (
             <button
-              onClick={() => navigate('/faculty/add')}
+              onClick={() => navigate('/dashboard/faculty/add')}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
             >
               Add Faculty Member
@@ -167,10 +167,10 @@ export default function FacultyListPage() {
             faculty={paginatedItems}
             sortConfig={sortConfig}
             requestSort={requestSort}
-            onView={(id) => navigate(`/faculty/profile/${id}`)}
-            onEdit={(id) => navigate(`/faculty/edit/${id}`)}
+            onView={(id) => navigate(`/dashboard/faculty/profile/${id}`)}
+            onEdit={(id) => navigate(`/dashboard/faculty/edit/${id}`)}
             onDelete={(id) => setDeleteTarget(id)}
-            onAssignCourse={(id) => navigate(`/faculty/assign?id=${id}`)}
+            onAssignCourse={(id) => navigate(`/dashboard/faculty/assign?id=${id}`)}
           />
           <FacultyPagination
             currentPage={currentPage}

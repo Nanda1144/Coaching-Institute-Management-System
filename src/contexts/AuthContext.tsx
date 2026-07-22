@@ -3,10 +3,13 @@ import authService from '../services/auth/auth.service'
 
 interface User {
   id: string
-  facultyId: string
+  facultyId?: string
+  studentId?: string
   role: string
   name?: string
   email?: string
+  fullName?: string
+  permissions?: string[]
 }
 
 interface AuthContextType {
@@ -33,16 +36,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const response = await authService.getMe()
-      const userData = response.data || response
+      const responseData = response.data || response
+      const userData = responseData.data?.user || responseData.user || responseData
+
+      const userRole = userData.role
+      if (!userRole) {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('userRole')
+        localStorage.removeItem('userName')
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+
+      const userName = userData.fullName || userData.name || userData.full_name || ''
+      localStorage.setItem('userRole', userRole)
+      localStorage.setItem('userName', userName)
+
       setUser({
-        id: userData.id || userData.facultyId,
+        id: userData.id || userData.facultyId || userData.studentId || '',
         facultyId: userData.facultyId || userData.id,
-        role: userData.role || 'FACULTY',
-        name: userData.fullName || userData.name,
-        email: userData.email,
+        studentId: userData.studentId,
+        role: userRole,
+        name: userName,
+        email: userData.email || '',
+        fullName: userName,
+        permissions: userData.permissions,
       })
     } catch {
       localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
       setUser(null)
     } finally {
       setIsLoading(false)
@@ -55,23 +79,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await authService.login({ email, password })
-    const { accessToken, data } = response.data || response
+    const responseData = response.data || response
+    const accessToken = responseData.data?.accessToken || responseData.accessToken || responseData.token
     if (accessToken) {
       localStorage.setItem('accessToken', accessToken)
     }
-    const userData = data || response.data || response
+    const refreshToken = responseData.data?.refreshToken || responseData.refreshToken
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken)
+    }
+
+    const userData = responseData.data?.user || responseData.user || responseData
+    const userRole = userData.role
+    if (!userRole) throw new Error('Invalid user data: missing role')
+
+    const userName = userData.fullName || userData.name || userData.full_name || ''
+    localStorage.setItem('userRole', userRole)
+    localStorage.setItem('userName', userName)
+
     setUser({
-      id: userData.id || userData.facultyId,
+      id: userData.id || userData.facultyId || userData.studentId || '',
       facultyId: userData.facultyId || userData.id,
-      role: userData.role || 'FACULTY',
-      name: userData.fullName || userData.name,
-      email: userData.email,
+      studentId: userData.studentId,
+      role: userRole,
+      name: userName,
+      email: userData.email || '',
+      fullName: userName,
+      permissions: userData.permissions,
     })
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userRole')
+    localStorage.removeItem('userName')
     setUser(null)
+    authService.logout().catch(() => {})
   }, [])
 
   return (

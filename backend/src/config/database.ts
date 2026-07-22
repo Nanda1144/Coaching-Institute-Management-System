@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Pool, PoolClient, QueryResult } from 'pg';
 import { env } from './env';
 
 const MAX_RETRIES = 10;
@@ -8,14 +8,24 @@ const RECONNECT_DELAY_MS = 5000;
 
 class Database {
   private static instance: Database | null = null;
-  private _client: PrismaClient;
+  private _pool: Pool;
+  private _client: PoolClient | null = null;
   private _isConnected: boolean = false;
   private _healthCheckTimer: ReturnType<typeof setInterval> | null = null;
   private _reconnecting: boolean = false;
 
   private constructor() {
-    this._client = new PrismaClient({
-      log: env.NODE_ENV === 'production' ? ['error'] : ['warn', 'error'],
+    this._pool = new Pool({
+      connectionString: env.DIRECT_URL,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED },
+    });
+
+    this._pool.on('error', (err) => {
+      console.error('Unexpected pool error:', err.message);
+      this._isConnected = false;
     });
   }
 
@@ -26,8 +36,8 @@ class Database {
     return Database.instance;
   }
 
-  get client(): PrismaClient {
-    return this._client;
+  get pool(): Pool {
+    return this._pool;
   }
 
   get isConnected(): boolean {
@@ -39,7 +49,7 @@ class Database {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        await this._client.$connect();
+        this._client = await this._pool.connect();
         this._isConnected = true;
         this._reconnecting = false;
         this._startHealthCheck();
@@ -67,7 +77,11 @@ class Database {
   async disconnect(): Promise<void> {
     this._stopHealthCheck();
     try {
-      await this._client.$disconnect();
+      if (this._client) {
+        this._client.release();
+        this._client = null;
+      }
+      await this._pool.end();
       this._isConnected = false;
       console.log('Database disconnected successfully');
     } catch (err) {
@@ -79,7 +93,7 @@ class Database {
     this._stopHealthCheck();
     this._healthCheckTimer = setInterval(async () => {
       try {
-        await this._client.$queryRaw`SELECT 1`;
+        await this._pool.query('SELECT 1');
         if (!this._isConnected) {
           this._isConnected = true;
           this._reconnecting = false;
@@ -106,16 +120,20 @@ class Database {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        await this._client.$disconnect();
+        await this._pool.end();
       } catch {
-        // ignore disconnect errors during reconnect
+        // ignore close errors
       }
 
       try {
-        this._client = new PrismaClient({
-          log: env.NODE_ENV === 'production' ? ['error'] : ['warn', 'error'],
+        this._pool = new Pool({
+          connectionString: env.DIRECT_URL,
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
+          ssl: { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED },
         });
-        await this._client.$connect();
+        this._client = await this._pool.connect();
         this._isConnected = true;
         this._reconnecting = false;
         this._startHealthCheck();
@@ -140,16 +158,21 @@ class Database {
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
     try {
-      await this._client.$queryRaw`SELECT 1`;
+      await this._pool.query('SELECT 1');
       return { status: this._isConnected ? 'connected' : 'degraded', latency: Date.now() - start };
     } catch {
       return { status: 'disconnected', latency: Date.now() - start };
     }
   }
+
+  async query(text: string, params?: any[]): Promise<QueryResult> {
+    return this._pool.query(text, params);
+  }
 }
 
 const db = Database.getInstance();
-export const prisma = db.client;
+export const pool = db.pool;
+export const query = (text: string, params?: any[]) => db.query(text, params);
 export const connectDatabase = () => db.connect();
 export const disconnectDatabase = () => db.disconnect();
 export const getDatabaseHealth = () => db.healthCheck();

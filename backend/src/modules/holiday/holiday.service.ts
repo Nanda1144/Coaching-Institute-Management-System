@@ -1,16 +1,14 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
 
 export const holidayService = {
   async create(data: any, userId: string) {
-    const holiday = await prisma.holiday.create({
-      data: {
-        ...data,
-        startDate: new Date(data.startDate).toISOString(),
-        endDate: new Date(data.endDate).toISOString(),
-        createdBy: userId,
-        updatedBy: userId,
-      },
+    const holiday = await db.create('holidays', {
+      ...data,
+      startDate: new Date(data.startDate).toISOString(),
+      endDate: new Date(data.endDate).toISOString(),
+      createdBy: userId,
+      updatedBy: userId,
     });
     return holiday;
   },
@@ -19,18 +17,18 @@ export const holidayService = {
     const { page, limit, holidayType, academicYear } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = { isDeleted: false };
-    if (holidayType) where.holidayType = holidayType;
-    if (academicYear) where.academicYear = academicYear;
+    const where: any[] = [{ column: 'isDeleted', value: false }];
+    if (holidayType) where.push({ column: 'holidayType', value: holidayType });
+    if (academicYear) where.push({ column: 'academicYear', value: academicYear });
 
     const [data, total] = await Promise.all([
-      prisma.holiday.findMany({
+      db.findMany('holidays', {
         where,
-        skip,
-        take: limit,
-        orderBy: { startDate: 'asc' },
+        offset: skip,
+        limit,
+        orderBy: [{ column: 'startDate', dir: 'asc' }],
       }),
-      prisma.holiday.count({ where }),
+      db.count('holidays', where),
     ]);
 
     return {
@@ -40,8 +38,11 @@ export const holidayService = {
   },
 
   async findById(id: string) {
-    const holiday = await prisma.holiday.findFirst({
-      where: { id, isDeleted: false },
+    const holiday = await db.findFirst('holidays', {
+      where: [
+        { column: 'id', value: id },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!holiday) throw AppError.notFound('Holiday not found');
     return holiday;
@@ -53,19 +54,19 @@ export const holidayService = {
     if (data.startDate) updateData.startDate = new Date(data.startDate).toISOString();
     if (data.endDate) updateData.endDate = new Date(data.endDate).toISOString();
 
-    const holiday = await prisma.holiday.update({
-      where: { id },
-      data: updateData,
-    });
+    const holiday = await db.update('holidays',
+      [{ column: 'id', value: id }],
+      updateData,
+    );
     return holiday;
   },
 
   async delete(id: string, userId: string) {
     await this.findById(id);
-    const holiday = await prisma.holiday.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date(), updatedBy: userId },
-    });
+    const holiday = await db.update('holidays',
+      [{ column: 'id', value: id }],
+      { isDeleted: true, deletedAt: new Date(), updatedBy: userId },
+    );
     return holiday;
   },
 
@@ -74,12 +75,13 @@ export const holidayService = {
     const future = new Date();
     future.setDate(future.getDate() + days);
 
-    const holidays = await prisma.holiday.findMany({
-      where: {
-        isDeleted: false,
-        startDate: { gte: now, lte: future },
-      },
-      orderBy: { startDate: 'asc' },
+    const holidays = await db.findMany('holidays', {
+      where: [
+        { column: 'isDeleted', value: false },
+        { column: 'startDate', operator: 'gte', value: now },
+        { column: 'startDate', operator: 'lte', value: future },
+      ],
+      orderBy: [{ column: 'startDate', dir: 'asc' }],
     });
     return holidays;
   },
@@ -90,23 +92,26 @@ export const holidayService = {
     const yearEnd = new Date(now.getFullYear(), 11, 31);
 
     const [total, upcoming, byType] = await Promise.all([
-      prisma.holiday.count({
-        where: { isDeleted: false, startDate: { gte: yearStart, lte: yearEnd } },
-      }),
-      prisma.holiday.count({
-        where: { isDeleted: false, startDate: { gte: now } },
-      }),
-      prisma.holiday.groupBy({
-        by: ['holidayType'],
-        where: { isDeleted: false, startDate: { gte: yearStart, lte: yearEnd } },
-        _count: { id: true },
-      }),
+      db.count('holidays', [
+        { column: 'isDeleted', value: false },
+        { column: 'startDate', operator: 'gte', value: yearStart },
+        { column: 'startDate', operator: 'lte', value: yearEnd },
+      ]),
+      db.count('holidays', [
+        { column: 'isDeleted', value: false },
+        { column: 'startDate', operator: 'gte', value: now },
+      ]),
+      db.groupBy('holidays', { by: ['holidayType'], _count: ['id'], where: [
+        { column: 'isDeleted', value: false },
+        { column: 'startDate', operator: 'gte', value: yearStart },
+        { column: 'startDate', operator: 'lte', value: yearEnd },
+      ] }),
     ]);
 
     return {
       total,
       upcoming,
-      byType: byType.reduce((acc: Record<string, number>, item) => {
+      byType: byType.reduce((acc: Record<string, number>, item: any) => {
         acc[item.holidayType] = item._count.id;
         return acc;
       }, {} as Record<string, number>),
@@ -115,14 +120,14 @@ export const holidayService = {
 
   async getSpecialEvents() {
     const now = new Date();
-    const events = await prisma.holiday.findMany({
-      where: {
-        isDeleted: false,
-        startDate: { gte: now },
-        holidayType: { in: ['event', 'special', 'celebration'] },
-      },
-      orderBy: { startDate: 'asc' },
-      take: 20,
+    const events = await db.findMany('holidays', {
+      where: [
+        { column: 'isDeleted', value: false },
+        { column: 'startDate', operator: 'gte', value: now },
+        { column: 'holidayType', operator: 'in', value: ['event', 'special', 'celebration'] },
+      ],
+      orderBy: [{ column: 'startDate', dir: 'asc' }],
+      limit: 20,
     });
     return events;
   },

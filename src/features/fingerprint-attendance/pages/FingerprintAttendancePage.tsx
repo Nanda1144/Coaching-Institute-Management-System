@@ -26,13 +26,13 @@ export default function FingerprintAttendancePage() {
         setLoading(true)
         const [statsRes, logRes] = await Promise.all([
           attendanceService.getAttendanceStats({ type: 'fingerprint' }),
-          attendanceService.getAll({ type: 'fingerprint', limit: 12 }),
+          attendanceService.getAll({ method: 'fingerprint', limit: 12 }),
         ])
         const s = statsRes?.data || statsRes || {}
         setStats({
-          successfulScans: s.successfulScans || s.successful || 0,
-          failedAttempts: s.failedAttempts || s.failed || 0,
-          totalAttendance: s.totalAttendance || s.total || 0,
+          successfulScans: s.present || 0,
+          failedAttempts: s.absent || 0,
+          totalAttendance: s.total || 0,
         })
         const logRaw = logRes?.data ?? []
         const entries = Array.isArray(logRaw) ? logRaw : (logRaw?.data ?? [])

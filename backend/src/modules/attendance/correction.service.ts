@@ -1,6 +1,5 @@
-import { prisma } from '../../config/database';
+import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
-import { AttendanceStatus, CorrectionApprovalStatus, Prisma } from '@prisma/client';
 
 export class CorrectionService {
   async requestCorrection(data: {
@@ -9,74 +8,63 @@ export class CorrectionService {
     reason: string;
     attachmentUrl?: string;
   }, userId: string) {
-    const attendance = await prisma.attendance.findFirst({
-      where: { id: data.attendanceId, isDeleted: false },
+    const attendance = await db.findFirst('attendances', {
+      where: [
+        { column: 'id', value: data.attendanceId },
+        { column: 'isDeleted', value: false },
+      ],
     });
     if (!attendance) throw AppError.notFound('Attendance record not found');
 
-    const existing = await prisma.attendanceCorrection.findFirst({
-      where: { attendanceId: data.attendanceId, approvalStatus: 'pending' },
+    const existing = await db.findFirst('attendance_corrections', {
+      where: [
+        { column: 'attendanceId', value: data.attendanceId },
+        { column: 'approvalStatus', value: 'pending' },
+      ],
     });
     if (existing) throw AppError.conflict('A pending correction request already exists for this attendance');
 
-    const correction = await prisma.attendanceCorrection.create({
-      data: {
-        attendanceId: data.attendanceId,
-        studentId: attendance.studentId,
-        attendanceDate: attendance.attendanceDate,
-        currentStatus: attendance.attendanceStatus,
-        requestedStatus: data.requestedStatus as AttendanceStatus,
-        reason: data.reason,
-        attachmentUrl: data.attachmentUrl,
-        createdById: userId,
-      },
-      include: { attendance: true, student: true },
+    const correction = await db.create('attendance_corrections', {
+      attendanceId: data.attendanceId,
+      studentId: attendance.studentId,
+      attendanceDate: attendance.attendanceDate,
+      currentStatus: attendance.attendanceStatus,
+      requestedStatus: data.requestedStatus,
+      reason: data.reason,
+      attachmentUrl: data.attachmentUrl,
+      createdById: userId,
     });
     return correction;
   }
 
   async approveCorrection(id: string, userId: string) {
-    const correction = await prisma.attendanceCorrection.findUnique({
-      where: { id },
-      include: { attendance: true },
-    });
+    const correction = await db.findUnique('attendance_corrections', [{ column: 'id', value: id }]);
     if (!correction) throw AppError.notFound('Correction request not found');
     if (correction.approvalStatus !== 'pending') throw AppError.badRequest('Correction request is already ' + correction.approvalStatus);
 
-    const [updated] = await prisma.$transaction([
-      prisma.attendanceCorrection.update({
-        where: { id },
-        data: {
-          approvalStatus: 'approved' as CorrectionApprovalStatus,
-          approvedById: userId,
-          approvalDate: new Date(),
-        },
-      }),
-      prisma.attendance.update({
-        where: { id: correction.attendanceId },
-        data: {
-          attendanceStatus: correction.requestedStatus,
-          updatedById: userId,
-        },
-      }),
-    ]);
+    const updated = await db.transact(async (q) => {
+      const corrResult = await q(
+        'UPDATE "attendance_corrections" SET approval_status = $1, approved_by_id = $2, approval_date = NOW() WHERE id = $3 RETURNING *',
+        ['approved', userId, id]
+      );
+      await q(
+        'UPDATE "attendances" SET attendance_status = $1, updated_by_id = $2 WHERE id = $3',
+        [correction.requestedStatus, userId, correction.attendanceId]
+      );
+      return corrResult.rows[0];
+    });
     return updated;
   }
 
   async rejectCorrection(id: string, userId: string) {
-    const correction = await prisma.attendanceCorrection.findUnique({
-      where: { id },
-    });
+    const correction = await db.findUnique('attendance_corrections', [{ column: 'id', value: id }]);
     if (!correction) throw AppError.notFound('Correction request not found');
     if (correction.approvalStatus !== 'pending') throw AppError.badRequest('Correction request is already ' + correction.approvalStatus);
 
-    const updated = await prisma.attendanceCorrection.update({
-      where: { id },
-      data: {
-        approvalStatus: 'rejected' as CorrectionApprovalStatus,
-        approvedById: userId,
-        approvalDate: new Date(),
-      },
+    const updated = await db.update('attendance_corrections', [{ column: 'id', value: id }], {
+      approvalStatus: 'rejected',
+      approvedById: userId,
+      approvalDate: new Date(),
     });
     return updated;
   }
@@ -92,34 +80,28 @@ export class CorrectionService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.AttendanceCorrectionWhereInput = {};
-    if (query.status) where.approvalStatus = query.status as CorrectionApprovalStatus;
-    if (query.studentId) where.studentId = query.studentId;
-    if (query.attendanceId) where.attendanceId = query.attendanceId;
+    const whereConditions: { column: string; value: any }[] = [];
+    if (query.status) whereConditions.push({ column: 'approvalStatus', value: query.status });
+    if (query.studentId) whereConditions.push({ column: 'studentId', value: query.studentId });
+    if (query.attendanceId) whereConditions.push({ column: 'attendanceId', value: query.attendanceId });
 
     const [data, total] = await Promise.all([
-      prisma.attendanceCorrection.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          attendance: true,
-          student: true,
-          approvedBy: true,
-          createdBy: true,
-        },
+      db.findMany('attendance_corrections', {
+        where: whereConditions,
+        offset: skip,
+        limit,
+        orderBy: [{ column: 'createdAt', dir: 'DESC' }],
       }),
-      prisma.attendanceCorrection.count({ where }),
+      db.count('attendance_corrections', whereConditions),
     ]);
 
     return {
-      data,
+      data: data ?? [],
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: total ?? 0,
+        totalPages: Math.ceil((total ?? 0) / limit),
       },
     };
   }
