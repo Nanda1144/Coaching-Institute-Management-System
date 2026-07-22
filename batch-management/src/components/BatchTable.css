@@ -1,0 +1,76 @@
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 850px;
+}
+
+.batch-table thead { background: #f8fafc; }
+
+.batch-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.batch-table td {
+  padding: 12px 16px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.batch-table tbody tr { transition: background 0.15s; }
+.batch-table tbody tr:hover { background: #f8fafc; }
+.batch-table tbody tr:last-child td { border-bottom: none; }
+
+.cell-id { font-weight: 600; color: #6366f1; font-family: monospace; }
+.cell-name { font-weight: 600; color: #1e1b4b; }
+.cell-schedule { font-size: 13px; color: #475569; }
+.cell-students { text-align: center; }
+
+.student-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.action-btns { display: flex; gap: 6px; }
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-btn.view:hover { background: #eef2ff; border-color: #a5b4fc; }
+.action-btn.edit:hover { background: #fef9c3; border-color: #fde68a; }
+.action-btn.delete:hover { background: #fee2e2; border-color: #fecaca; }

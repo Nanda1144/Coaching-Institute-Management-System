@@ -1,0 +1,35 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.content-area {
+  padding: 20px 28px;
+  flex: 1;
+}
+
+.content-area.form-page {
+  max-width: 860px;
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 16px;
+  }
+  .content-area.form-page {
+    max-width: 100%;
+  }
+}
