@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { MdPerson, MdAccessTime, MdCheckCircle, MdCancel } from 'react-icons/md'
 import type { RecognitionRecord } from '../types/faceRecognition.types'
 import { confidenceColor, confidenceBg } from '../data/faceRecognitionData'
+import { getInitials } from '../../../utils/unwrap'
 
 interface RecognitionHistoryProps {
   records: RecognitionRecord[]
@@ -54,7 +55,7 @@ export default function RecognitionHistory({ records }: RecognitionHistoryProps)
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-[8px] font-bold text-primary">
                           {record.studentName !== 'Unknown'
-                            ? record.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)
+                            ? getInitials(record.studentName)
                             : '?'}
                         </div>
                         <span className="text-xs text-gray-800 font-medium">{record.studentName}</span>

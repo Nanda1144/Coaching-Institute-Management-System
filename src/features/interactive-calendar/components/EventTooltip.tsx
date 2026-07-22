@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MdAccessTime, MdPerson, MdRoom, MdSchool, MdGroup, MdDescription } from 'react-icons/md'
 import { EVENT_TYPE_CONFIG } from '../types/calendar.types'
 import type { CalendarEvent } from '../types/calendar.types'
+import { getFacultyName, safeConfig } from '../../../utils/unwrap'
 
 interface EventTooltipProps {
   event: CalendarEvent
@@ -9,7 +10,7 @@ interface EventTooltipProps {
 }
 
 export default function EventTooltip({ event, isVisible }: EventTooltipProps) {
-  const config = EVENT_TYPE_CONFIG[event.type]
+  const config = safeConfig(EVENT_TYPE_CONFIG, event.type, { bg: '#f3f4f6', border: '#e5e7eb', label: event.type, color: '#6b7280' })
 
   return (
     <AnimatePresence>
@@ -38,7 +39,7 @@ export default function EventTooltip({ event, isVisible }: EventTooltipProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <MdPerson className="text-gray-400 flex-shrink-0" />
-              <span className="truncate">{event.faculty}</span>
+              <span className="truncate">{getFacultyName(event.faculty) || 'Unknown'}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <MdRoom className="text-gray-400 flex-shrink-0" />

@@ -1,22 +1,93 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MdCalendarMonth } from 'react-icons/md'
+import Toast from '../../../components/Toast'
 import { useCalendar } from '../hooks/useCalendar'
-import { allEvents, departmentOptions, facultyOptions, courseOptions, batchOptions, classroomOptions } from '../data/calendarData'
+
 import CalendarHeader from '../components/CalendarHeader'
 import CalendarSidebar from '../components/CalendarSidebar'
 import DailyView from '../components/DailyView'
 import WeeklyView from '../components/WeeklyView'
 import MonthlyView from '../components/MonthlyView'
 import CalendarSkeleton from '../components/CalendarSkeleton'
+import timetableService from '../../../services/timetable/timetable.service'
+import type { CalendarEvent, EventType } from '../types/calendar.types'
+
+function pad(n: number): string {
+  return n.toString().padStart(2, '0')
+}
+
+function extractDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    }
+  } catch {}
+  return ''
+}
+
+function dateStr(year: number, month: number, day: number): string {
+  return `${year}-${pad(month)}-${pad(day)}`
+}
+
+function mapToCalendarEvents(apiData: Record<string, unknown>[]): CalendarEvent[] {
+  if (!Array.isArray(apiData)) return []
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  return apiData.map((item: Record<string, unknown>, index: number) => {
+    const startTime = String(item.startTime || '')
+    const date = String(item.date || extractDate(startTime) || dateStr(year, month, (index % 28) + 1))
+    const timeOnly = (iso: string) => {
+      try {
+        const d = new Date(iso)
+        if (!isNaN(d.getTime())) return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+      } catch {}
+      return iso.substring(11, 16) || iso
+    }
+    return {
+      id: String(item.id || `CE-${String(index + 1).padStart(3, '0')}`),
+      title: String(item.title || item.subject || ''),
+      subject: String(item.subject || ''),
+      faculty: String(item.faculty || item.facultyName || ''),
+      classroom: String(item.classroom || (item.building ? `${item.building} ${item.roomNumber}` : '') || item.roomNumber || ''),
+      building: String(item.building || ''),
+      startTime: timeOnly(startTime),
+      endTime: String(item.endTime ? timeOnly(String(item.endTime)) : ''),
+      date,
+      batch: String(item.batch || ''),
+      course: String(item.course || ''),
+      department: String(item.department || ''),
+      type: (item.type as EventType) || 'lecture',
+      description: String(item.description || ''),
+    }
+  })
+}
 
 export default function InteractiveCalendarPage() {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(t)
+    const fetchEvents = async () => {
+      try {
+        const response = await timetableService.getAll()
+        const rawData = response?.data ?? []
+        const data = (Array.isArray(rawData) ? rawData : (rawData?.data ?? [])) as Record<string, unknown>[]
+        setEvents(mapToCalendarEvents(data))
+      } catch {
+        setEvents([])
+        setToastMessage('Failed to load calendar events')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
   }, [])
 
   const {
@@ -28,7 +99,13 @@ export default function InteractiveCalendarPage() {
     navigate,
     headerLabel,
     handleDragStart,
-  } = useCalendar(allEvents)
+  } = useCalendar(events)
+
+  const departmentOptions = useMemo(() => [...new Set(events.map(e => e.department).filter(Boolean))], [events])
+  const facultyOptions = useMemo(() => [...new Set(events.map(e => e.faculty).filter(Boolean))], [events])
+  const courseOptions = useMemo(() => [...new Set(events.map(e => e.course).filter(Boolean))], [events])
+  const batchOptions = useMemo(() => [...new Set(events.map(e => e.batch).filter(Boolean))], [events])
+  const classroomOptions = useMemo(() => [...new Set(events.map(e => e.classroom).filter(Boolean))], [events])
 
   if (loading) return <CalendarSkeleton />
 
@@ -103,6 +180,11 @@ export default function InteractiveCalendarPage() {
             />
           )}
         </div>
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </motion.div>
   )
 }

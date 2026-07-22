@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdVisibility, MdCheckCircle, MdCancel, MdAccessTime, MdDescription } from 'react-icons/md'
 import type { CorrectionRequest, ApprovalStatus, AttendanceStatus } from '../types/attendanceCorrection.types'
+import { getInitials, safeUpperFirst, safeConfig } from '../../../utils/unwrap'
 
 interface CorrectionTableProps {
   requests: CorrectionRequest[]
@@ -19,6 +20,7 @@ const statusStyles: Record<AttendanceStatus, { color: string; bg: string }> = {
   present: { color: '#10b981', bg: '#d1fae5' },
   absent: { color: '#ef4444', bg: '#fee2e2' },
   late: { color: '#f59e0b', bg: '#fef3c7' },
+  half_day: { color: '#8b5cf6', bg: '#ede9fe' },
   leave: { color: '#3b82f6', bg: '#dbeafe' },
 }
 
@@ -56,9 +58,9 @@ export default function CorrectionTable({ requests, onView, onApprove, onReject 
           </thead>
           <tbody>
             {requests.map((req, index) => {
-              const as = approvalStyles[req.approvalStatus]
-              const cs = statusStyles[req.currentStatus]
-              const rs = statusStyles[req.requestedStatus]
+              const as = safeConfig(approvalStyles, req.approvalStatus, { color: '#6b7280', bg: '#f3f4f6', label: req.approvalStatus })
+              const cs = safeConfig(statusStyles, req.currentStatus, { color: '#6b7280', bg: '#f3f4f6' })
+              const rs = safeConfig(statusStyles, req.requestedStatus, { color: '#6b7280', bg: '#f3f4f6' })
               return (
                 <motion.tr
                   key={req.id}
@@ -73,7 +75,7 @@ export default function CorrectionTable({ requests, onView, onApprove, onReject 
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-[8px] font-bold text-primary flex-shrink-0">
-                        {req.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        {getInitials(req.studentName)}
                       </div>
                       <div>
                         <p className="text-xs text-gray-800 font-medium truncate max-w-[120px]">{req.studentName}</p>
@@ -89,12 +91,12 @@ export default function CorrectionTable({ requests, onView, onApprove, onReject 
                   </td>
                   <td className="py-3 px-3">
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap" style={{ backgroundColor: cs.bg, color: cs.color }}>
-                      {req.currentStatus.charAt(0).toUpperCase() + req.currentStatus.slice(1)}
+                      {safeUpperFirst(req.currentStatus)}
                     </span>
                   </td>
                   <td className="py-3 px-3">
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap" style={{ backgroundColor: rs.bg, color: rs.color }}>
-                      {req.requestedStatus.charAt(0).toUpperCase() + req.requestedStatus.slice(1)}
+                      {safeUpperFirst(req.requestedStatus)}
                     </span>
                   </td>
                   <td className="py-3 px-3">

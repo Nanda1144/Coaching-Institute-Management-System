@@ -8,17 +8,54 @@ import StudentPerformance from '../components/StudentPerformance'
 import AnalyticsBreakdown from '../components/AnalyticsBreakdown'
 import AnalyticsActions from '../components/AnalyticsActions'
 import AnalyticsSkeleton from '../components/AnalyticsSkeleton'
-import { initialFilters, dummyAnalyticsData } from '../data/attendanceAnalyticsData'
-import type { AnalyticsFilters as Filters } from '../types/attendanceAnalytics.types'
+import Toast from '../../../components/Toast'
+import attendanceService from '../../../services/attendance/attendance.service'
+import { initialFilters } from '../data/attendanceAnalyticsData'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
+import type { AnalyticsFilters as Filters, AnalyticsData } from '../types/attendanceAnalytics.types'
 
 export default function AttendanceAnalyticsPage() {
   const [filters, setFilters] = useState<Filters>(initialFilters)
   const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<AnalyticsData | null>(null)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  const fetchAnalytics = useCallback(async (f: Filters) => {
+    setLoading(true)
+    try {
+      const params: Record<string, unknown> = {}
+      if (f.department) params.department = f.department
+      if (f.faculty) params.faculty = f.faculty
+      if (f.semester) params.semester = f.semester
+      if (f.course) params.course = f.course
+      if (f.dateFrom) params.dateFrom = f.dateFrom
+      if (f.dateTo) params.dateTo = f.dateTo
+
+      const res = await attendanceService.getAttendanceStats({ ...params, type: 'analytics' })
+      const d = res?.data || res || {}
+      setData({
+        cards: d.cards || { overallPercentage: 0, averageAttendance: 0, highestAttendance: { value: 0, department: '' }, lowestAttendance: { value: 0, department: '' } },
+        trend: d.trend || [],
+        departmentData: d.departmentData || [],
+        monthlyData: d.monthlyData || [],
+        heatmap: d.heatmap || [],
+        topStudents: d.topStudents || [],
+        lowStudents: d.lowStudents || [],
+        facultyData: d.facultyData || [],
+        courseData: d.courseData || [],
+      })
+    } catch {
+      setToastMessage('Failed to load analytics data')
+      setShowToast(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchAnalytics(filters)
+  }, [filters])
 
   const handleFilterChange = useCallback((key: keyof Filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -28,19 +65,19 @@ export default function AttendanceAnalyticsPage() {
     setFilters(initialFilters)
   }, [])
 
-  if (loading) {
+  if (loading || !data) {
     return (
       <div className="space-y-6">
+        <AttendanceNavBar />
         <div className="h-8 w-60 bg-gray-100/60 rounded-xl animate-pulse" />
         <AnalyticsSkeleton />
       </div>
     )
   }
 
-  const data = dummyAnalyticsData
-
   return (
     <div className="space-y-6">
+      <AttendanceNavBar />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -85,6 +122,12 @@ export default function AttendanceAnalyticsPage() {
       />
 
       <AnalyticsActions />
+
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   )
 }

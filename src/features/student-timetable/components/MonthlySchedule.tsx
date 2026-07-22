@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ScheduleEntry } from '../types/studentTimetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface MonthlyScheduleProps {
   entries: ScheduleEntry[]
@@ -57,7 +58,7 @@ export default function MonthlySchedule({ entries }: MonthlyScheduleProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{entry.subject}</p>
-                    <p className="text-xs text-gray-500 truncate">{entry.faculty} &middot; {entry.classroom}</p>
+                    <p className="text-xs text-gray-500 truncate">{getFacultyName(entry.faculty) || 'Unknown'} &middot; {entry.classroom}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${

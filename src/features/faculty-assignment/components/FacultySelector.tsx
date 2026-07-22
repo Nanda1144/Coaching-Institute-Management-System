@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MdSearch, MdPerson, MdClose } from 'react-icons/md'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getInitials } from '../../../utils/unwrap'
 
 interface FacultyOption {
   id: string
@@ -101,7 +102,7 @@ export default function FacultySelector({
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
                           f.id === selectedId ? 'bg-primary/20 text-primary' : 'bg-gray-100 text-gray-500'
                         }`}>
-                          {f.name.charAt(0)}
+                          {getInitials(f.name)}
                         </div>
                         <div>
                           <p className="font-medium">{f.name}</p>

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdEmail, MdPhone, MdSchool, MdWork, MdCalendarToday } from 'react-icons/md'
 import type { FacultyProfile } from '../types/profile.types'
+import { getInitials } from '../../../utils/unwrap'
 
 interface ProfileCardProps {
   profile: FacultyProfile
@@ -20,7 +21,7 @@ export default function ProfileCard({ profile }: ProfileCardProps) {
             {profile.photo ? (
               <img src={profile.photo} alt={profile.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-3xl font-bold text-primary">{profile.name.charAt(0)}</span>
+              <span className="text-3xl font-bold text-primary">{getInitials(profile.name, '?')}</span>
             )}
           </div>
           <div className="flex-1 pt-2 space-y-1">

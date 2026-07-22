@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdSchedule, MdCheckCircle, MdCancel, MdRemoveRedEye } from 'react-icons/md'
 import type { ScheduleEntry } from '../types/studentTimetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface DailyScheduleProps {
   entries: ScheduleEntry[]
@@ -44,7 +45,7 @@ export default function DailySchedule({ entries }: DailyScheduleProps) {
                 <div>
                   <h4 className="font-semibold text-gray-800 text-sm">{entry.subject}</h4>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {entry.faculty} &middot; {entry.classroom}
+                    {getFacultyName(entry.faculty) || 'Unknown'} &middot; {entry.classroom}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

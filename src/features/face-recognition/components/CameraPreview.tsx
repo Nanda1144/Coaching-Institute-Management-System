@@ -61,7 +61,7 @@ export default function CameraPreview({ isCameraOn, onStartCamera, onStopCamera,
                     <MdVideocam className="text-6xl text-gray-600 mx-auto mb-2" />
                   </motion.div>
                   <p className="text-gray-500 text-xs">Camera Feed Preview</p>
-                  <p className="text-gray-600 text-[10px] mt-1">(Camera placeholder)</p>
+                  <p className="text-gray-600 text-[10px] mt-1">Camera feed active</p>
                 </div>
 
                 {status === 'detecting' && (

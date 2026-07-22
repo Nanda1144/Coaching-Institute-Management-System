@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdVisibility, MdEdit, MdArrowUpward, MdArrowDownward, MdCheckCircle, MdCancel, MdSchedule, MdEventBusy } from 'react-icons/md'
 import type { HistoryRecord, SortConfig, SortField } from '../types/attendanceHistory.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface AttendanceHistoryTableProps {
   records: HistoryRecord[]
@@ -79,7 +80,7 @@ export default function AttendanceHistoryTable({ records, sortConfig, onSort, on
           </div>
 
           {records.map((record, index) => {
-            const st = statusStyles[record.status]
+            const st = statusStyles[record.status] || { color: '#6b7280', bg: '#f3f4f6', icon: MdCheckCircle }
             const StatusIcon = st.icon
             return (
               <motion.div
@@ -92,7 +93,7 @@ export default function AttendanceHistoryTable({ records, sortConfig, onSort, on
                 <div className="flex-[1.2] text-xs text-gray-700 tabular-nums">{record.date}</div>
                 <div className="flex-[1.8] flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-[8px] font-bold text-primary flex-shrink-0">
-                    {record.studentName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    {(record.studentName || '?').split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
                   <span className="text-xs text-gray-800 font-medium truncate">{record.studentName}</span>
                 </div>
@@ -104,11 +105,11 @@ export default function AttendanceHistoryTable({ records, sortConfig, onSort, on
                     style={{ backgroundColor: st.bg, color: st.color }}
                   >
                     <StatusIcon className="text-xs" />
-                    {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                    {(record.status || '').charAt(0).toUpperCase() + (record.status || '').slice(1)}
                   </span>
                 </div>
                 <div className="flex-[1] text-xs text-gray-600 capitalize">{methodLabels[record.method] || record.method}</div>
-                <div className="flex-[1.5] text-xs text-gray-600 truncate">{record.faculty}</div>
+                <div className="flex-[1.5] text-xs text-gray-600 truncate">{getFacultyName(record.faculty) || (typeof record.faculty === 'string' ? record.faculty : 'Unknown')}</div>
                 <div className="flex-[1] text-xs text-gray-600 tabular-nums">{record.time}</div>
                 <div className="flex-[1.2] flex items-center gap-1.5">
                   <motion.button

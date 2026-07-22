@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MdChevronRight, MdHome, MdArrowBack } from 'react-icons/md'
+import Toast from '../../../components/Toast'
 import { useNavigate } from 'react-router-dom'
-import type { TransferRequest } from '../types/transfer.types'
-import {
-  facultyTransferList, branchOptions, departmentOptions, transferHistoryData,
-} from '../data/transferData'
+import type { TransferRequest, TransferRecord } from '../types/transfer.types'
+import type { Faculty } from '../../faculty/types/faculty.types'
+import facultyService from '../../../services/faculty/faculty.service'
+import facultyTransferService from '../../../services/faculty/faculty-transfer.service'
+import { normalizeFacultyList } from '../../../utils/normalizers'
 import TransferForm from '../components/TransferForm'
 import TransferHistory from '../components/TransferHistory'
 import ConfirmModal from '../components/ConfirmModal'
@@ -23,9 +25,45 @@ const emptyForm: TransferRequest = {
 
 export default function FacultyTransferPage() {
   const navigate = useNavigate()
+  const [facultyTransferList, setFacultyTransferList] = useState<{ id: string; name: string; branch: string; department: string }[]>([])
+  const [history, setHistory] = useState<TransferRecord[]>([])
   const [form, setForm] = useState<TransferRequest>(emptyForm)
-  const [history, setHistory] = useState(transferHistoryData)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const [facultyRes, transferRes] = await Promise.all([
+          facultyService.getAll(),
+          facultyTransferService.getAll(),
+        ])
+        const facultyList: Faculty[] = normalizeFacultyList(facultyRes)
+        setFacultyTransferList(
+          facultyList.map((f: Faculty) => ({
+            id: f.id,
+            name: f.name,
+            branch: f.branch,
+            department: f.department,
+          }))
+        )
+        const transferRaw = transferRes?.data ?? []
+        const transferList = Array.isArray(transferRaw) ? transferRaw : (transferRaw?.data ?? [])
+        setHistory(transferList)
+      } catch {
+        setFacultyTransferList([])
+        setHistory([])
+        setToastMessage('Failed to load transfer data')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const handleFacultyChange = (id: string) => {
     const f = facultyTransferList.find(f => f.id === id)
@@ -38,16 +76,24 @@ export default function FacultyTransferPage() {
     })
   }
 
-  const handleTransfer = () => {
-    const newRecord = {
-      id: `TRF-${String(history.length + 1).padStart(3, '0')}`,
-      facultyName: form.facultyName,
-      oldBranch: form.currentBranch,
-      newBranch: form.newBranch,
-      date: form.transferDate,
-      status: 'Pending' as const,
+  const handleTransfer = async () => {
+    try {
+      await facultyTransferService.create(form as unknown as Record<string, unknown>)
+      const newRecord: TransferRecord = {
+        id: `TRF-${String(history.length + 1).padStart(3, '0')}`,
+        facultyName: form.facultyName,
+        oldBranch: form.currentBranch,
+        newBranch: form.newBranch,
+        date: form.transferDate,
+        status: 'Pending',
+      }
+      setHistory(prev => [newRecord, ...prev])
+      setToastMessage('Transfer initiated successfully')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to initiate transfer')
+      setShowToast(true)
     }
-    setHistory(prev => [newRecord, ...prev])
     setForm(emptyForm)
     setShowConfirm(false)
   }
@@ -55,6 +101,17 @@ export default function FacultyTransferPage() {
   const canTransfer = !!(
     form.facultyId && form.newBranch && form.newDepartment && form.transferDate && form.reason
   )
+
+  const branchOptions = useMemo(() => [...new Set(facultyTransferList.map(f => f.branch).filter(Boolean))], [facultyTransferList])
+  const departmentOptions = useMemo(() => [...new Set(facultyTransferList.map(f => f.department).filter(Boolean))], [facultyTransferList])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      </div>
+    )
+  }
 
   return (
     <motion.div
@@ -122,6 +179,11 @@ export default function FacultyTransferPage() {
         onConfirm={handleTransfer}
         form={form}
         facultyName={form.facultyName}
+      />
+      <Toast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
       />
     </motion.div>
   )

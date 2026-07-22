@@ -1,6 +1,6 @@
 # EduManage — Faculty Management ERP
 
-A modern, responsive **Faculty Management System** built as a Single Page Application (SPA) with dummy JSON data. Designed for college administrators to manage faculty records, assignments, transfers, and profiles with an intuitive dashboard interface.
+A full-stack **Faculty Management System** built with React + Express + PostgreSQL. Designed for college administrators to manage faculty records, attendance, timetables, assignments, transfers, and profiles with an intuitive dashboard interface.
 
 ---
 
@@ -8,9 +8,7 @@ A modern, responsive **Faculty Management System** built as a Single Page Applic
 
 | Layer            | Technology                                     |
 | ---------------- | ---------------------------------------------- |
-| **Framework**    | React 19                                       |
-| **Language**     | TypeScript 6 (strict mode)                     |
-| **Build Tool**   | Vite 8                                         |
+| **Frontend**     | React 19, TypeScript, Vite 8                   |
 | **Styling**      | Tailwind CSS v4 (via `@tailwindcss/vite`)      |
 | **Routing**      | React Router v7                                |
 | **Animations**   | Framer Motion v12                              |
@@ -18,35 +16,38 @@ A modern, responsive **Faculty Management System** built as a Single Page Applic
 | **Charts**       | Recharts                                       |
 | **Forms**        | React Hook Form v7                             |
 | **Export**       | SheetJS (xlsx) — CSV & XLSX export             |
-| **State Mgmt**   | Component-local state (`useState` / `useMemo`) |
-| **Data Source**  | Dummy JSON (no backend / no API)               |
+| **State Mgmt**   | React Query + Component-local state            |
+| **Backend**      | Express.js, Prisma ORM, PostgreSQL             |
+| **Auth**         | JWT (access + refresh tokens)                  |
 
 ---
 
 ## Features
 
-### 7 Route Modules
+### Feature Modules
 
-| Route                 | Page              | Description                                      |
-| --------------------- | ----------------- | ------------------------------------------------ |
-| `/`                   | Dashboard         | Statistics, charts, recent activities, schedule  |
-| `/faculty`            | Faculty List      | Sortable table, filters, pagination, CRUD        |
-| `/faculty/add`        | Add Faculty       | Form to add a new faculty member                 |
-| `/faculty/edit/:id`   | Edit Faculty      | Edit existing faculty details                    |
-| `/faculty/profile/:id`| Faculty Profile   | Full profile with courses, timetable, documents  |
-| `/faculty/assign`     | Assign Course     | Assign courses to faculty members                |
-| `/faculty/transfer`   | Transfer Faculty  | Transfer faculty between branches                |
-| `/faculty/search`     | Search Faculty    | Advanced search across all faculty records       |
-
-### Implemented Tasks
-
-1. **Export CSV / XLSX** — Export button with dropdown for CSV or XLSX download of current faculty list.
-2. **Delete Faculty with Reason** — Delete button opens a confirmation modal requiring a deletion reason before proceeding.
-3. **Assign Course** — Assign Course button navigates to the assignment page with the faculty ID pre-selected.
-4. **Profile Card Fix** — Content text darkened for readability; gradient overlay z-index corrected.
-5. **Sidebar Animation** — Smooth spring-based slide-in/out animation when toggling the sidebar.
-6. **Profile Actions** — Edit and Assign Course buttons on the profile page are now fully wired to navigation.
-7. **Dropdown Z-Index** — Faculty selector dropdown z-index raised to prevent overlap issues.
+| Module                    | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| **Dashboard**             | Statistics, charts, recent activities, schedule  |
+| **Faculty**               | Faculty list with sortable table, filters, CRUD  |
+| **Add/Edit Faculty**      | Multi-section form for faculty registration      |
+| **Faculty Profile**       | Full profile with courses, timetable, documents  |
+| **Faculty Assignment**    | Assign courses to faculty members                |
+| **Faculty Transfer**      | Transfer faculty between branches                |
+| **Faculty Search**        | Advanced search across all faculty records       |
+| **Attendance**            | Record and manage attendance                     |
+| **Attendance Analytics**  | Charts and insights on attendance data           |
+| **Attendance Correction** | Request and approve attendance corrections       |
+| **Attendance History**    | View historical attendance records               |
+| **Attendance Reports**    | Generate attendance reports                      |
+| **Timetable**             | View and manage timetables                       |
+| **Create Timetable**      | Create new timetable entries                     |
+| **Face Recognition**      | Face-based attendance marking                    |
+| **Fingerprint Attendance**| Fingerprint-based attendance marking             |
+| **QR Attendance**         | QR code-based attendance marking                 |
+| **Manual Attendance**     | Manual attendance entry                          |
+| **Holiday Management**    | Manage holidays and special events               |
+| **Interactive Calendar**  | Calendar view of schedules and events            |
 
 ---
 
@@ -54,6 +55,7 @@ A modern, responsive **Faculty Management System** built as a Single Page Applic
 
 - **Node.js** v18 or later
 - **npm** v9 or later (ships with Node.js)
+- **PostgreSQL** 14 or later (for backend)
 
 ---
 
@@ -81,7 +83,7 @@ npm run dev
 
 The Vite dev server starts at **http://localhost:5173** with hot module replacement (HMR). Open this URL in your browser.
 
-### 4. Available Scripts
+### 4. Available Scripts (Frontend)
 
 | Command             | Description                                        |
 | ------------------- | -------------------------------------------------- |
@@ -89,7 +91,30 @@ The Vite dev server starts at **http://localhost:5173** with hot module replacem
 | `npm run build`     | Type-check with `tsc` then build for production    |
 | `npm run preview`   | Preview the production build locally               |
 
-### 5. Production Build
+### 5. Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+Set up your PostgreSQL database, then configure `backend/.env` (see `.env.example`).
+
+Run migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+Start the backend:
+
+```bash
+npm run dev
+```
+
+The API server starts at **http://localhost:5000/api**.
+
+### 6. Production Build (Frontend)
 
 ```bash
 npm run build
@@ -103,22 +128,15 @@ npm run preview
 
 ---
 
-## Backend
-
-**This is a pure frontend application.** There is no backend server, database, or API integration. All data is provided as dummy JSON files located in each feature module's `data/` directory. No backend setup is required.
-
-If you need backend integration in the future, the modular structure allows easy replacement of data files with API calls.
-
----
-
 ## Project Structure
 
 ```
 faculty-dashboard/
 ├── index.html                 # Entry HTML
-├── package.json               # Dependencies & scripts
-├── tsconfig.json              # TypeScript configuration
+├── package.json               # Frontend dependencies & scripts
+├── tsconfig.json              # Frontend TypeScript config
 ├── vite.config.ts             # Vite configuration
+├── .env                       # Frontend environment variables
 ├── public/                    # Static assets (favicon, icons)
 ├── src/
 │   ├── main.tsx               # React entry point
@@ -129,18 +147,29 @@ faculty-dashboard/
 │   │   ├── Navbar.tsx         # Top navigation bar
 │   │   ├── Toast.tsx          # Toast notification
 │   │   └── ...                # Other shared components
-│   ├── data/
-│   │   └── dashboardData.ts   # Dashboard mock data
+│   ├── hooks/                 # Custom React hooks
 │   ├── pages/
 │   │   └── Dashboard.tsx      # Dashboard page
+│   ├── services/              # API service layer
 │   └── features/              # Feature modules
 │       ├── faculty/           # Faculty list (CRUD)
 │       ├── add-faculty/       # Add / Edit faculty
 │       ├── faculty-profile/   # Faculty profile view
-│       ├── faculty-assignment/# Course assignment
-│       ├── faculty-transfer/  # Faculty transfer
-│       └── faculty-search/    # Faculty search
-└── dist/                      # Production build output
+│       ├── attendance/        # Attendance management
+│       ├── timetable/         # Timetable management
+│       └── ...                # Other feature modules
+├── backend/
+│   ├── package.json           # Backend dependencies
+│   ├── tsconfig.json          # Backend TypeScript config
+│   ├── prisma/
+│   │   └── schema.prisma      # Database schema
+│   └── src/
+│       ├── server.ts          # Entry point
+│       ├── app.ts             # Express app setup
+│       ├── config/            # Configuration
+│       ├── modules/           # Route modules
+│       └── shared/            # Shared middleware & utils
+└── dist/                      # Frontend build output
 ```
 
 Each feature module follows a consistent structure:
@@ -148,7 +177,7 @@ Each feature module follows a consistent structure:
 ```
 faculty/
 ├── components/    # UI components
-├── data/          # Mock data files
+├── data/          # Form options / UI config constants
 ├── hooks/         # Custom React hooks
 ├── pages/         # Page-level components
 └── types/         # TypeScript interfaces
@@ -164,6 +193,8 @@ faculty/
 | Port 5173 in use               | Vite auto-picks next available port           |
 | TypeScript errors during build | Run `npm run build` to see detailed errors    |
 | Blank page after build         | Ensure `index.html` is present in `dist/`     |
+| Backend won't start            | Check PostgreSQL is running and `.env` is set |
+| Prisma migration fails         | Verify database credentials in `backend/.env` |
 
 ---
 

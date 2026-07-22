@@ -4,9 +4,9 @@ import { MdHowToVote, MdAssessment, MdAnalytics, MdHistory } from 'react-icons/m
 
 const actions = [
   { label: 'Mark Attendance', icon: MdHowToVote, color: '#3b82f6', bg: '#dbeafe', route: '/attendance/manual' },
-  { label: 'View Reports', icon: MdAssessment, color: '#10b981', bg: '#d1fae5', route: null },
-  { label: 'Analytics', icon: MdAnalytics, color: '#8b5cf6', bg: '#ede9fe', route: null },
-  { label: 'History', icon: MdHistory, color: '#f59e0b', bg: '#fef3c7', route: null },
+  { label: 'View Reports', icon: MdAssessment, color: '#10b981', bg: '#d1fae5', route: '/attendance/reports' },
+  { label: 'Analytics', icon: MdAnalytics, color: '#8b5cf6', bg: '#ede9fe', route: '/attendance/analytics' },
+  { label: 'History', icon: MdHistory, color: '#f59e0b', bg: '#fef3c7', route: '/attendance/history' },
 ]
 
 export default function AttendanceQuickActions() {

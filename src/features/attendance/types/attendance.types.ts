@@ -1,8 +1,11 @@
+export type AttendanceStatusType = 'present' | 'absent' | 'late' | 'half_day' | 'leave'
+
 export interface AttendanceStats {
   totalStudents: number
   presentToday: number
   absentToday: number
   lateArrivals: number
+  halfDay: number
   leaveRequests: number
   attendancePercentage: number
 }
@@ -23,6 +26,7 @@ export interface DailyAttendance {
   present: number
   absent: number
   late: number
+  halfDay: number
   leave: number
 }
 

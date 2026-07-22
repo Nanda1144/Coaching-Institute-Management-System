@@ -14,6 +14,7 @@ import {
   classroomOptions, buildingOptions, floorOptions, dayOptions,
   statusOptions, recurringOptions,
 } from '../data/timetableFormData'
+import timetableService from '../../../services/timetable/timetable.service'
 import type { CreateTimetableFormData } from '../types/timetableForm.types'
 
 type FormValues = { [key: string]: string }
@@ -85,16 +86,25 @@ export default function CreateTimetablePage() {
     setShowConfirm(true)
   }
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     setShowConfirm(false)
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const payload: Record<string, unknown> = {}
+      for (const key of Object.keys(form)) {
+        payload[key] = form[key]
+      }
+      await timetableService.create(payload)
       setToastMessage('Timetable created successfully!')
       setShowToast(true)
       setForm({ ...initialForm })
       setErrors({})
-    }, 1000)
+    } catch {
+      setToastMessage('Failed to create timetable entry')
+      setShowToast(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {

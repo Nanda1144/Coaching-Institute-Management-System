@@ -1,0 +1,42 @@
+npm warn Unknown env config "tmp". This will error in a future major version of npm. See `npm help npmrc` for supported config options.
+npm notice run college-erp-backend@1.0.0 npx
+npm notice run ts-node-dev --respawn --transpile-only src/server.ts
+(node:4892) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Database connection attempt 1/10 failed: self-signed certificate in certificate chain. Retrying in 2000ms...
+Database connection attempt 2/10 failed: self-signed certificate in certificate chain. Retrying in 4000ms...
+Database connection attempt 3/10 failed: self-signed certificate in certificate chain. Retrying in 8000ms...
+Database connection attempt 4/10 failed: self-signed certificate in certificate chain. Retrying in 16000ms...
+Database connection attempt 5/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+Database connection attempt 6/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+Database connection attempt 7/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+Database connection attempt 8/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+Database connection attempt 9/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+Database connection attempt 10/10 failed: self-signed certificate in certificate chain. Retrying in 30000ms...
+All 10 database connection attempts failed. Last error: self-signed certificate in certificate chain
+Initial database connection failed (server still running): self-signed certificate in certificate chain
+Health check system will retry connection automatically.
+Unhandled error: Error: self-signed certificate in certificate chain
+    at C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\node_modules\pg-pool\index.js:45:11
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at Object.findUnique (C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\shared\utils\db.ts:123:18)
+    at Object.login (C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\modules\auth\auth.service.ts:43:19)
+    at C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\modules\auth\auth.controller.ts:12:47 {
+  code: 'SELF_SIGNED_CERT_IN_CHAIN'
+}
+Unhandled error: Error: self-signed certificate in certificate chain
+    at C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\node_modules\pg-pool\index.js:45:11
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at Object.findUnique (C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\shared\utils\db.ts:123:18)
+    at Object.login (C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\modules\auth\auth.service.ts:43:19)
+    at C:\nanda\ramp msme\coaching-instiution-management-system\Mytasks\faculty-dashboard\backend\src\modules\auth\auth.controller.ts:12:47 {
+  code: 'SELF_SIGNED_CERT_IN_CHAIN'
+}
+Uncaught Exception caught (server continues): listen EADDRINUSE: address already in use :::5001

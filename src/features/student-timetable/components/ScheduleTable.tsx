@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ScheduleEntry } from '../types/studentTimetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface ScheduleTableProps {
   entries: ScheduleEntry[]
@@ -61,7 +62,7 @@ export default function ScheduleTable({ entries, view }: ScheduleTableProps) {
                 )}
                 <td className="px-4 py-3.5 text-gray-700 whitespace-nowrap">{entry.time}</td>
                 <td className="px-4 py-3.5 text-gray-800 font-medium">{entry.subject}</td>
-                <td className="px-4 py-3.5 text-gray-600">{entry.faculty}</td>
+                <td className="px-4 py-3.5 text-gray-600">{getFacultyName(entry.faculty) || 'Unknown'}</td>
                 <td className="px-4 py-3.5 text-gray-600">{entry.classroom}</td>
                 <td className="px-4 py-3.5 text-center">
                   <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${statusStyles[entry.status] || 'bg-gray-100 text-gray-600'}`}>

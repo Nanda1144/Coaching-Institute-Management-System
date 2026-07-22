@@ -56,7 +56,7 @@ function HeatmapGrid({ data }: { data: HeatmapDay[] }) {
         {data.map((row) => (
           <div key={row.day} className="flex items-center mb-1.5">
             <div className="w-20 flex-shrink-0 text-[10px] text-gray-600 font-medium">{row.day}</div>
-            {row.slots.map((slot) => (
+            {(row.slots || []).map((slot) => (
               <motion.div
                 key={slot.label}
                 initial={{ opacity: 0, scale: 0.8 }}

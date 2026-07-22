@@ -1,23 +1,19 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MdPersonAdd, MdAssignment, MdSchool, MdAssessment } from 'react-icons/md'
+import { MdSchool, MdAssessment, MdWarning, MdCalendarMonth } from 'react-icons/md'
 
 const actions = [
-  { label: 'Add Faculty', icon: MdPersonAdd, color: '#3b82f6', bg: '#dbeafe', route: '/faculty/add' },
-  { label: 'Assign Faculty', icon: MdAssignment, color: '#10b981', bg: '#d1fae5', route: '/faculty/assign' },
-  { label: 'View Departments', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/departments' },
-  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: null },
+  { label: 'Timetable', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/dashboard/faculty/timetable' },
+  { label: 'Conflicts Alert', icon: MdWarning, color: '#ef4444', bg: '#fee2e2', route: '/dashboard/timetable/calendar' },
+  { label: 'Calendar View', icon: MdCalendarMonth, color: '#3b82f6', bg: '#dbeafe', route: '/dashboard/timetable/calendar' },
+  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: '/dashboard/attendance/reports' },
 ]
 
 export default function QuickActions() {
   const navigate = useNavigate()
 
-  const handleClick = (route: string | null) => {
-    if (route) {
-      navigate(route)
-    } else {
-      alert('Report generation feature coming soon.')
-    }
+  const handleClick = (route: string) => {
+    navigate(route)
   }
 
   return (

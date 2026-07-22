@@ -12,7 +12,7 @@ export default function FacultyQuickActions({
 }: FacultyQuickActionsProps) {
   const actions = [
     { label: 'Print Timetable', icon: MdPrint, onClick: onPrint, variant: 'secondary' as const },
-    { label: 'Download PDF', icon: MdDownload, onClick: onDownloadPdf, variant: 'secondary' as const },
+    { label: 'Download as Image', icon: MdDownload, onClick: onDownloadPdf, variant: 'secondary' as const },
     { label: 'Request Change', icon: MdSwapHoriz, onClick: onRequestChange, variant: 'secondary' as const },
     { label: 'View Calendar', icon: MdCalendarMonth, onClick: onViewCalendar, variant: 'primary' as const },
   ]

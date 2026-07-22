@@ -39,7 +39,7 @@ export default function RecentTimetableActivities({ activities, error }: RecentT
       ) : (
         <div className="space-y-3">
           {activities.map((activity, index) => {
-            const config = activityConfig[activity.type]
+            const config = activityConfig[activity.type] || { icon: MdSchedule, color: '#6b7280', bg: '#f3f4f6' }
             const Icon = config.icon
             return (
               <motion.div

@@ -17,7 +17,7 @@ const scanStatusConfig: Record<QRStatus, { label: string; icon: typeof MdCheckCi
 }
 
 export default function QRScanner({ isScannerOn, scanStatus, onStart, onStop }: QRScannerProps) {
-  const config = scanStatusConfig[scanStatus]
+  const config = scanStatusConfig[scanStatus] || { label: 'Unknown', icon: MdCheckCircle, color: '#6b7280', bg: '#f3f4f6' }
   const Icon = config.icon
 
   return (
@@ -61,7 +61,7 @@ export default function QRScanner({ isScannerOn, scanStatus, onStart, onStop }: 
                     <MdCamera className="text-6xl text-gray-600 mx-auto mb-2" />
                   </motion.div>
                   <p className="text-gray-500 text-xs">Camera Feed Preview</p>
-                  <p className="text-gray-600 text-[10px] mt-1">(Camera placeholder)</p>
+                  <p className="text-gray-600 text-[10px] mt-1">Scanner active</p>
                 </div>
 
                 <div className="absolute inset-0 flex items-center justify-center">

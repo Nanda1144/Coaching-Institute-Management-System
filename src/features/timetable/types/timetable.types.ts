@@ -1,6 +1,7 @@
 export interface TimetableEntry {
   id: string
   time: string
+  day: string
   course: string
   subject: string
   faculty: string
@@ -97,6 +98,7 @@ export interface Conflict {
 export interface EditableEntry {
   id: string
   time: string
+  day: string
   course: string
   subject: string
   faculty: string

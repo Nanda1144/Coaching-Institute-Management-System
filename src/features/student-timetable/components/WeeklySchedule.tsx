@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ScheduleEntry } from '../types/studentTimetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface WeeklyScheduleProps {
   entries: ScheduleEntry[]
@@ -50,7 +51,7 @@ export default function WeeklySchedule({ entries }: WeeklyScheduleProps) {
                       {entry ? (
                         <div className={`rounded-lg border p-2 ${statusColors[entry.status] || 'border-gray-100 bg-gray-50/30'}`}>
                           <p className="font-semibold text-gray-800 text-[11px] leading-tight">{entry.subject}</p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">{entry.faculty.split(' ').pop()}</p>
+                          <p className="text-[10px] text-gray-500 mt-0.5">{typeof entry.faculty === 'string' ? entry.faculty.split(' ').pop() : getFacultyName(entry.faculty)}</p>
                           <p className="text-[10px] text-gray-400">{entry.classroom}</p>
                           <span className={`inline-block mt-1 text-[9px] px-1.5 py-0.5 rounded font-medium ${
                             entry.status === 'Scheduled' ? 'bg-blue-100 text-blue-700' :

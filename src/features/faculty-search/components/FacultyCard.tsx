@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { MdSchool, MdBook, MdTimeline, MdVisibility, MdEdit, MdAssignment } from 'react-icons/md'
 import type { FacultySearchResult } from '../types/search.types'
+import { getInitials } from '../../../utils/unwrap'
 
 interface FacultyCardProps {
   faculty: FacultySearchResult
@@ -29,7 +30,7 @@ export default function FacultyCard({ faculty, index, onView, onEdit, onAssign }
           {faculty.photo ? (
             <img src={faculty.photo} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xl font-bold text-primary">{faculty.name.charAt(0)}</span>
+            <span className="text-xl font-bold text-primary">{getInitials(faculty.name, '?')}</span>
           )}
         </div>
       </div>

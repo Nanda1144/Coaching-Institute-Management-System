@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MdHowToVote, MdArrowBack, MdHome, MdChevronRight } from 'react-icons/md'
@@ -6,10 +6,10 @@ import AcademicDetailsSection from '../components/AcademicDetailsSection'
 import ClassDetailsSection from '../components/ClassDetailsSection'
 import StudentAttendanceTable from '../components/StudentAttendanceTable'
 import Toast from '../../../components/Toast'
-import {
-  departmentOptions, courseOptions, semesterOptions, batchOptions,
-  sectionOptions, subjectOptions, facultyOptions, initialStudents,
-} from '../data/manualAttendanceData'
+import attendanceService from '../../../services/attendance/attendance.service'
+import facultyService from '../../../services/faculty/faculty.service'
+import { normalizeFacultyList } from '../../../utils/normalizers'
+import AttendanceNavBar from '../../../components/AttendanceNavBar'
 import type { StudentAttendance, ManualAttendanceForm, Errors } from '../types/manualAttendance.types'
 
 const initialForm: ManualAttendanceForm = {
@@ -31,11 +31,99 @@ const fieldLabels: Record<string, string> = {
 export default function ManualAttendancePage() {
   const navigate = useNavigate()
   const [form, setForm] = useState<ManualAttendanceForm>({ ...initialForm })
-  const [students, setStudents] = useState<StudentAttendance[]>([...initialStudents])
+  const [students, setStudents] = useState<StudentAttendance[]>([])
   const [errors, setErrors] = useState<Errors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [formOptions, setFormOptions] = useState<{
+    departments: { value: string; label: string }[]
+    courses: { value: string; label: string }[]
+    semesters: { value: string; label: string }[]
+    batches: { value: string; label: string }[]
+    sections: { value: string; label: string }[]
+    subjects: { value: string; label: string }[]
+    faculties: { value: string; label: string }[]
+  }>({
+    departments: [],
+    courses: [],
+    semesters: [],
+    batches: [],
+    sections: [],
+    subjects: [],
+    faculties: [],
+  })
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setLoading(true)
+        let facultyListData: any[] = []
+        try {
+          const facRes = await facultyService.getAll()
+          facultyListData = normalizeFacultyList(facRes)
+        } catch (err) {
+          console.warn('Failed to load faculty list:', err)
+        }
+        setFormOptions({
+          departments: [
+            { value: '', label: 'Select Department...' },
+            { value: 'Computer Science', label: 'Computer Science' },
+            { value: 'Electronics', label: 'Electronics' },
+            { value: 'Mechanical', label: 'Mechanical' },
+            { value: 'Civil', label: 'Civil' },
+            { value: 'Electrical', label: 'Electrical' },
+          ],
+          courses: [
+            { value: '', label: 'Select Course...' },
+            { value: 'B.Tech CSE', label: 'B.Tech CSE' },
+            { value: 'B.Tech ECE', label: 'B.Tech ECE' },
+            { value: 'B.Sc Math', label: 'B.Sc Math' },
+            { value: 'M.Sc Math', label: 'M.Sc Math' },
+          ],
+          semesters: [
+            { value: '', label: 'Select Semester...' },
+            { value: '1', label: 'Semester 1' },
+            { value: '2', label: 'Semester 2' },
+            { value: '3', label: 'Semester 3' },
+            { value: '4', label: 'Semester 4' },
+            { value: '5', label: 'Semester 5' },
+            { value: '6', label: 'Semester 6' },
+          ],
+          batches: [
+            { value: '', label: 'Select Batch...' },
+            { value: '2024-25', label: '2024-25' },
+            { value: '2023-24', label: '2023-24' },
+            { value: '2022-23', label: '2022-23' },
+          ],
+          sections: [
+            { value: '', label: 'Select Section...' },
+            { value: 'A', label: 'Section A' },
+            { value: 'B', label: 'Section B' },
+            { value: 'C', label: 'Section C' },
+          ],
+          subjects: [
+            { value: '', label: 'Select Subject...' },
+            { value: 'Mathematics', label: 'Mathematics' },
+            { value: 'Physics', label: 'Physics' },
+            { value: 'Chemistry', label: 'Chemistry' },
+            { value: 'Computer Science', label: 'Computer Science' },
+          ],
+          faculties: [
+            { value: '', label: 'Select Faculty...' },
+            ...facultyListData.map((f: any) => ({ value: f.id || '', label: f.name || 'Unknown' })),
+          ],
+        })
+      } catch {
+        setToastMessage('Failed to load form options')
+        setShowToast(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOptions()
+  }, [])
 
   const handleFormChange = useCallback((field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -79,29 +167,67 @@ export default function ManualAttendancePage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
     setIsSubmitting(true)
-    setTimeout(() => {
-      setIsSubmitting(false)
-      const marked = students.filter((s) => s.status !== null).length
-      setToastMessage(`Attendance saved successfully! ${marked} students marked.`)
+    try {
+      const markedStudents = students.filter((s) => s.status !== null)
+      let successCount = 0
+      let failCount = 0
+      for (const student of markedStudents) {
+        try {
+          await attendanceService.create({
+            studentId: student.id,
+            subjectId: form.subject,
+            batchId: form.batch,
+            classroomId: form.section || '',
+            attendanceDate: form.date,
+            startTime: form.time,
+            endTime: form.time,
+            attendanceMethod: 'manual',
+            attendanceStatus: student.status,
+            remarks: student.remarks || '',
+          })
+          successCount++
+        } catch (err) {
+          failCount++
+          console.error('Failed to save attendance for student', student.id, err)
+        }
+      }
+      const msg = failCount > 0
+        ? `Attendance saved (${successCount} success, ${failCount} failed)`
+        : `Attendance saved successfully! ${successCount} students marked.`
+      setToastMessage(msg)
       setShowToast(true)
       setForm({ ...initialForm, date: new Date().toISOString().split('T')[0] })
-      setStudents(initialStudents.map((s) => ({ ...s, status: null, remarks: '' })))
+      setStudents([])
       setErrors({})
-    }, 1000)
+    } catch {
+      setToastMessage('Failed to save attendance. Please try again.')
+      setShowToast(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleReset = () => {
     setForm({ ...initialForm, date: new Date().toISOString().split('T')[0] })
-    setStudents(initialStudents.map((s) => ({ ...s, status: null, remarks: '' })))
+    setStudents([])
     setErrors({})
   }
 
   const handleCancel = () => {
     navigate('/attendance')
+  }
+
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+        <div className="h-8 w-64 bg-gray-100/60 rounded-xl animate-pulse" />
+        <div className="h-96 bg-gray-100/40 rounded-2xl animate-pulse" />
+      </motion.div>
+    )
   }
 
   return (
@@ -110,6 +236,7 @@ export default function ManualAttendancePage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
+      <AttendanceNavBar />
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -142,19 +269,19 @@ export default function ManualAttendancePage() {
           values={form}
           onChange={handleFormChange}
           errors={errors}
-          departmentOptions={departmentOptions}
-          courseOptions={courseOptions}
-          semesterOptions={semesterOptions}
-          batchOptions={batchOptions}
-          sectionOptions={sectionOptions}
+          departmentOptions={formOptions.departments}
+          courseOptions={formOptions.courses}
+          semesterOptions={formOptions.semesters}
+          batchOptions={formOptions.batches}
+          sectionOptions={formOptions.sections}
         />
 
         <ClassDetailsSection
           values={form}
           onChange={handleFormChange}
           errors={errors}
-          subjectOptions={subjectOptions}
-          facultyOptions={facultyOptions}
+          subjectOptions={formOptions.subjects}
+          facultyOptions={formOptions.faculties}
         />
 
         <StudentAttendanceTable

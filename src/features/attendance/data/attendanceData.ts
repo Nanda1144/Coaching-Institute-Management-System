@@ -13,6 +13,7 @@ export const attendanceStats: AttendanceStats = {
   presentToday: 1086,
   absentToday: 98,
   lateArrivals: 42,
+  halfDay: 6,
   leaveRequests: 24,
   attendancePercentage: 86.88,
 }
@@ -41,12 +42,12 @@ export const recentAttendance: AttendanceRecord[] = [
 ]
 
 export const dailyAttendance: DailyAttendance[] = [
-  { date: 'Mon', present: 142, absent: 18, late: 8, leave: 4 },
-  { date: 'Tue', present: 148, absent: 12, late: 6, leave: 6 },
-  { date: 'Wed', present: 135, absent: 22, late: 10, leave: 5 },
-  { date: 'Thu', present: 150, absent: 10, late: 5, leave: 7 },
-  { date: 'Fri', present: 138, absent: 20, late: 7, leave: 7 },
-  { date: 'Sat', present: 108, absent: 42, late: 12, leave: 10 },
+  { date: 'Mon', present: 142, absent: 18, late: 8, halfDay: 3, leave: 4 },
+  { date: 'Tue', present: 148, absent: 12, late: 6, halfDay: 2, leave: 6 },
+  { date: 'Wed', present: 135, absent: 22, late: 10, halfDay: 4, leave: 5 },
+  { date: 'Thu', present: 150, absent: 10, late: 5, halfDay: 1, leave: 7 },
+  { date: 'Fri', present: 138, absent: 20, late: 7, halfDay: 3, leave: 7 },
+  { date: 'Sat', present: 108, absent: 42, late: 12, halfDay: 5, leave: 10 },
 ]
 
 export const weeklyTrend: WeeklyTrend[] = [

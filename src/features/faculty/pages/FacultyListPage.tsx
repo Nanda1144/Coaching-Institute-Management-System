@@ -1,9 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { MdClose, MdWarning } from 'react-icons/md'
-import { facultyList as initialFacultyList, departmentOptions, branchOptions, statusOptions, experienceRanges } from '../data/facultyData'
+import type { Faculty } from '../types/faculty.types'
+import facultyService from '../../../services/faculty/faculty.service'
+import { normalizeFacultyList } from '../../../utils/normalizers'
+const statusOptions = ['Active', 'Inactive', 'On Leave'] as const
+const experienceRanges = [
+  { label: 'All', value: '' },
+  { label: '0-5 Years', value: '0-5' },
+  { label: '6-10 Years', value: '6-10' },
+  { label: '11-15 Years', value: '11-15' },
+  { label: '15+ Years', value: '15+' },
+]
 import { useFacultyFilters } from '../hooks/useFacultyFilters'
 import { useFacultySort } from '../hooks/useFacultySort'
 import { useFacultyPagination } from '../hooks/useFacultyPagination'
@@ -15,11 +25,32 @@ import Toast from '../../../components/Toast'
 
 export default function FacultyListPage() {
   const navigate = useNavigate()
-  const [facultyList, setFacultyList] = useState(initialFacultyList)
+  const [facultyList, setFacultyList] = useState<Faculty[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
   const [toastMessage, setToastMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await facultyService.getAll()
+        setFacultyList(normalizeFacultyList(result))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load faculty')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const departmentOptions = useMemo(() => [...new Set(facultyList.map(f => f.department).filter(Boolean))], [facultyList])
+  const branchOptions = useMemo(() => [...new Set(facultyList.map(f => f.branch).filter(Boolean))], [facultyList])
 
   const { filters, setFilter, resetFilters, filteredFaculty } = useFacultyFilters(facultyList)
   const { sortConfig, requestSort, sortedFaculty } = useFacultySort(filteredFaculty)
@@ -51,13 +82,34 @@ export default function FacultyListPage() {
     showToastMsg('XLSX exported successfully')
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (deleteTarget && deleteReason.trim()) {
-      setFacultyList(prev => prev.filter(f => f.id !== deleteTarget))
-      showToastMsg(`Faculty member ${deleteTarget} deleted. Reason: ${deleteReason}`)
+      try {
+        await facultyService.delete(deleteTarget)
+        setFacultyList(prev => prev.filter(f => f.id !== deleteTarget))
+        showToastMsg(`Faculty member ${deleteTarget} deleted. Reason: ${deleteReason}`)
+      } catch (err) {
+        showToastMsg(err instanceof Error ? err.message : 'Failed to delete faculty')
+      }
       setDeleteTarget(null)
       setDeleteReason('')
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
   }
 
   return (
@@ -66,7 +118,7 @@ export default function FacultyListPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <FacultyHeader onAdd={() => navigate('/faculty/add')} onExportCSV={handleExportCSV} onExportXLSX={handleExportXLSX} />
+      <FacultyHeader onAdd={() => navigate('/dashboard/faculty/add')} onExportCSV={handleExportCSV} onExportXLSX={handleExportXLSX} />
 
       <FacultyFilters
         filters={filters}
@@ -78,29 +130,57 @@ export default function FacultyListPage() {
         experienceRanges={experienceRanges}
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md overflow-hidden"
-      >
-        <FacultyTable
-          faculty={paginatedItems}
-          sortConfig={sortConfig}
-          requestSort={requestSort}
-          onView={(id) => navigate(`/faculty/profile/${id}`)}
-          onEdit={(id) => navigate(`/faculty/edit/${id}`)}
-          onDelete={(id) => setDeleteTarget(id)}
-          onAssignCourse={(id) => navigate(`/faculty/assign?id=${id}`)}
-        />
-        <FacultyPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={sortedFaculty.length}
-          pageSize={pageSize}
-          goToPage={goToPage}
-        />
-      </motion.div>
+      {sortedFaculty.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md p-12 text-center"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">No Faculty Found</h3>
+          <p className="text-sm text-gray-500 mb-4 max-w-sm mx-auto">
+            {facultyList.length === 0
+              ? 'No faculty members have been added yet. Add your first faculty member to get started.'
+              : 'No faculty members match your current filter criteria. Try adjusting your filters.'}
+          </p>
+          {facultyList.length === 0 && (
+            <button
+              onClick={() => navigate('/dashboard/faculty/add')}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
+            >
+              Add Faculty Member
+            </button>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md overflow-hidden"
+        >
+          <FacultyTable
+            faculty={paginatedItems}
+            sortConfig={sortConfig}
+            requestSort={requestSort}
+            onView={(id) => navigate(`/dashboard/faculty/profile/${id}`)}
+            onEdit={(id) => navigate(`/dashboard/faculty/edit/${id}`)}
+            onDelete={(id) => setDeleteTarget(id)}
+            onAssignCourse={(id) => navigate(`/dashboard/faculty/assign?id=${id}`)}
+          />
+          <FacultyPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={sortedFaculty.length}
+            pageSize={pageSize}
+            goToPage={goToPage}
+          />
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {deleteTarget && (

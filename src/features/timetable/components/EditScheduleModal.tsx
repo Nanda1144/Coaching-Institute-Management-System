@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MdClose, MdSave, MdUndo, MdEdit, MdAccessTime, MdBook, MdPerson, MdMeetingRoom, MdGroup } from 'react-icons/md'
 import type { TimetableEntry } from '../types/timetable.types'
+import { getFacultyName } from '../../../utils/unwrap'
 
 interface EditScheduleModalProps {
   isOpen: boolean
@@ -171,7 +172,7 @@ export default function EditScheduleModal({ isOpen, onClose, entries, onSave }: 
                                 <MdPerson /> Faculty
                               </label>
                               <input
-                                value={entry.faculty}
+                                value={typeof entry.faculty === 'object' ? getFacultyName(entry.faculty) : entry.faculty}
                                 onChange={(e) => handleFieldChange(entry.id, 'faculty', e.target.value)}
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-300"
                               />
@@ -254,7 +255,7 @@ export default function EditScheduleModal({ isOpen, onClose, entries, onSave }: 
                             <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
                               <span>{entry.time}</span>
                               <span className="text-gray-300">|</span>
-                              <span>{entry.faculty}</span>
+                              <span>{getFacultyName(entry.faculty) || 'Unknown'}</span>
                               <span className="text-gray-300">|</span>
                               <span>{entry.classroom}</span>
                             </div>

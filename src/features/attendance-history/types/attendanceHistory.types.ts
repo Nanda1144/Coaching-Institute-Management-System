@@ -1,5 +1,5 @@
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'leave'
-export type AttendanceMethod = 'manual' | 'face' | 'fingerprint' | 'qr'
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day' | 'leave'
+export type AttendanceMethod = 'manual' | 'face_recognition' | 'face' | 'fingerprint' | 'qr_code' | 'qr'
 export type SortField = 'date' | 'studentName' | 'rollNumber' | 'department' | 'status' | 'time' | 'method' | 'faculty'
 export type SortDirection = 'asc' | 'desc'
 
@@ -39,5 +39,6 @@ export interface HistoryStats {
   present: number
   absent: number
   late: number
+  halfDay: number
   leave: number
 }
