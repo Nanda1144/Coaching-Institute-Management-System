@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MdNotifications, MdInfo, MdCheckCircle, MdWarning, MdEvent, MdDelete, MdErrorOutline, MdRefresh } from 'react-icons/md'
+import { MdNotifications, MdInfo, MdCheckCircle, MdWarning, MdEvent, MdRefresh } from 'react-icons/md'
 import api from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { MdPerson, MdSchool, MdWork, MdEmail, MdPhone, MdHome, MdRefresh, MdEdit, MdSave, MdClose } from 'react-icons/md'
-import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -16,7 +15,6 @@ const itemVariants = {
 }
 
 export default function FacultyProfilePage() {
-  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

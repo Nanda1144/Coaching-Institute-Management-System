@@ -101,7 +101,42 @@ async function main() {
   });
   console.log('✓ Upserted student@gmail.com (STUDENT)');
 
-  // ─── 4. Parent ───
+  // ─── 4. Faculty ───
+  const facultyPassword = await bcrypt.hash('faculty@cims', 10);
+  await prisma.faculty.upsert({
+    where: { email: 'faculty@gmail.com' },
+    update: { password: facultyPassword, role: 'FACULTY', status: 'active' },
+    create: {
+      facultyId: 'FAC-DEMO-001',
+      firstName: 'Demo',
+      lastName: 'Faculty',
+      fullName: 'Demo Faculty',
+      gender: 'Male',
+      dateOfBirth: new Date('1988-03-15'),
+      email: 'faculty@gmail.com',
+      phone: '9000000041',
+      employeeId: 'EMP-DEMO-001',
+      designation: 'Assistant Professor',
+      department: 'Computer Science',
+      specialization: ['Web Development'],
+      qualification: ['M.Tech'],
+      experience: 8,
+      joiningDate: new Date('2018-06-01'),
+      employmentType: 'permanent',
+      branch: 'Main Campus',
+      campus: 'Main',
+      address: { street: 'Faculty Block', city: 'City', state: 'State', pincode: '123456' },
+      emergencyContact: { name: 'Faculty Contact', phone: '9000000042', relation: 'Spouse' },
+      username: 'demo.faculty',
+      password: facultyPassword,
+      role: 'FACULTY',
+      permissions: ['*'],
+      status: 'active',
+    },
+  });
+  console.log('✓ Upserted faculty@gmail.com (FACULTY)');
+
+  // ─── 5. Parent ───
   const parentPassword = await bcrypt.hash('parent@cims', 10);
   await prisma.parent.upsert({
     where: { email: 'parent@gmail.com' },

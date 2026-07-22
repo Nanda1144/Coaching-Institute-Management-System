@@ -163,7 +163,6 @@ function AdminDashboard() {
 }
 
 function FacultyDashboard() {
-  const { user } = useAuth()
   const { data: stats, isLoading, isError, error, refetch } = useFacultyDashboard()
 
   if (isLoading) return <LoadingSection />

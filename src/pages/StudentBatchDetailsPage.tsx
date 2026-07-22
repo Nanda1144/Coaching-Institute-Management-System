@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MdGroup, MdPeople, MdSchool, MdCalendarMonth, MdErrorOutline, MdPerson } from 'react-icons/md'
+import { MdGroup, MdPeople, MdSchool, MdCalendarMonth, MdErrorOutline } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import studentDashboardService from '../services/student-dashboard/student-dashboard.service'
 
@@ -28,8 +28,6 @@ export default function StudentBatchDetailsPage() {
   const course = student.course || '-'
   const semester = student.semester || '-'
   const department = student.department || '-'
-  const fullName = student.fullName || 'Student'
-  const rollNumber = student.rollNumber || '-'
 
   const batchInfo = [
     { label: 'Batch Name', value: batch },

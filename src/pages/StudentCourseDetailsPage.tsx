@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MdBook, MdSchool, MdGroup, MdStar, MdErrorOutline } from 'react-icons/md'
+import { MdSchool, MdGroup, MdStar, MdErrorOutline } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import studentDashboardService from '../services/student-dashboard/student-dashboard.service'
 
@@ -21,7 +21,6 @@ export default function StudentCourseDetailsPage() {
 
   const overview = data?.data
   const student = overview?.student ?? {}
-  const stats = overview?.stats ?? {}
 
   const course = student.course || 'Not assigned'
   const department = student.department || 'General'

@@ -11,6 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 const DEMO_CREDENTIALS = [
   { role: 'Super Admin', email: 'admin@gmail.com', password: 'admin@cims', gradient: 'from-blue-600 to-indigo-600' },
   { role: 'College Admin', email: 'collegemanagement@gmail.com', password: 'collegemanagement@cims', gradient: 'from-emerald-600 to-teal-600' },
+  { role: 'Faculty', email: 'faculty@gmail.com', password: 'faculty@cims', gradient: 'from-rose-600 to-pink-600' },
   { role: 'Student', email: 'student@gmail.com', password: 'student@cims', gradient: 'from-purple-600 to-pink-600' },
   { role: 'Parent', email: 'parent@gmail.com', password: 'parent@cims', gradient: 'from-amber-500 to-orange-600' },
 ]

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MdRateReview, MdSchool, MdDownload, MdErrorOutline, MdMilitaryTech, MdCalendarToday } from 'react-icons/md'
+import { MdSchool, MdDownload, MdErrorOutline, MdMilitaryTech, MdCalendarToday } from 'react-icons/md'
 import { useQuery } from '@tanstack/react-query'
 import studentDashboardService from '../services/student-dashboard/student-dashboard.service'
 
