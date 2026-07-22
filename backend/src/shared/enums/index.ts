@@ -142,5 +142,6 @@ export const ROLE_PERMISSIONS: Record<string, string[] | null> = {
     Permission.READ_EVALUATION,
     Permission.READ_FEE,
     Permission.READ_NOTIFICATION,
+    Permission.READ_FACULTY,
   ],
 };

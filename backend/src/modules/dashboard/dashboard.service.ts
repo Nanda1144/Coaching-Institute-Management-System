@@ -128,40 +128,60 @@ export const dashboardService = {
   async getStudentStats(studentId: string) {
     const d = today();
     const t = tomorrow();
-    const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+    const student = await db.findUnique('students', [{ column: 'id', value: studentId }])
+      || await db.findFirst('students', { where: [{ column: 'studentId', value: studentId }] });
     if (!student) return null;
 
-    const totalAttendance = await db.count('attendances', [
-      { column: 'studentId', value: studentId },
-    ]);
-    const presentAttendance = await db.count('attendance', [
-      { column: 'studentId', value: studentId },
-      { column: 'attendanceStatus', value: 'present' },
-    ]);
+    let totalAttendance = 0;
+    let presentAttendance = 0;
+    try {
+      totalAttendance = await db.count('attendance', [
+        { column: 'studentId', value: student.id },
+      ]);
+    } catch { totalAttendance = 0; }
+    try {
+      presentAttendance = await db.count('attendance', [
+        { column: 'studentId', value: student.id },
+        { column: 'attendanceStatus', value: 'present' },
+      ]);
+    } catch { presentAttendance = 0; }
     const attendanceRate = totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 0;
 
-    const exams = await db.findMany('exams', {
-      where: [
-        { column: 'date', operator: '>=', value: d },
-        { column: 'status', value: 'scheduled' },
-      ],
-      orderBy: [{ column: 'date', dir: 'ASC' }],
-      limit: 5,
-    });
+    let exams: any[] = [];
+    try {
+      exams = await db.findMany('exams', {
+        where: [
+          { column: 'date', operator: '>=', value: d },
+          { column: 'status', value: 'scheduled' },
+        ],
+        orderBy: [{ column: 'date', dir: 'ASC' }],
+        limit: 5,
+      });
+    } catch { exams = []; }
 
-    const pendingAssignments = await db.count('assignments', [
-      { column: 'status', value: 'active' },
-      { column: 'deletedAt', value: null },
-    ]);
+    let pendingAssignments = 0;
+    try {
+      pendingAssignments = await db.count('assignments', [
+        { column: 'batchId', value: student.batchId ?? '' },
+        { column: 'status', value: 'active' },
+        { column: 'isDeleted', value: false },
+      ]);
+    } catch { pendingAssignments = 0; }
 
-    const pendingFees = await db.count('fee_pending', [
-      { column: 'roll', value: student.rollNumber || '' },
-      { column: 'isDeleted', value: false },
-    ]);
+    let pendingFees = 0;
+    try {
+      pendingFees = await db.count('fee_pending', [
+        { column: 'studentId', value: student.id },
+        { column: 'isDeleted', value: false },
+      ]);
+    } catch { pendingFees = 0; }
 
-    const notifications = await db.count('notification_broadcasts', [
-      { column: 'deletedAt', value: null },
-    ]);
+    let notifications = 0;
+    try {
+      notifications = await db.count('notifications', [
+        { column: 'isDeleted', value: false },
+      ]);
+    } catch { notifications = 0; }
 
     const result = {
       attendanceRate,

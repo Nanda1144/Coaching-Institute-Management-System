@@ -35,6 +35,7 @@ export default function UsageSection() {
   return (
     <Section
       id="usage"
+      bgDecoration="waves"
       subtitle="How It Works"
       title="Get started in four simple steps"
       description="From setup to analytics, CIMS makes institute management effortless."

@@ -21,6 +21,7 @@ export default function AboutSection() {
     <Section
       id="about"
       variant="alt"
+      bgDecoration="dots"
       subtitle="About CIMS"
       title="Transforming education through technology"
       description="Built by educators and technologists who understand the challenges of managing a coaching institute."

@@ -32,6 +32,38 @@ const facultyDayOptions = [
   { value: 'Saturday', label: 'Saturday' },
 ]
 
+function formatTime(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    if (Number.isNaN(d.getTime())) return dateStr
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+  } catch { return dateStr }
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    if (Number.isNaN(d.getTime())) return ''
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  } catch { return '' }
+}
+
+function mapRawToEntry(raw: Record<string, unknown>): FacultyScheduleEntry {
+  const s = String(raw.status || 'scheduled')
+  const capStatus = s.charAt(0).toUpperCase() + s.slice(1) as FacultyScheduleEntry['status']
+  return {
+    id: String(raw.id || ''),
+    time: `${formatTime(String(raw.startTime || ''))} - ${formatTime(String(raw.endTime || ''))}`,
+    course: String(raw.course || ''),
+    subject: String(raw.subject || ''),
+    batch: String(raw.batch || raw.batchName || ''),
+    classroom: String(raw.roomNumber || raw.classroom || '') + (raw.building ? ` (${raw.building})` : ''),
+    status: capStatus,
+    day: String(raw.dayOfWeek || ''),
+    date: formatDate(String(raw.startTime || '')),
+  }
+}
+
 export default function FacultyTimetablePage() {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<FacultyScheduleView>('daily')
@@ -72,26 +104,31 @@ export default function FacultyTimetablePage() {
           setShowToast(true)
         }
         const today = new Date().toLocaleString('en-US', { weekday: 'long' })
-        let mapped: FacultyScheduleEntry[] = []
+        let allMapped: FacultyScheduleEntry[] = []
         if (facultyId) {
-          const response = await timetableService.getByDay(facultyId, today)
-          const data = Array.isArray(response) ? response : (response?.data ?? [])
-          mapped = (data as Record<string, unknown>[]).map((item, index) => ({
-            id: String(item.id || `FS-${String(index + 1).padStart(3, '0')}`),
-            time: String(item.time || `${item.startTime || '09:00'} - ${item.endTime || '10:00'}`),
-            course: String(item.course || ''),
-            subject: String(item.subject || ''),
-            batch: String(item.batch || ''),
-            classroom: String(item.classroom || ''),
-            status: (item.status as FacultyScheduleEntry['status']) || 'Scheduled',
-            day: String(item.day || today),
-            date: String(item.date || ''),
-          }))
+          const response = await timetableService.getByFaculty(facultyId)
+          const raw = (response as any)?.data || response || {}
+          const entries: Record<string, unknown>[] = []
+          if (typeof raw === 'object' && !Array.isArray(raw)) {
+            for (const day of Object.keys(raw)) {
+              const dayEntries = raw[day]
+              if (Array.isArray(dayEntries)) {
+                for (const e of dayEntries) {
+                  entries.push(typeof e === 'object' ? e as Record<string, unknown> : {})
+                }
+              }
+            }
+          } else if (Array.isArray(raw)) {
+            entries.push(...raw)
+          }
+          allMapped = entries.map(mapRawToEntry)
         }
-        setFacultyScheduleEntries(mapped)
+        setFacultyScheduleEntries(allMapped)
         setFacultyPastEntries([])
-        const todayCount = mapped.filter((e: FacultyScheduleEntry) => e.day === today).length
-        setFacultyStats({ classesToday: todayCount, classesThisWeek: mapped.length, studentsAssigned: 0, workingHours: 0 })
+        const todayCount = allMapped.filter((e: FacultyScheduleEntry) => e.day === today).length
+        const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        const weekCount = allMapped.filter((e) => weekDays.includes(e.day)).length
+        setFacultyStats({ classesToday: todayCount, classesThisWeek: weekCount, studentsAssigned: 0, workingHours: 0 })
         setFacultyInfo({
           id: facultyId || 'FAC-001',
           photo: '',

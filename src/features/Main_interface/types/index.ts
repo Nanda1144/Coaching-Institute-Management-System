@@ -209,6 +209,7 @@ export interface SectionProps {
   className?: string
   children: ReactNode
   variant?: 'default' | 'alt' | 'gradient'
+  bgDecoration?: 'default' | 'alt' | 'gradient' | 'dots' | 'waves' | false
 }
 
 export interface HeroProps {

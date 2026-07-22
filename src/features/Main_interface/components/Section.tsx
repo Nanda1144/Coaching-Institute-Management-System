@@ -2,6 +2,7 @@ import type { SectionProps } from '../types'
 import { cn } from '../utils/cn'
 import Container from './Container'
 import FadeIn from '../animations/FadeIn'
+import BgDecoration from './BgDecoration'
 
 const bgStyles: Record<string, string> = {
   default: 'bg-white',
@@ -9,8 +10,8 @@ const bgStyles: Record<string, string> = {
   gradient: 'bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600',
 }
 
-export default function Section({ id, title, subtitle, description, className, children, variant = 'default' }: SectionProps) {
-  return (
+export default function Section({ id, title, subtitle, description, className, children, variant = 'default', bgDecoration }: SectionProps) {
+  const section = (
     <section
       id={id}
       className={cn(
@@ -54,5 +55,13 @@ export default function Section({ id, title, subtitle, description, className, c
         {children}
       </Container>
     </section>
+  )
+
+  if (bgDecoration === false) return section
+
+  return (
+    <BgDecoration variant={bgDecoration ?? (variant === 'default' ? 'default' : variant === 'alt' ? 'alt' : 'gradient')}>
+      {section}
+    </BgDecoration>
   )
 }

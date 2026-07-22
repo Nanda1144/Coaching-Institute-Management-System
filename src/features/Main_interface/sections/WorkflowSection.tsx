@@ -10,6 +10,7 @@ export default function WorkflowSection() {
   return (
     <Section
       id="workflow"
+      bgDecoration="dots"
       subtitle="Workflow"
       title="How CIMS works for your institute"
       description="A streamlined workflow designed to get your institute up and running in no time."

@@ -10,6 +10,7 @@ export default function WorkingModelSection() {
     <Section
       id="working-model"
       variant="alt"
+      bgDecoration="default"
       subtitle="Working Model"
       title="Our technical architecture"
       description="Built on modern cloud infrastructure for reliability, security, and scale."

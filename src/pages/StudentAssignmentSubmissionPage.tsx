@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MdAssignment, MdCloudUpload, MdCheckCircle, MdPendingActions, MdSearch, MdSchedule, MdErrorOutline, MdInsertDriveFile } from 'react-icons/md'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import studentDashboardService from '../services/student-dashboard/student-dashboard.service'
+import submissionService from '../services/submission/submission.service'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -19,6 +20,7 @@ export default function StudentAssignmentSubmissionPage() {
   const [submittingId, setSubmittingId] = useState<string | null>(null)
   const [files, setFiles] = useState<Record<string, File>>({})
   const [submitted, setSubmitted] = useState<string[]>([])
+  const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['student-assignments-submit'],
@@ -38,18 +40,26 @@ export default function StudentAssignmentSubmissionPage() {
     }
   }
 
-  const handleSubmit = (id: string) => {
+  const handleSubmit = async (id: string) => {
     if (!files[id]) return
     setSubmittingId(id)
-    setTimeout(() => {
+    try {
+      await submissionService.create({
+        assignmentId: id,
+        fileName: files[id].name,
+        fileSize: files[id].size,
+      } as any)
       setSubmitted((prev) => [...prev, id])
-      setSubmittingId(null)
       setFiles((prev) => {
         const next = { ...prev }
         delete next[id]
         return next
       })
-    }, 1200)
+      queryClient.invalidateQueries({ queryKey: ['student-assignments-submit'] })
+    } catch {
+      /* ignore */
+    }
+    setSubmittingId(null)
   }
 
   return (

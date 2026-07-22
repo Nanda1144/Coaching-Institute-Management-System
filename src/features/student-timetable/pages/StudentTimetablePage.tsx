@@ -9,7 +9,7 @@ import MonthlySchedule from '../components/MonthlySchedule'
 import ScheduleTable from '../components/ScheduleTable'
 import StudentTimetableSkeleton from '../components/StudentTimetableSkeleton'
 import Toast from '../../../components/Toast'
-import timetableService from '../../../services/timetable/timetable.service'
+import studentDashboardService from '../../../services/student-dashboard/student-dashboard.service'
 import type { ScheduleView } from '../types/studentTimetable.types'
 import type { ScheduleEntry, StudentInfo, QuickStats as QuickStatsType } from '../types/studentTimetable.types'
 
@@ -48,18 +48,30 @@ export default function StudentTimetablePage() {
     const fetchData = async () => {
       setError(null)
       try {
-        const response = await timetableService.getAll()
-        const rawData = response?.data ?? []
-        const items = Array.isArray(rawData) ? rawData : (rawData?.data ?? [])
-        const mapped = (items as Record<string, unknown>[]).map((item, index) => ({
+        const response = await studentDashboardService.getTimetable()
+        const raw = (response as any)?.data || response || {}
+        const items: Record<string, unknown>[] = []
+        if (typeof raw === 'object' && !Array.isArray(raw)) {
+          for (const day of Object.keys(raw)) {
+            const dayEntries = raw[day]
+            if (Array.isArray(dayEntries)) {
+              for (const e of dayEntries) {
+                items.push(typeof e === 'object' ? e as Record<string, unknown> : {})
+              }
+            }
+          }
+        } else if (Array.isArray(raw)) {
+          items.push(...raw)
+        }
+        const mapped = items.map((item, index) => ({
           id: String(item.id || `ST-${String(index + 1).padStart(3, '0')}`),
           time: String(item.time || `${item.startTime || '09:00'} - ${item.endTime || '10:00'}`),
-          subject: String(item.subject || ''),
-          faculty: String(item.faculty || ''),
-          classroom: String(item.classroom || ''),
-          status: (item.status as ScheduleEntry['status']) || 'Scheduled',
+          subject: String(item.subject || item.subjectName || ''),
+          faculty: String(item.facultyName || item.faculty || ''),
+          classroom: String(item.classroom || item.roomNumber || ''),
+          status: 'Scheduled' as const,
           attendance: 'Not Marked' as const,
-          day: String(item.day || ''),
+          day: String(item.dayOfWeek || item.day || ''),
           date: String(item.date || ''),
           month: String(item.month || ''),
         }))

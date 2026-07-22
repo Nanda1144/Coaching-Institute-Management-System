@@ -1,37 +1,66 @@
 import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
 
+async function getStudent(studentId: string) {
+  const student = await db.findUnique('students', [{ column: 'id', value: studentId }])
+    || await db.findFirst('students', { where: [{ column: 'studentId', value: studentId }] });
+  return student;
+}
+
 async function getOverview(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const [totalClasses, attendedClasses, pendingAssignments, totalAssignments] = await Promise.all([
-    db.count('attendance', [
+  let totalClasses = 0;
+  let attendedClasses = 0;
+  let pendingAssignments = 0;
+  let totalAssignments = 0;
+
+  try {
+    totalClasses = await db.count('attendance', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
-    ]),
-    db.count('attendance', [
+    ]);
+  } catch { totalClasses = 0; }
+  try {
+    attendedClasses = await db.count('attendance', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
       { column: 'attendanceStatus', value: 'present' },
-    ]),
-    db.count('assignments', [
+    ]);
+  } catch { attendedClasses = 0; }
+  try {
+    pendingAssignments = await db.count('assignments', [
       { column: 'batchId', value: student.batchId ?? '' },
       { column: 'status', value: 'active' },
       { column: 'isDeleted', value: false },
-    ], { sql: `NOT EXISTS (SELECT 1 FROM assignment_submissions WHERE assignment_submissions.assignment_id = assignments.id AND assignment_submissions.student_id = $1)`, params: [studentId] }),
-    db.count('assignments', [
+    ], { sql: `NOT EXISTS (SELECT 1 FROM assignment_submissions WHERE assignment_submissions.assignment_id = assignments.id AND assignment_submissions.student_id = $1)`, params: [studentId] });
+  } catch { pendingAssignments = 0; }
+  try {
+    totalAssignments = await db.count('assignments', [
       { column: 'batchId', value: student.batchId ?? '' },
       { column: 'isDeleted', value: false },
       { column: 'status', value: 'active' },
-    ]),
-  ]);
+    ]);
+  } catch { totalAssignments = 0; }
 
-  const fees = await db.findMany('fees', {
-    where: [{ column: 'studentId', value: studentId }],
-  });
-  const feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount), 0);
-  const feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount), 0);
+  let feesTotal = 0;
+  let feesPaid = 0;
+  try {
+    const fees = await db.findMany('fee_transactions', {
+      where: [{ column: 'studentId', value: studentId }],
+    });
+    feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount || 0), 0);
+    feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount || f.amount || 0), 0);
+  } catch {
+    try {
+      const fees = await db.findMany('fee_pending', {
+        where: [{ column: 'studentId', value: studentId }],
+      });
+      feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount || 0), 0);
+      feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount || 0), 0);
+    } catch { /* ignore */ }
+  }
 
   return {
     student: {
@@ -72,10 +101,13 @@ async function getAttendance(studentId: string, month?: number, year?: number) {
     where.push({ column: 'attendanceDate', operator: 'lte', value: end });
   }
 
-  const records = await db.findMany('attendance', {
-    where,
-    orderBy: [{ column: 'attendanceDate', dir: 'desc' }],
-  });
+  let records: any[] = [];
+  try {
+    records = await db.findMany('attendance', {
+      where,
+      orderBy: [{ column: 'attendanceDate', dir: 'desc' }],
+    });
+  } catch { records = []; }
 
   const total = records.length;
   const present = records.filter((r: any) => r.attendanceStatus === 'present').length;
@@ -89,18 +121,20 @@ async function getAttendance(studentId: string, month?: number, year?: number) {
 }
 
 async function getTimetable(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const timetables = await db.findMany('timetables', {
-    where: [
-      { column: 'batchId', value: student.batchId ?? undefined },
-      { column: 'semester', value: student.semester },
-      { column: 'department', value: student.department },
-      { column: 'status', value: 'scheduled' },
-    ],
-    orderBy: [{ column: 'dayOfWeek', dir: 'asc' }, { column: 'startTime', dir: 'asc' }],
-  });
+  let timetables: any[] = [];
+  try {
+    timetables = await db.findMany('timetables', {
+      where: [
+        { column: 'batchId', value: student.batchId ?? undefined },
+        { column: 'semester', value: student.semester },
+        { column: 'department', value: student.department },
+      ],
+      orderBy: [{ column: 'dayOfWeek', dir: 'asc' }, { column: 'startTime', dir: 'asc' }],
+    });
+  } catch { timetables = []; }
 
   const grouped: Record<string, typeof timetables> = {};
   for (const t of timetables) {
@@ -112,24 +146,30 @@ async function getTimetable(studentId: string) {
 }
 
 async function getAssignments(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const assignments = await db.findMany('assignments', {
-    where: [
-      { column: 'batchId', value: student.batchId ?? '' },
-      { column: 'isDeleted', value: false },
-      { column: 'status', value: 'active' },
-    ],
-    orderBy: [{ column: 'dueDate', dir: 'asc' }],
-  });
+  let assignments: any[] = [];
+  let submissions: any[] = [];
+  try {
+    assignments = await db.findMany('assignments', {
+      where: [
+        { column: 'batchId', value: student.batchId ?? '' },
+        { column: 'isDeleted', value: false },
+        { column: 'status', value: 'active' },
+      ],
+      orderBy: [{ column: 'dueDate', dir: 'asc' }],
+    });
+  } catch { assignments = []; }
 
-  const submissions = await db.findMany('assignment_submissions', {
-    where: [
-      { column: 'studentId', value: studentId },
-      { column: 'isDeleted', value: false },
-    ],
-  });
+  try {
+    submissions = await db.findMany('assignment_submissions', {
+      where: [
+        { column: 'studentId', value: studentId },
+        { column: 'isDeleted', value: false },
+      ],
+    });
+  } catch { submissions = []; }
 
   return assignments.map((a: any) => {
     const sub = submissions.find((s: any) => s.assignmentId === a.id);
@@ -151,23 +191,28 @@ async function getAssignments(studentId: string) {
 }
 
 async function getMarks(studentId: string) {
-  const submissions = await db.findMany('assignment_submissions', {
-    where: [
-      { column: 'studentId', value: studentId },
-      { column: 'isDeleted', value: false },
-      { column: 'status', value: 'graded' },
-    ],
-    orderBy: [{ column: 'submissionDate', dir: 'desc' }],
-  });
+  let submissions: any[] = [];
+  try {
+    submissions = await db.findMany('assignment_submissions', {
+      where: [
+        { column: 'studentId', value: studentId },
+        { column: 'isDeleted', value: false },
+        { column: 'status', value: 'graded' },
+      ],
+      orderBy: [{ column: 'submissionDate', dir: 'desc' }],
+    });
+  } catch { submissions = []; }
 
   const evaluationIds = submissions.filter((s: any) => s.id).map((s: any) => s.id);
   let evaluations: any[] = [];
   if (evaluationIds.length > 0) {
-    evaluations = await db.findMany('evaluations', {
-      where: [
-        { column: 'submissionId', operator: 'in', value: evaluationIds },
-      ],
-    });
+    try {
+      evaluations = await db.findMany('evaluations', {
+        where: [
+          { column: 'submissionId', operator: 'in', value: evaluationIds },
+        ],
+      });
+    } catch { evaluations = []; }
   }
 
   return submissions
@@ -186,37 +231,70 @@ async function getMarks(studentId: string) {
 }
 
 async function getMaterials(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const materials = await db.findMany('study_materials', {
-    where: [
-      {
-        column: 'batchSearch',
-        operator: 'raw',
-        value: `batch_id = $1 OR department_id = $2 OR course_id = $3`,
-        params: [student.batchId, student.department, student.course],
-      },
-      { column: 'semesterId', value: String(student.semester) },
-      { column: 'visibility', operator: 'in', value: ['PUBLIC', 'STUDENTS_ONLY', 'BATCH_ONLY'] },
-    ],
-    orderBy: [{ column: 'createdAt', dir: 'desc' }],
-  });
+  let materials: any[] = [];
+  try {
+    if (student.batchId) {
+      materials = await db.findMany('study_materials', {
+        where: [
+          { column: 'batchId', value: student.batchId },
+          { column: 'visibility', operator: 'in', value: ['PUBLIC', 'STUDENTS_ONLY', 'BATCH_ONLY'] },
+          { column: 'status', value: 'active' },
+          { column: 'isDeleted', value: false },
+        ],
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
+      });
+    }
+    if (materials.length === 0) {
+      materials = await db.findMany('study_materials', {
+        where: [
+          { column: 'visibility', operator: 'in', value: ['PUBLIC', 'STUDENTS_ONLY'] },
+          { column: 'status', value: 'active' },
+          { column: 'isDeleted', value: false },
+        ],
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
+        limit: 50,
+      });
+    }
+  } catch {
+    try {
+      materials = await db.findMany('study_materials', {
+        where: [
+          { column: 'status', value: 'active' },
+          { column: 'isDeleted', value: false },
+        ],
+        orderBy: [{ column: 'createdAt', dir: 'desc' }],
+        limit: 50,
+      });
+    } catch { materials = []; }
+  }
 
   return materials;
 }
 
 async function getFees(studentId: string) {
-  const fees = await db.findMany('fees', {
-    where: [{ column: 'studentId', value: studentId }],
-    orderBy: [{ column: 'semester', dir: 'asc' }, { column: 'dueDate', dir: 'asc' }],
-  });
+  let fees: any[] = [];
+  try {
+    fees = await db.findMany('fee_pending', {
+      where: [{ column: 'studentId', value: studentId }],
+      orderBy: [{ column: 'dueDate', dir: 'asc' }, { column: 'semester', dir: 'asc' }],
+    });
+  } catch {
+    try {
+      fees = await db.findMany('fee_transactions', {
+        where: [{ column: 'studentId', value: studentId }],
+        orderBy: [{ column: 'dueDate', dir: 'asc' }],
+      });
+    } catch { fees = []; }
+  }
 
   const summary = fees.reduce(
     (acc: any, f: any) => ({
-      totalAmount: acc.totalAmount + Number(f.amount),
-      totalPaid: acc.totalPaid + Number(f.paidAmount),
-      pending: acc.pending + (Number(f.amount) - Number(f.paidAmount)),
+      totalAmount: acc.totalAmount + Number(f.amount || 0),
+      totalPaid: acc.totalPaid + Number(f.paidAmount || 0),
+      pending: acc.pending + (Number(f.amount || 0) - Number(f.paidAmount || 0)),
     }),
     { totalAmount: 0, totalPaid: 0, pending: 0 }
   );
@@ -225,60 +303,72 @@ async function getFees(studentId: string) {
 }
 
 async function getNotifications(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const notifications = await db.findMany('notifications', {
-    where: [
-      {
-        column: 'studentFilter',
-        operator: 'raw',
-        value: `student_id = $1 OR (student_id IS NULL AND batch_id = $2)`,
-        params: [studentId, student.batchId],
-      },
-    ],
-    orderBy: [{ column: 'createdAt', dir: 'desc' }],
-    limit: 50,
-  });
+  let notifications: any[] = [];
+  try {
+    notifications = await db.findMany('notifications', {
+      where: [
+        {
+          column: 'studentFilter',
+          operator: 'raw',
+          value: `student_id = $1 OR (student_id IS NULL AND batch_id = $2)`,
+          params: [studentId, student.batchId ?? ''],
+        },
+      ],
+      orderBy: [{ column: 'createdAt', dir: 'desc' }],
+      limit: 50,
+    });
+  } catch { notifications = []; }
 
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
   return { notifications, unreadCount };
 }
 
 async function markNotificationRead(notificationId: string, studentId: string) {
-  const notification = await db.findFirst('notifications', {
-    where: [
-      { column: 'id', value: notificationId },
-      { column: 'studentId', value: studentId },
-    ],
-  });
-  if (!notification) throw AppError.notFound('Notification not found');
+  try {
+    const notification = await db.findFirst('notifications', {
+      where: [
+        { column: 'id', value: notificationId },
+        { column: 'studentId', value: studentId },
+      ],
+    });
+    if (!notification) throw AppError.notFound('Notification not found');
 
-  return db.update('notifications',
-    [{ column: 'id', value: notificationId }],
-    { isRead: true },
-  );
+    return db.update('notifications',
+      [{ column: 'id', value: notificationId }],
+      { isRead: true },
+    );
+  } catch {
+    throw AppError.notFound('Notification not found');
+  }
 }
 
 async function getCertificates(studentId: string) {
-  const student = await db.findUnique('students', [{ column: 'id', value: studentId }]);
+  const student = await getStudent(studentId);
   if (!student) throw AppError.notFound('Student not found');
 
-  const submissions = await db.findMany('assignment_submissions', {
-    where: [
-      { column: 'studentId', value: studentId },
-      { column: 'isDeleted', value: false },
-      { column: 'status', value: 'graded' },
-    ],
-    orderBy: [{ column: 'submissionDate', dir: 'desc' }],
-  });
+  let submissions: any[] = [];
+  try {
+    submissions = await db.findMany('assignment_submissions', {
+      where: [
+        { column: 'studentId', value: studentId },
+        { column: 'isDeleted', value: false },
+        { column: 'status', value: 'graded' },
+      ],
+      orderBy: [{ column: 'submissionDate', dir: 'desc' }],
+    });
+  } catch { submissions = []; }
 
   const evaluationIds = submissions.filter((s: any) => s.id).map((s: any) => s.id);
   let evaluations: any[] = [];
   if (evaluationIds.length > 0) {
-    evaluations = await db.findMany('evaluations', {
-      where: [{ column: 'submissionId', operator: 'in', value: evaluationIds }],
-    });
+    try {
+      evaluations = await db.findMany('evaluations', {
+        where: [{ column: 'submissionId', operator: 'in', value: evaluationIds }],
+      });
+    } catch { evaluations = []; }
   }
 
   const certificates = submissions.map((s: any) => {

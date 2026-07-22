@@ -72,7 +72,9 @@ async function getOverview(parentId: string) {
 
 async function getAttendance(parentId: string, month?: number, year?: number) {
   const { studentId } = await getParentWithStudent(parentId);
-  if (!studentId) throw AppError.notFound('No linked student found');
+  if (!studentId) {
+    return { overall: 0, present: 0, total: 0, subjects: [], recent: [], records: [], summary: { total: 0, present: 0, absent: 0, late: 0, percent: 0 } };
+  }
 
   const where: any[] = [
     { column: 'studentId', value: studentId },
@@ -133,7 +135,7 @@ async function getAttendance(parentId: string, month?: number, year?: number) {
 
 async function getTimetable(parentId: string) {
   const { student, studentId } = await getParentWithStudent(parentId);
-  if (!student || !studentId) throw AppError.notFound('No linked student found');
+  if (!student || !studentId) return [];
 
   const timetables = await db.findMany('timetables', {
     where: [
@@ -169,7 +171,7 @@ async function getTimetable(parentId: string) {
 
 async function getAssignments(parentId: string) {
   const { student, studentId } = await getParentWithStudent(parentId);
-  if (!student || !studentId) throw AppError.notFound('No linked student found');
+  if (!student || !studentId) return [];
 
   const assignments = await db.findMany('assignments', {
     where: [
@@ -205,7 +207,7 @@ async function getAssignments(parentId: string) {
 
 async function getMarks(parentId: string) {
   const { studentId } = await getParentWithStudent(parentId);
-  if (!studentId) throw AppError.notFound('No linked student found');
+  if (!studentId) return [];
 
   const submissions = await db.findMany('assignment_submissions', {
     where: [
@@ -240,7 +242,7 @@ async function getMarks(parentId: string) {
 
 async function getMaterials(parentId: string) {
   const { student, studentId } = await getParentWithStudent(parentId);
-  if (!student || !studentId) throw AppError.notFound('No linked student found');
+  if (!student || !studentId) return [];
 
   const materials = await db.findMany('study_materials', {
     where: [
@@ -261,7 +263,7 @@ async function getMaterials(parentId: string) {
 
 async function getFees(parentId: string) {
   const { studentId } = await getParentWithStudent(parentId);
-  if (!studentId) throw AppError.notFound('No linked student found');
+  if (!studentId) return { fees: [], summary: { totalAmount: 0, totalPaid: 0, pending: 0 }, totalFee: 0, paid: 0, due: 0, status: 'unpaid', transactions: [] };
 
   const fees = await db.findMany('fees', {
     where: [{ column: 'studentId', value: studentId }],
@@ -298,7 +300,7 @@ async function getFees(parentId: string) {
 
 async function getNotifications(parentId: string) {
   const { parent, studentId } = await getParentWithStudent(parentId);
-  if (!studentId) throw AppError.notFound('No linked student found');
+  if (!studentId) return { notifications: [], unreadCount: 0 };
 
   const notifications = await db.findMany('notifications', {
     where: [
