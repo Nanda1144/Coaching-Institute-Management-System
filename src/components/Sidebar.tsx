@@ -87,7 +87,6 @@ const facultyNavItems: NavItem[] = [
   { to: '/dashboard/assignments', icon: MdAssignment, label: 'Assignments' },
   { to: '/dashboard/materials', icon: MdLibraryBooks, label: 'Study Materials' },
   { to: '/dashboard/marks', icon: MdRateReview, label: 'Marks & Results' },
-  { to: '/dashboard/registration-requests', icon: MdPerson, label: 'Registration Requests' },
   { to: '/dashboard/faculty/notifications', icon: MdNotifications, label: 'Notifications' },
   { to: '/dashboard/holidays', icon: MdStars, label: 'Holidays' },
 ]

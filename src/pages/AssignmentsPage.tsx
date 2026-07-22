@@ -34,7 +34,8 @@ export default function AssignmentsPage() {
       try {
         setLoading(true)
         const res = await api.get('/assignments')
-        setAssignments(res.data?.data || [])
+        const raw = res.data?.data ?? res.data ?? []
+        setAssignments(Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [])
       } catch (err: any) {
         if (err?.response?.status !== 401) {
           setError(err?.response?.data?.message || 'Failed to load assignments')
@@ -46,9 +47,9 @@ export default function AssignmentsPage() {
     load()
   }, [])
 
-  const filtered = assignments.filter((a) =>
+  const filtered = Array.isArray(assignments) ? assignments.filter((a) =>
     a.title.toLowerCase().includes(search.toLowerCase())
-  )
+  ) : []
 
   const statusColor = (s?: string) => {
     switch (s) {

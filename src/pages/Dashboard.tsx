@@ -10,7 +10,7 @@ import ErrorMessage from '../components/ErrorMessage'
 import {
   MdSchool, MdPeople, MdHowToVote, MdAssignment, MdAttachMoney,
   MdEvent, MdNotifications, MdBook, MdGroup, MdCalendarMonth,
-  MdTrendingUp, MdStars, MdCheckCircle, MdRateReview,
+  MdTrendingUp, MdStars, MdCheckCircle, MdRateReview, MdPerson,
 } from 'react-icons/md'
 import { useAdminDashboard, useFacultyDashboard, useStudentDashboard, useParentDashboard } from '../hooks/useReactQuery'
 
@@ -66,6 +66,10 @@ function AdminDashboard() {
           <p className="text-sm text-neutral-500 mt-1">Welcome back! Here's your institute overview.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/dashboard/registration-requests')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors">
+            <MdPerson size={18} />
+            <span>Registration Requests</span>
+          </button>
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-success/10 text-success text-sm font-medium">
             <MdTrendingUp />
             <span>All systems operational</span>

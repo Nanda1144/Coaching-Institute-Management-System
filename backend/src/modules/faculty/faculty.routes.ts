@@ -22,7 +22,7 @@ const router = Router();
 router.get(
   '/',
   authenticate,
-  authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD),
+  authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY),
   requirePermission(Permission.READ_FACULTY),
   validate(facultyQuerySchema, 'query'),
   facultyController.getAll

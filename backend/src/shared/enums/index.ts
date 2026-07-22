@@ -119,7 +119,7 @@ export const ROLE_PERMISSIONS: Record<string, string[] | null> = {
   SUPER_ADMIN: ['*'],
   ADMIN: ['*'],
   HOD: ['*'],
-  FACULTY: null,
+  FACULTY: ['*'],
   STUDENT: [
     Permission.READ_DASHBOARD,
     Permission.READ_ATTENDANCE,
