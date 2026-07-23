@@ -108,7 +108,7 @@ export default function AdminPermissionsPage() {
         <div className="skeleton h-4 w-48 mb-6" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-96 rounded-xl" />
+            <div key={'sk' + i} className="skeleton h-96 rounded-xl" />
           ))}
         </div>
       </div>

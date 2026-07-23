@@ -72,7 +72,7 @@ export default function StudentAssignmentsPage() {
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="card p-5">
+              <div key={'sk' + i} className="card p-5">
                 <div className="flex items-start gap-3 animate-pulse">
                   <div className="w-10 h-10 rounded-md skeleton" />
                   <div className="flex-1 space-y-2">

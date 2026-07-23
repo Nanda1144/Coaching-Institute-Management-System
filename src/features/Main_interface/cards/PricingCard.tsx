@@ -51,7 +51,7 @@ export default function PricingCard({
 
       <ul className="space-y-3 mb-8">
         {features.map((feature, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm">
+          <li key={'sk' + i} className="flex items-start gap-3 text-sm">
             <Check size={16} className={cn('shrink-0 mt-0.5', highlighted ? 'text-blue-200' : 'text-emerald-500')} aria-hidden="true" />
             <span className={highlighted ? 'text-blue-100' : 'text-gray-600'}>{feature}</span>
           </li>

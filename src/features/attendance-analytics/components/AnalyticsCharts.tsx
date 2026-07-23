@@ -19,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <div className="bg-white/90 backdrop-blur-xl rounded-xl p-3 shadow-lg border border-white/30 text-sm">
         <p className="font-medium text-gray-800 mb-1.5">{label}</p>
         {payload.map((entry: any, i: number) => (
-          <p key={i} style={{ color: entry.color }} className="font-semibold text-xs">
+          <p key={'sk' + i} style={{ color: entry.color }} className="font-semibold text-xs">
             {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}
           </p>
         ))}
@@ -87,7 +87,7 @@ export default function AnalyticsCharts({ trend, departmentData, monthlyData, he
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-white/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-sm p-5 animate-pulse">
+          <div key={'sk' + i} className="bg-white/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-sm p-5 animate-pulse">
             <div className="h-5 w-44 bg-gray-200 rounded mb-4" />
             <div className="h-52 bg-gray-100 rounded-xl" />
           </div>

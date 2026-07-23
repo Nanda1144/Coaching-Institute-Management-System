@@ -9,7 +9,7 @@ function StarRating({ rating }: { rating: number }) {
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
-          key={i}
+          key={'sk' + i}
           size={14}
           className={i < rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}
         />

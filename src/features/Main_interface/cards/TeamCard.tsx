@@ -39,7 +39,7 @@ export default function TeamCard({ name, role, bio, social }: TeamCardProps) {
         <div className="flex items-center justify-center gap-2">
           {social.map((s, i) => (
             <IconButton
-              key={i}
+              key={'sk' + i}
               icon={socialIcons[s.platform] || <Globe size={16} />}
               label={s.platform}
               variant="ghost"

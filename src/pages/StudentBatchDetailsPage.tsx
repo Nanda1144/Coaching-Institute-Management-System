@@ -75,14 +75,14 @@ export default function StudentBatchDetailsPage() {
             <div className="card p-5 animate-pulse">
               <div className="space-y-3">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-10 skeleton rounded" />
+                  <div key={'sk' + i} className="h-10 skeleton rounded" />
                 ))}
               </div>
             </div>
             <div className="card p-5 animate-pulse">
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-10 skeleton rounded" />
+                  <div key={'sk' + i} className="h-10 skeleton rounded" />
                 ))}
               </div>
             </div>

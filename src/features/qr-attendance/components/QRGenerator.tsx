@@ -98,7 +98,7 @@ export default function QRGenerator({ qrData, qrStatus, secondsLeft, onGenerate,
                           (i >= 14 && i <= 20 && i % 7 >= 2 && i % 7 <= 4 && (i === 16 || i === 17 || i === 19))
                         return (
                           <div
-                            key={i}
+                            key={'sk' + i}
                             className={`w-3 h-3 rounded-sm ${isBlack ? 'bg-white' : 'bg-transparent'}`}
                           />
                         )

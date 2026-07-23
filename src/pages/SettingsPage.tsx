@@ -245,7 +245,7 @@ export default function SettingsPage() {
             {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="skeleton h-11 w-full" />
+                  <div key={'sk' + i} className="skeleton h-11 w-full" />
                 ))}
               </div>
             ) : (

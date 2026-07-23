@@ -65,12 +65,12 @@ export default function AdminPaymentsPage() {
           <div><div className="skeleton h-9 w-64 mb-2" /><div className="skeleton h-4 w-32" /></div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {Array.from({ length: 3 }).map((_, i) => (<div key={i} className="skeleton h-32 rounded-xl" />))}
+          {Array.from({ length: 3 }).map((_, i) => (<div key={'sk' + i} className="skeleton h-32 rounded-xl" />))}
         </div>
         <div className="skeleton h-10 w-80 mb-4 rounded-lg" />
         <div className="card overflow-hidden">
           <div className="p-4 border-b border-neutral-100"><div className="skeleton h-10 w-full" /></div>
-          {Array.from({ length: 4 }).map((_, i) => (<div key={i} className="skeleton h-14 mx-4 mb-2" />))}
+          {Array.from({ length: 4 }).map((_, i) => (<div key={'sk' + i} className="skeleton h-14 mx-4 mb-2" />))}
           <div className="h-4" />
         </div>
       </div>

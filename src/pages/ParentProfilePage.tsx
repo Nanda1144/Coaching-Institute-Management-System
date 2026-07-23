@@ -81,7 +81,7 @@ export default function ParentProfilePage() {
             <div className="skeleton h-6 w-40 mb-4" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i}>
+                <div key={'sk' + i}>
                   <div className="skeleton h-3 w-16 mb-1" />
                   <div className="skeleton h-8 w-full rounded-lg" />
                 </div>
@@ -93,7 +93,7 @@ export default function ParentProfilePage() {
           <div className="skeleton h-6 w-40 mb-4" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i}>
+              <div key={'sk' + i}>
                 <div className="skeleton h-3 w-20 mb-1" />
                 <div className="skeleton h-8 w-full rounded-lg" />
               </div>

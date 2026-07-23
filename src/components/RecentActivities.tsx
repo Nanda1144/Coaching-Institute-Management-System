@@ -65,7 +65,7 @@ export default function RecentActivities() {
         <h3 className="font-semibold text-gray-800 mb-4">Recent Activities</h3>
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 animate-pulse">
+            <div key={'sk' + i} className="flex items-start gap-3 p-3 animate-pulse">
               <div className="w-9 h-9 rounded-xl bg-gray-200 flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="h-3 bg-gray-200 rounded w-32" />

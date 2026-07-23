@@ -20,7 +20,7 @@ export default function TestimonialCard({ name, role, content, rating }: Testimo
       <div className="flex items-center gap-1 mb-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
-            key={i}
+            key={'sk' + i}
             size={16}
             className={cn(
               i < rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200',

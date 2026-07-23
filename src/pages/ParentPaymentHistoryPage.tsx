@@ -59,7 +59,7 @@ export default function ParentPaymentHistoryPage() {
         {isLoading ? (
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="card p-4 animate-pulse">
+              <div key={'sk' + i} className="card p-4 animate-pulse">
                 <div className="flex justify-between">
                   <div className="h-4 skeleton rounded w-1/4" />
                   <div className="h-4 skeleton rounded w-1/4" />

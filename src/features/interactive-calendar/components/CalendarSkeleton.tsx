@@ -27,10 +27,10 @@ export default function CalendarSkeleton() {
         <div className="w-60 bg-white/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-sm p-4 hidden lg:block">
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i}>
+              <div key={'sk' + i}>
                 <div className="h-3 w-16 bg-gray-200 rounded mb-2" />
                 {Array.from({ length: 3 }).map((_, j) => (
-                  <div key={j} className="h-5 bg-gray-100 rounded mb-1" />
+                  <div key={'sk' + j} className="h-5 bg-gray-100 rounded mb-1" />
                 ))}
               </div>
             ))}

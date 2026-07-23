@@ -46,7 +46,7 @@ export default function ParentResultsPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-5 text-center">
+            <div key={'sk' + i} className="card p-5 text-center">
               <div className="skeleton w-8 h-8 rounded-full mx-auto mb-2" />
               <div className="skeleton h-8 w-16 mx-auto mb-1" />
               <div className="skeleton h-4 w-24 mx-auto" />
@@ -57,7 +57,7 @@ export default function ParentResultsPage() {
           <div className="skeleton h-10 w-full rounded-none" />
           <div className="p-5 space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex justify-between">
+              <div key={'sk' + i} className="flex justify-between">
                 <div className="skeleton h-4 w-24" />
                 <div className="skeleton h-4 w-16" />
               </div>

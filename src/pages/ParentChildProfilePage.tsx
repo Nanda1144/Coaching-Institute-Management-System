@@ -33,7 +33,7 @@ export default function ParentChildProfilePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="p-3 rounded-xl bg-neutral-50">
+              <div key={'sk' + i} className="p-3 rounded-xl bg-neutral-50">
                 <div className="skeleton h-3 w-16 mb-2" />
                 <div className="skeleton h-4 w-32" />
               </div>

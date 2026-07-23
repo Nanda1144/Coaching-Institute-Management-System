@@ -38,7 +38,7 @@ export default function StudentFeeStatusPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="stat-card">
+                <div key={'sk' + i} className="stat-card">
                   <div className="flex flex-col items-center space-y-2 animate-pulse">
                     <div className="w-8 h-8 rounded-full skeleton" />
                     <div className="h-6 skeleton rounded w-20" />
@@ -50,7 +50,7 @@ export default function StudentFeeStatusPage() {
             <div className="card p-5 animate-pulse">
               <div className="space-y-2">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-10 skeleton rounded" />
+                  <div key={'sk' + i} className="h-10 skeleton rounded" />
                 ))}
               </div>
             </div>

@@ -43,7 +43,7 @@ export default function AdminFeesPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-32 rounded-xl" />
+            <div key={'sk' + i} className="skeleton h-32 rounded-xl" />
           ))}
         </div>
         <div className="skeleton h-10 w-80 mb-4 rounded-lg" />
@@ -52,7 +52,7 @@ export default function AdminFeesPage() {
             <div className="skeleton h-10 w-full" />
           </div>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="skeleton h-14 mx-4 mb-2" />
+            <div key={'sk' + i} className="skeleton h-14 mx-4 mb-2" />
           ))}
           <div className="h-4" />
         </div>

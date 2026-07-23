@@ -121,14 +121,14 @@ export default function AdminReportsPage() {
           </h3>
           {isLoading ? (
             <div className="space-y-2">
-              {[...Array(3)].map((_, i) => <div key={i} className="h-14 skeleton rounded-xl" />)}
+              {[...Array(3)].map((_, i) => <div key={'sk' + i} className="h-14 skeleton rounded-xl" />)}
             </div>
           ) : recentReports.length === 0 ? (
             <p className="text-sm text-neutral-400 text-center py-6">No reports generated yet. Select a report type above to generate your first report.</p>
           ) : (
             <div className="space-y-1">
               {recentReports.map((r, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex items-center justify-between p-3.5 rounded-xl hover:bg-neutral-50 transition-colors group">
+                <motion.div key={'sk' + i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.08, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex items-center justify-between p-3.5 rounded-xl hover:bg-neutral-50 transition-colors group">
                   <div className="flex items-center gap-3.5">
                     <span className={`w-9 h-9 rounded-lg flex items-center justify-center ${r.type === 'PDF' ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}>
                       <MdAssessment size={18} />

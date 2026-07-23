@@ -44,7 +44,7 @@ export default function StudentMaterialsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="card p-5">
+              <div key={'sk' + i} className="card p-5">
                 <div className="flex items-start gap-3 animate-pulse">
                   <div className="w-10 h-10 rounded-md skeleton" />
                   <div className="flex-1 space-y-2">

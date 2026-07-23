@@ -132,7 +132,7 @@ export default function LandingPage() {
                       { icon: <MdCalendarToday className="text-3xl" />, label: 'Timetable' },
                       { icon: <MdAssignment className="text-3xl" />, label: 'Assignments' },
                     ].map((item, i) => (
-                      <div key={i} className="bg-white/80 backdrop-blur rounded-2xl p-6 flex flex-col items-center gap-2 shadow-sm">
+                      <div key={'sk' + i} className="bg-white/80 backdrop-blur rounded-2xl p-6 flex flex-col items-center gap-2 shadow-sm">
                         <div className="text-blue-600">{item.icon}</div>
                         <span className="text-sm font-medium text-gray-700">{item.label}</span>
                       </div>
@@ -154,7 +154,7 @@ export default function LandingPage() {
             { number: '50+', label: 'Courses' },
             { number: '99.9%', label: 'Uptime' },
           ].map((stat, i) => (
-            <motion.div key={i} className="text-center" {...fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}>
+            <motion.div key={'sk' + i} className="text-center" {...fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}>
               <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{stat.number}</div>
               <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
             </motion.div>
@@ -183,7 +183,7 @@ export default function LandingPage() {
               { icon: <MdEmail />, title: 'Communication Hub', desc: 'Automated reminders, notifications, and announcements across channels.' },
             ].map((service, i) => (
               <motion.div
-                key={i}
+                key={'sk' + i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -219,7 +219,7 @@ export default function LandingPage() {
                   'Real-time analytics and reporting',
                   'Multi-campus support',
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
+                  <div key={'sk' + i} className="flex items-center gap-3">
                     <MdCheckCircle className="text-green-500 shrink-0" />
                     <span className="text-sm text-gray-600">{item}</span>
                   </div>
@@ -267,7 +267,7 @@ export default function LandingPage() {
                 { icon: <MdPhone className="text-xl" />, title: 'Phone', value: '+1 (555) 123-4567' },
                 { icon: <MdLocationOn className="text-xl" />, title: 'Address', value: '123 Education Lane, Learning City, ED 12345' },
               ].map((item, i) => (
-                <div key={i} className="flex items-start gap-4">
+                <div key={'sk' + i} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">{item.icon}</div>
                   <div>
                     <h4 className="font-medium text-gray-800">{item.title}</h4>

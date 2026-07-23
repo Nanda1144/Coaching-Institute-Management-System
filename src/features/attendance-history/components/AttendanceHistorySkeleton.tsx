@@ -11,12 +11,12 @@ export default function AttendanceHistorySkeleton() {
         <div className="p-5 space-y-1">
           <div className="flex gap-4 pb-3 border-b border-gray-100">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="h-4 bg-gray-100 rounded animate-pulse flex-1" />
+              <div key={'sk' + i} className="h-4 bg-gray-100 rounded animate-pulse flex-1" />
             ))}
           </div>
           {Array.from({ length: rows }).map((_, i) => (
             <motion.div
-              key={i}
+              key={'sk' + i}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.05 }}
@@ -24,7 +24,7 @@ export default function AttendanceHistorySkeleton() {
             >
               {Array.from({ length: 9 }).map((_, j) => (
                 <div
-                  key={j}
+                  key={'sk' + j}
                   className={`h-4 bg-gray-100 rounded animate-pulse flex-1 ${j === 1 ? 'flex-[2]' : ''}`}
                   style={{ animationDelay: `${(i + j) * 50}ms` }}
                 />
@@ -38,7 +38,7 @@ export default function AttendanceHistorySkeleton() {
         <div className="h-4 w-44 bg-gray-100 rounded animate-pulse" />
         <div className="flex gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={'sk' + i} className="h-8 w-8 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>

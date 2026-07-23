@@ -34,7 +34,7 @@ export default function UpcomingSchedule() {
         </div>
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 animate-pulse">
+            <div key={'sk' + i} className="flex items-center gap-3 p-3 animate-pulse">
               <div className="w-14 h-14 rounded-xl bg-gray-200 flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="h-3 bg-gray-200 rounded w-32" />

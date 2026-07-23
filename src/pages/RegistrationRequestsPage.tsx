@@ -59,7 +59,7 @@ export default function RegistrationRequestsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-24 skeleton rounded-xl" />)}
+            {[...Array(4)].map((_, i) => <div key={'sk' + i} className="h-24 skeleton rounded-xl" />)}
           </div>
         </div>
       </div>

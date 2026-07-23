@@ -44,7 +44,7 @@ export default function ParentMaterialsPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card p-5">
+            <div key={'sk' + i} className="card p-5">
               <div className="flex items-start gap-3">
                 <div className="skeleton w-10 h-10 rounded-xl" />
                 <div className="flex-1 space-y-2">

@@ -27,7 +27,7 @@ export default function WeeklyView({ weekDays, getEventsForDate, onDragStart }: 
             {weekDays.map((d, i) => {
               const isToday = d.toDateString() === todayStr
               return (
-                <div key={i} className={`p-2 text-center border-l border-gray-50 ${isToday ? 'bg-primary/5' : ''}`}>
+                <div key={'sk' + i} className={`p-2 text-center border-l border-gray-50 ${isToday ? 'bg-primary/5' : ''}`}>
                   <p className={`text-xs font-semibold ${isToday ? 'text-primary' : 'text-gray-500'}`}>
                     {d.toLocaleDateString('en-US', { weekday: 'short' })}
                   </p>
@@ -63,7 +63,7 @@ export default function WeeklyView({ weekDays, getEventsForDate, onDragStart }: 
                     const isToday = d.toDateString() === todayStr
                     return (
                       <div
-                        key={i}
+                        key={'sk' + i}
                         className={`p-1 border-l border-gray-50 min-h-[60px] ${
                           isToday ? 'bg-primary/[0.02]' : ''
                         }`}

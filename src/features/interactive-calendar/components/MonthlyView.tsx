@@ -42,7 +42,7 @@ export default function MonthlyView({ monthDays, getEventsForDate, onDragStart }
             const dayNum = date.getDate()
             return (
               <motion.div
-                key={i}
+                key={'sk' + i}
                 layout
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

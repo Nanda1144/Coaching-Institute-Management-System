@@ -36,7 +36,7 @@ export default function BgDecoration({ variant = 'default', children }: BgDecora
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         {orbs.map((orb, i) => (
           <div
-            key={i}
+            key={'sk' + i}
             className={`absolute ${orb.size} ${orb.position} ${orb.color} rounded-full blur-[100px] ${orb.animation}`}
           />
         ))}

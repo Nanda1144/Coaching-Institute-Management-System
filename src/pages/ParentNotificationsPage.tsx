@@ -66,7 +66,7 @@ export default function ParentNotificationsPage() {
         </div>
         <div className="space-y-2">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card p-4">
+            <div key={'sk' + i} className="card p-4">
               <div className="flex items-start gap-3">
                 <div className="skeleton w-9 h-9 rounded-xl" />
                 <div className="flex-1 space-y-2">

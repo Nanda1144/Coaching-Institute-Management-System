@@ -29,11 +29,11 @@ export default function ParentTimetablePage() {
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="card overflow-hidden">
+            <div key={'sk' + i} className="card overflow-hidden">
               <div className="skeleton h-10 w-full rounded-none" />
               <div className="divide-y divide-neutral-100">
                 {[1, 2, 3].map((j) => (
-                  <div key={j} className="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div key={'sk' + j} className="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="skeleton h-6 w-24 rounded-full" />
                     <div className="flex-1 space-y-1">
                       <div className="skeleton h-4 w-40" />
@@ -104,7 +104,7 @@ export default function ParentTimetablePage() {
             <div className="divide-y divide-neutral-100">
               {day.classes.map((cls: any, i: number) => (
                 <div
-                  key={i}
+                  key={'sk' + i}
                   className="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-3 hover:bg-neutral-50 transition-colors"
                 >
                   <span className="badge badge-info shrink-0 w-fit">{cls.time}</span>

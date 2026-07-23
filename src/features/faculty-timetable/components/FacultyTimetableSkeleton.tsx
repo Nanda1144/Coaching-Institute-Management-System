@@ -5,7 +5,7 @@ export default function FacultyTimetableSkeleton() {
       <div className="h-32 bg-white/50 rounded-2xl border border-white/30" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-white/50 rounded-2xl border border-white/30" />
+          <div key={'sk' + i} className="h-24 bg-white/50 rounded-2xl border border-white/30" />
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

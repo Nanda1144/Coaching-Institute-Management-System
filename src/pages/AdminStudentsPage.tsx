@@ -80,7 +80,7 @@ export default function AdminStudentsPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-28 rounded-xl" />
+            <div key={'sk' + i} className="skeleton h-28 rounded-xl" />
           ))}
         </div>
         <div className="card overflow-hidden">
@@ -88,7 +88,7 @@ export default function AdminStudentsPage() {
             <div className="skeleton h-10 w-full" />
           </div>
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton h-14 mx-4 mb-2" />
+            <div key={'sk' + i} className="skeleton h-14 mx-4 mb-2" />
           ))}
           <div className="h-4" />
         </div>

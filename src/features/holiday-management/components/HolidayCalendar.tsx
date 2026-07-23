@@ -76,7 +76,7 @@ export default function HolidayCalendar({ holidays }: HolidayCalendarProps) {
           const isWeekend = date.getDay() === 0 || date.getDay() === 6
           return (
             <div
-              key={i}
+              key={'sk' + i}
               className={`aspect-square p-0.5 border border-gray-50 flex flex-col items-center justify-start ${
                 !isCurrentMonth ? 'bg-gray-50/30' : ''
               } ${isToday ? 'ring-1 ring-primary/30 bg-primary/[0.03]' : ''}`}

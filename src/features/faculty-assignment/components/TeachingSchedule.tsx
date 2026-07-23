@@ -54,7 +54,7 @@ export default function TeachingSchedule({
         )}
         {slots.map((slot, i) => (
           <motion.div
-            key={i}
+            key={'sk' + i}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 p-3 rounded-xl bg-gray-50/50 border border-gray-100"

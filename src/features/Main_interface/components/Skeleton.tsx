@@ -23,7 +23,7 @@ export default function Skeleton({ variant = 'text', width, height, count = 1, c
     <>
       {Array.from({ length: count }).map((_, i) => (
         <div
-          key={i}
+          key={'sk' + i}
           className={cn(
             baseClass,
             variant === 'text' && 'mb-2',
