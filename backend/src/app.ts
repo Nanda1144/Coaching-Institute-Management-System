@@ -23,6 +23,7 @@ import uploadRoutes from './modules/upload/upload.routes';
 import reminderRoutes from './modules/reminder/reminder.routes';
 import facultyTransferRoutes from './modules/faculty-transfer/faculty-transfer.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
+import adminRoutes from './modules/admin/admin.routes';
 import studentAuthRoutes from './modules/student-auth/student-auth.routes';
 import studentDashboardRoutes from './modules/student-dashboard/student-dashboard.routes';
 import parentDashboardRoutes from './modules/parent-dashboard/parent-dashboard.routes';
@@ -158,6 +159,7 @@ app.use('/api/revaluations', revaluationRoutes);
 app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/cloud-documents', cloudDocumentsRoutes);
 app.use('/api/payment-gateways', paymentGatewayRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling
 app.use(notFoundHandler);

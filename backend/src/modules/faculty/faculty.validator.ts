@@ -6,7 +6,7 @@ export const createFacultySchema = z.object({
   fullName: z.string().optional(),
   email: z.string().email('Invalid email format'),
   phone: z.string().min(10, 'Phone must be at least 10 digits').max(15),
-  gender: z.enum(['male', 'female', 'other']),
+  gender: z.preprocess((v) => String(v).toLowerCase(), z.enum(['male', 'female', 'other'])),
   dateOfBirth: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: 'Invalid date format for dateOfBirth',
   }).optional(),

@@ -5,9 +5,17 @@ import { env } from '../../config/env';
 import { AppError } from '../../shared/errors/AppError';
 import type { CreateFacultyInput, UpdateFacultyInput, FacultyQueryInput } from './faculty.validator';
 
-function generateFacultyId(lastId?: string): string {
-  const lastNum = lastId ? parseInt(lastId.split('-')[1], 10) : 0;
-  return `FAC-${String(lastNum + 1).padStart(5, '0')}`;
+async function generateFacultyId(): Promise<string> {
+  const rows = await db.findMany('faculty', { select: ['facultyId'] });
+  let maxNum = 0;
+  for (const r of rows) {
+    const match = (r.facultyId as string)?.match(/^FAC-(\d+)$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  }
+  return `FAC-${String(maxNum + 1).padStart(5, '0')}`;
 }
 
 async function generateUsername(firstName: string, lastName: string): Promise<string> {
@@ -94,10 +102,7 @@ export const facultyService = {
       if (existingEid) throw AppError.conflict('Employee ID already in use');
     }
 
-    const lastFaculty = await db.findFirst('faculty', {
-      orderBy: [{ column: 'facultyId', dir: 'desc' }],
-    });
-    const fId = generateFacultyId(lastFaculty?.facultyId);
+    const fId = await generateFacultyId();
 
     const username = await generateUsername(firstName, lastName);
     const tempPassword = Math.random().toString(36).slice(-10) + 'A1!';

@@ -476,7 +476,8 @@ body {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-neutral-200);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: var(--shadow-card);
 }
 .table-container table {
@@ -860,6 +861,47 @@ body {
 }
 .bg-dark-navy-mid {
   background-color: #0F172A;
+}
+
+/* ── Responsive Overrides ── */
+@media (max-width: 1023px) {
+  .dashboard-main.sidebar-open {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-container {
+    padding: 1rem 1rem;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+  .stat-card .stat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+  .table-container th,
+  .table-container td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  .input-group {
+    gap: 0.25rem;
+  }
+  .input-field, .select-field {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
 }
 
 /* ── Print Styles ── */

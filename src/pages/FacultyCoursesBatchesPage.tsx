@@ -271,7 +271,7 @@ export default function FacultyCoursesBatchesPage() {
           <p className="text-neutral-500 text-sm mt-1">Manage your courses, batches, subjects, and student registrations</p>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex gap-1 p-1 bg-neutral-100 rounded-xl w-fit">
+        <motion.div variants={itemVariants} className="flex gap-1 p-1 bg-neutral-100 rounded-xl w-fit overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.key

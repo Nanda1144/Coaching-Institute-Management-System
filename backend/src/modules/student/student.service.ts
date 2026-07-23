@@ -43,7 +43,7 @@ export const studentService = {
       dateOfBirth: new Date(dateOfBirth as string),
       status: (data.status as string) || 'active',
       batchId: (data.batchId as string) || null,
-      address: data.address || null,
+      address: typeof data.address === 'string' ? { text: data.address } : (data.address || null),
       createdById: (data.createdById as string) || null,
     });
   },

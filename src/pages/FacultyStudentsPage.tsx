@@ -89,7 +89,7 @@ export default function FacultyStudentsPage() {
           <button onClick={() => window.location.reload()} className="btn btn-ghost btn-sm"><MdRefresh size={16} /> Refresh</button>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="flex gap-1 p-1 bg-neutral-100 rounded-xl w-fit">
+        <motion.div variants={itemVariants} className="flex gap-1 p-1 bg-neutral-100 rounded-xl w-fit overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.key}

@@ -7,7 +7,7 @@ import {
   MdEvent, MdAssessment, MdFace, MdFingerprint,
   MdQrCode, MdHistory, MdAnalytics, MdBook, MdSearch,
   MdChevronLeft, MdStars, MdAccountTree, MdEdit,
-  MdCloudUpload, MdMilitaryTech, MdReceipt,
+  MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity,
 } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
 import { useState } from 'react'
@@ -74,6 +74,7 @@ const adminNavItems: NavItem[] = [
   },
   { to: '/dashboard/admin/reports', icon: MdAssessment, label: 'Reports', badge: 'New' },
   { to: '/dashboard/admin/notifications', icon: MdNotifications, label: 'Notifications' },
+  { to: '/dashboard/admin/permissions', icon: MdSecurity, label: 'Permissions' },
   { to: '/dashboard/faculty/search', icon: MdSearch, label: 'Advanced Search' },
 ]
 

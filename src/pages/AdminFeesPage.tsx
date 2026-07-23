@@ -88,7 +88,7 @@ export default function AdminFeesPage() {
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex gap-1 mb-5 p-1 bg-neutral-100/50 rounded-lg w-fit">
+        <div className="flex gap-1 mb-5 p-1 bg-neutral-100/50 rounded-lg w-fit overflow-x-auto">
           {(['collection', 'pending', 'structure'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`btn btn-sm rounded-md transition-all ${tab === t ? 'btn-primary shadow-sm' : 'btn-ghost text-neutral-500'}`}>
               {t === 'collection' ? 'Collection' : t === 'pending' ? 'Pending Fees' : 'Fee Structure'}
@@ -182,7 +182,7 @@ export default function AdminFeesPage() {
                   ) : (
                     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-3">
                       {pendingList.map((p: any) => (
-                        <motion.div key={p.roll} variants={itemVariants} className="card p-4 border-danger/20 hover:border-danger/40 transition-all">
+                        <motion.div key={`pending-${p.roll}-${p.type || p.dueDate}`} variants={itemVariants} className="card p-4 border-danger/20 hover:border-danger/40 transition-all">
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-full bg-danger-light flex items-center justify-center shrink-0">
@@ -232,8 +232,8 @@ export default function AdminFeesPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {structureList.map((f: any) => (
-                          <tr key={f.type}>
+                        {structureList.map((f: any, fi: number) => (
+                          <tr key={`fee-${f.type}-${fi}`}>
                             <td className="text-sm text-neutral-800">{f.type}</td>
                             <td className="text-right font-semibold text-neutral-800">₹{f.amount?.toLocaleString()}</td>
                             <td className="text-center text-sm text-neutral-500">{f.dueDate}</td>

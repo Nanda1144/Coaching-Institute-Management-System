@@ -102,7 +102,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider text-center mb-4">Quick Demo Access</p>
             {DEMO_CREDENTIALS.map((c) => (
               <motion.button
-                key={c.role}
+                key={c.email}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => fillDemo(c)}
@@ -273,7 +273,7 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {DEMO_CREDENTIALS.map((c) => (
                     <button
-                      key={c.role}
+                      key={`mobile-${c.email}`}
                       onClick={() => fillDemo(c)}
                       className={`text-xs p-2.5 rounded-lg bg-gradient-to-br ${c.gradient} text-white hover:shadow-lg transition-all text-left hover:-translate-y-0.5`}
                     >

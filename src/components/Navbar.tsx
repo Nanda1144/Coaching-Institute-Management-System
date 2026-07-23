@@ -89,7 +89,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              className="bg-transparent border-none outline-none text-sm text-neutral-700 w-72 placeholder:text-neutral-400"
+              className="bg-transparent border-none outline-none text-sm text-neutral-700 w-48 xl:w-72 placeholder:text-neutral-400"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400">
@@ -97,6 +97,12 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
               </button>
             )}
           </div>
+          <button
+            className="md:hidden p-2.5 rounded-xl hover:bg-neutral-100 transition-colors text-neutral-500"
+            aria-label="Search"
+          >
+            <MdSearch className="text-xl" />
+          </button>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -157,7 +163,7 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
                     ) : (
                       notifications.map((n: any, i: number) => (
                         <motion.div
-                          key={n.id || i}
+                          key={n.id ?? `notif-${i}`}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.05 }}

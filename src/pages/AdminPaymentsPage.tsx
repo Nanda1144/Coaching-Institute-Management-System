@@ -156,7 +156,7 @@ export default function AdminPaymentsPage() {
       )}
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}>
-        <div className="flex gap-1 mb-5 p-1 bg-neutral-100/50 rounded-lg w-fit">
+        <div className="flex gap-1 mb-5 p-1 bg-neutral-100/50 rounded-lg w-fit overflow-x-auto">
           {(['all', 'history', 'summary'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`btn btn-sm rounded-md transition-all ${tab === t ? 'btn-primary shadow-sm' : 'btn-ghost text-neutral-500'}`}>
               {t === 'all' ? 'All Payments' : t === 'history' ? 'History' : 'Summary'}

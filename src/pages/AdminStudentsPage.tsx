@@ -59,9 +59,13 @@ export default function AdminStudentsPage() {
   const handleCreate = () => {
     const form = document.getElementById('add-student-form') as HTMLFormElement
     if (!form) return
-    const data = Object.fromEntries(new FormData(form)) as Record<string, unknown>
-    createStudent.mutate(data)
-    setTab('list')
+    const data: Record<string, unknown> = {}
+    for (const [key, value] of new FormData(form).entries()) {
+      if (value !== '') data[key] = value
+    }
+    createStudent.mutate(data, {
+      onSuccess: () => setTab('list'),
+    })
   }
 
   if (isLoading) {

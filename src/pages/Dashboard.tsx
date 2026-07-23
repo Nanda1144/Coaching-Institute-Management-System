@@ -60,19 +60,20 @@ function AdminDashboard() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Admin Dashboard</h1>
           <p className="text-sm text-neutral-500 mt-1">Welcome back! Here's your institute overview.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => navigate('/dashboard/registration-requests')} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors">
             <MdPerson size={18} />
-            <span>Registration Requests</span>
+            <span className="hidden sm:inline">Registration Requests</span>
+            <span className="sm:hidden">Requests</span>
           </button>
           <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-success/10 text-success text-sm font-medium">
             <MdTrendingUp />
-            <span>All systems operational</span>
+            <span className="hidden sm:inline">All systems operational</span>
           </div>
         </div>
       </motion.div>
@@ -146,7 +147,7 @@ function AdminDashboard() {
           {adminStats.holidays?.length > 0 ? (
             <div className="space-y-3">
               {adminStats.holidays.slice(0, 5).map((h: any, i: number) => (
-                <div key={h.id || i} className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50">
+                <div key={h.id ?? `holiday-${i}`} className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50">
                   <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
                     <MdStars className="text-primary-600" />
                   </div>
@@ -185,12 +186,12 @@ function FacultyDashboard() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Faculty Dashboard</h1>
           <p className="text-sm text-neutral-500 mt-1">Manage your classes, attendance, and assignments.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50 text-primary-700 text-sm font-medium">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-50 text-primary-700 text-sm font-medium w-fit">
           <MdCheckCircle className="text-primary-500" />
           <span>{s.myClasses || 0} classes</span>
         </div>
@@ -252,7 +253,7 @@ function StudentDashboard() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Student Dashboard</h1>
           <p className="text-sm text-neutral-500 mt-1">Track your academic progress and stay updated.</p>
@@ -313,7 +314,7 @@ function ParentDashboard() {
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Parent Dashboard</h1>
           <p className="text-sm text-neutral-500 mt-1">Stay informed about your child's academic journey.</p>

@@ -348,10 +348,6 @@ export interface AdminDashboardStats {
   activeFaculty: number
   totalStudents: number
   totalSubjects: number
-  totalDepartments: number
-  assignedCourses: number
-  todayClasses: number
-  pendingLeaves: number
   todayAttendance: number
   pendingAssignments: number
   upcomingHolidays: number
@@ -364,10 +360,6 @@ export function normalizeAdminDashboardStats(response: unknown): AdminDashboardS
     activeFaculty: safeNumber(obj.activeFaculty),
     totalStudents: safeNumber(obj.totalStudents),
     totalSubjects: safeNumber(obj.totalSubjects),
-    totalDepartments: safeNumber(obj.totalDepartments),
-    assignedCourses: safeNumber(obj.pendingAssignments) || safeNumber(obj.assignedCourses),
-    todayClasses: safeNumber(obj.totalClasses) || safeNumber(obj.todayClasses),
-    pendingLeaves: safeNumber(obj.upcomingHolidays) || safeNumber(obj.pendingLeaves),
     todayAttendance: safeNumber(obj.todayAttendance),
     pendingAssignments: safeNumber(obj.pendingAssignments),
     upcomingHolidays: safeNumber(obj.upcomingHolidays),

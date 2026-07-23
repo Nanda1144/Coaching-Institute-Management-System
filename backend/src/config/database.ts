@@ -1,10 +1,19 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 import { env } from './env';
+import { lookup } from 'dns/promises';
 
 const MAX_RETRIES = 10;
-const RETRY_BASE_DELAY_MS = 2000;
+const RETRY_BASE_DELAY_MS = 4000;
 const HEALTH_CHECK_INTERVAL_MS = 30000;
 const RECONNECT_DELAY_MS = 5000;
+
+function maskConnectionString(cs: string): string {
+  try {
+    return cs.replace(/\/\/[^:]+:[^@]+@/, '//USER:PASSWORD@');
+  } catch {
+    return cs;
+  }
+}
 
 class Database {
   private static instance: Database | null = null;
@@ -15,18 +24,25 @@ class Database {
   private _reconnecting: boolean = false;
 
   private constructor() {
-    this._pool = new Pool({
+    const poolConfig: import('pg').PoolConfig = {
       connectionString: env.DIRECT_URL,
-      max: 20,
+      max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-      ssl: { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED },
-    });
+      connectionTimeoutMillis: 30000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
+      ssl: env.DB_SSL_REJECT_UNAUTHORIZED
+        ? { rejectUnauthorized: true }
+        : { rejectUnauthorized: false },
+    };
+    this._pool = new Pool(poolConfig);
 
     this._pool.on('error', (err) => {
-      console.error('Unexpected pool error:', err.message);
+      console.error('[DB] Unexpected pool error:', err.message);
       this._isConnected = false;
     });
+
+    console.log('[DB] Pool created:', maskConnectionString(env.DIRECT_URL));
   }
 
   static getInstance(): Database {
@@ -44,8 +60,25 @@ class Database {
     return this._isConnected;
   }
 
+  private async _resolveHostname(): Promise<boolean> {
+    try {
+      const url = new URL(env.DIRECT_URL);
+      const addresses = await lookup(url.hostname);
+      console.log(`[DB] DNS resolved ${url.hostname} -> ${addresses.address}`);
+      return true;
+    } catch (err) {
+      console.error(`[DB] DNS resolution failed: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
   async connect(): Promise<void> {
     let lastError: Error | null = null;
+
+    const dnsOk = await this._resolveHostname();
+    if (!dnsOk) {
+      console.warn('[DB] DNS resolution failed — the Supabase host may be unreachable from this network.');
+    }
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -53,13 +86,25 @@ class Database {
         this._isConnected = true;
         this._reconnecting = false;
         this._startHealthCheck();
-        console.log(`Database connected successfully (attempt ${attempt})`);
+        console.log(`[DB] Connected successfully (attempt ${attempt})`);
         return;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         const delay = Math.min(RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1), 30000);
+
+        const msg = lastError.message;
+        let hint = '';
+        if (msg.includes('timeout')) {
+          hint = ' — check firewall/VPN, or the Supabase DB may be paused (reactivate at supabase.com/dashboard)';
+        } else if (msg.includes('ECONNREFUSED')) {
+          hint = ' — connection refused, check if the DB host/port is correct and whitelisted';
+        } else if (msg.includes('ENOTFOUND')) {
+          hint = ' — DNS lookup failed, check network connectivity';
+        } else if (msg.includes('password') || msg.includes('auth')) {
+          hint = ' — check DATABASE_URL credentials';
+        }
         console.error(
-          `Database connection attempt ${attempt}/${MAX_RETRIES} failed: ${lastError.message}. ` +
+          `[DB] Connection attempt ${attempt}/${MAX_RETRIES} failed: ${msg}${hint}. ` +
           `Retrying in ${delay}ms...`
         );
 
@@ -70,7 +115,7 @@ class Database {
     }
 
     this._isConnected = false;
-    console.error(`All ${MAX_RETRIES} database connection attempts failed. Last error: ${lastError?.message}`);
+    console.error(`[DB] All ${MAX_RETRIES} connection attempts failed. Last error: ${lastError?.message}`);
     throw lastError || new Error('Database connection failed after all retries');
   }
 
@@ -83,9 +128,9 @@ class Database {
       }
       await this._pool.end();
       this._isConnected = false;
-      console.log('Database disconnected successfully');
+      console.log('[DB] Disconnected successfully');
     } catch (err) {
-      console.error('Error during database disconnection:', err);
+      console.error('[DB] Error during disconnection:', err);
     }
   }
 
@@ -97,11 +142,11 @@ class Database {
         if (!this._isConnected) {
           this._isConnected = true;
           this._reconnecting = false;
-          console.log('Database connection restored');
+          console.log('[DB] Connection restored');
         }
       } catch {
         this._isConnected = false;
-        console.error('Database health check failed — connection lost');
+        console.error('[DB] Health check failed — connection lost');
         this._attemptReconnection();
       }
     }, HEALTH_CHECK_INTERVAL_MS);
@@ -126,23 +171,28 @@ class Database {
       }
 
       try {
-        this._pool = new Pool({
+        const poolConfig: import('pg').PoolConfig = {
           connectionString: env.DIRECT_URL,
-          max: 20,
+          max: 10,
           idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 10000,
-          ssl: { rejectUnauthorized: env.DB_SSL_REJECT_UNAUTHORIZED },
-        });
+          connectionTimeoutMillis: 30000,
+          keepAlive: true,
+          keepAliveInitialDelayMillis: 10000,
+          ssl: env.DB_SSL_REJECT_UNAUTHORIZED
+            ? { rejectUnauthorized: true }
+            : { rejectUnauthorized: false },
+        };
+        this._pool = new Pool(poolConfig);
         this._client = await this._pool.connect();
         this._isConnected = true;
         this._reconnecting = false;
         this._startHealthCheck();
-        console.log(`Database reconnected after ${attempt} attempt(s)`);
+        console.log(`[DB] Reconnected after ${attempt} attempt(s)`);
         return;
       } catch (err) {
         const delay = Math.min(RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1), 30000);
         console.error(
-          `Reconnection attempt ${attempt}/${MAX_RETRIES} failed: ` +
+          `[DB] Reconnection attempt ${attempt}/${MAX_RETRIES} failed: ` +
           `${err instanceof Error ? err.message : String(err)}. Retrying in ${delay}ms...`
         );
         if (attempt < MAX_RETRIES) {
@@ -152,7 +202,7 @@ class Database {
     }
 
     this._reconnecting = false;
-    console.error('All reconnection attempts exhausted. Will retry on next health check.');
+    console.error('[DB] All reconnection attempts exhausted. Will retry on next health check.');
   }
 
   async healthCheck(): Promise<{ status: string; latency: number }> {

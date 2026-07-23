@@ -41,7 +41,7 @@ export default function RecentActivities() {
       (a, b) => new Date(b.joiningDate).getTime() - new Date(a.joiningDate).getTime()
     )
     return sorted.slice(0, 8).map((f, i) => ({
-      id: f.id ?? i,
+      id: f.id ?? `activity-${i}`,
       type: (i === 0 || i === 3 ? 'joined' : i % 2 === 0 ? 'profile_update' : 'course_assignment') as ActivityItem['type'],
       facultyName: f.name || 'Unknown',
       description:

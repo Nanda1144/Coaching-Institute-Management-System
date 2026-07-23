@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, type ReactNode } from 'react'
+import { useState, useEffect, lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -83,6 +83,7 @@ const AdminNotificationsPage = lazy(() => import('./pages/AdminNotificationsPage
 const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage'))
 const AdminBranchesPage = lazy(() => import('./pages/AdminBranchesPage'))
 const AdminCertificatesPage = lazy(() => import('./pages/AdminCertificatesPage'))
+const AdminPermissionsPage = lazy(() => import('./pages/AdminPermissionsPage'))
 const RegistrationRequestsPage = lazy(() => import('./pages/RegistrationRequestsPage'))
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -133,8 +134,16 @@ const pageVariants = {
 }
 
 function MainLayout({ children }: { children: ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024)
   const location = useLocation()
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   return (
     <div className="dashboard-layout">
@@ -219,6 +228,7 @@ function DashboardRoutes() {
       <Route path="/admin/payments" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminPaymentsPage /></RoleGuard>} />
       <Route path="/admin/branches" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminBranchesPage /></RoleGuard>} />
       <Route path="/admin/certificates" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminCertificatesPage /></RoleGuard>} />
+      <Route path="/admin/permissions" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminPermissionsPage /></RoleGuard>} />
       <Route path="/my-profile" element={<RoleGuard roles={['STUDENT']}><StudentProfilePage /></RoleGuard>} />
       <Route path="/my-attendance" element={<RoleGuard roles={['STUDENT']}><StudentAttendancePage /></RoleGuard>} />
       <Route path="/my-assignments" element={<RoleGuard roles={['STUDENT']}><StudentAssignmentsPage /></RoleGuard>} />
