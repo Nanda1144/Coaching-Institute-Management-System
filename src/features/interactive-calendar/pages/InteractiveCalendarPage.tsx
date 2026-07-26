@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MdCalendarMonth } from 'react-icons/md'
+import BackButton from '../../../components/BackButton'
 import Toast from '../../../components/Toast'
 import { useCalendar } from '../hooks/useCalendar'
 
@@ -67,8 +68,8 @@ function mapToCalendarEvents(apiData: Record<string, unknown>[]): CalendarEvent[
 
 export default function InteractiveCalendarPage() {
   const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [events, setEvents] = useState<CalendarEvent[]>([])
+  const totalEvents = events.length
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
@@ -115,6 +116,9 @@ export default function InteractiveCalendarPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
+      <div className="flex items-center gap-3 mb-2">
+        <BackButton />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -144,8 +148,6 @@ export default function InteractiveCalendarPage() {
       <CalendarSidebar
         filters={filters}
         onToggleFilter={toggleFilter}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
         departmentOptions={departmentOptions}
         facultyOptions={facultyOptions}
         courseOptions={courseOptions}
@@ -177,6 +179,7 @@ export default function InteractiveCalendarPage() {
               monthDays={monthDays}
               getEventsForDate={getEventsForDate}
               onDragStart={handleDragStart}
+              totalEvents={totalEvents}
             />
           )}
         </div>

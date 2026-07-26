@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { MdCalendarMonth, MdPrint, MdDownload } from 'react-icons/md'
+import { MdCalendarMonth, MdPrint, MdDownload, MdAdd } from 'react-icons/md'
 import Toast from '../../../components/Toast'
 import * as XLSX from 'xlsx'
 import { safeUpperFirst } from '../../../utils/unwrap'
@@ -10,6 +10,7 @@ import HolidayList from '../components/HolidayList'
 import HolidayFilters from '../components/HolidayFilters'
 import SpecialEvents from '../components/SpecialEvents'
 import HolidaySkeleton from '../components/HolidaySkeleton'
+import HolidayFormModal from '../components/HolidayFormModal'
 import holidayService from '../../../services/holiday/holiday.service'
 import type { HolidayFilters as FilterType } from '../types/holiday.types'
 import type { Holiday, SpecialEvent, HolidayStats } from '../types/holiday.types'
@@ -50,41 +51,42 @@ export default function HolidayManagementPage() {
   const [specialEvents, setSpecialEvents] = useState<SpecialEvent[]>([])
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [holidaysRes, statsRes, eventsRes] = await Promise.allSettled([
-          holidayService.getAll(),
-          holidayService.getStats(),
-          holidayService.getSpecialEvents(),
-        ])
-        if (holidaysRes.status === 'fulfilled') {
-          const data = holidaysRes.value
-          const rawData = data?.data ?? []
-          setHolidays(Array.isArray(rawData) ? rawData : (rawData?.data ?? []))
-        }
-        if (statsRes.status === 'fulfilled') {
-          const data = statsRes.value
-          const s = (data?.data ?? data) as HolidayStats
-          if (s) setHolidayStats(s)
-        }
-        if (eventsRes.status === 'fulfilled') {
-          const data = eventsRes.value
-          const rawEvents = data?.data ?? []
-          setSpecialEvents(Array.isArray(rawEvents) ? rawEvents : (rawEvents?.data ?? []))
-        }
-      } catch {
-        setHolidays([])
-        setSpecialEvents([])
-        setToastMessage('Failed to load holiday data')
-        setShowToast(true)
-      } finally {
-        setLoading(false)
+  const fetchData = useCallback(async () => {
+    try {
+      const [holidaysRes, statsRes, eventsRes] = await Promise.allSettled([
+        holidayService.getAll(),
+        holidayService.getStats(),
+        holidayService.getSpecialEvents(),
+      ])
+      if (holidaysRes.status === 'fulfilled') {
+        const data = holidaysRes.value
+        const rawData = data?.data ?? []
+        setHolidays(Array.isArray(rawData) ? rawData : (rawData?.data ?? []))
       }
+      if (statsRes.status === 'fulfilled') {
+        const data = statsRes.value
+        const s = (data?.data ?? data) as HolidayStats
+        if (s) setHolidayStats(s)
+      }
+      if (eventsRes.status === 'fulfilled') {
+        const data = eventsRes.value
+        const rawEvents = data?.data ?? []
+        setSpecialEvents(Array.isArray(rawEvents) ? rawEvents : (rawEvents?.data ?? []))
+      }
+    } catch {
+      setHolidays([])
+      setSpecialEvents([])
+      setToastMessage('Failed to load holiday data')
+      setShowToast(true)
+    } finally {
+      setLoading(false)
     }
-    fetchData()
   }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleFilterChange = useCallback((key: keyof FilterType, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
@@ -93,6 +95,61 @@ export default function HolidayManagementPage() {
   const handleReset = useCallback(() => {
     setFilters(initialFilters)
   }, [])
+
+  const handleCreate = () => {
+    setEditingHoliday(null)
+    setShowModal(true)
+  }
+
+  const handleEdit = (holiday: Holiday) => {
+    setEditingHoliday(holiday)
+    setShowModal(true)
+  }
+
+  const handleSave = async (data: Partial<Holiday>, status: 'draft' | 'upcoming') => {
+    try {
+      const payload = { ...data, status }
+      if (editingHoliday) {
+        await holidayService.update(editingHoliday.id, payload as Record<string, unknown>)
+        setToastMessage('Holiday updated successfully')
+      } else {
+        await holidayService.create(payload as Record<string, unknown>)
+        setToastMessage(status === 'draft' ? 'Holiday saved as draft' : 'Holiday announced successfully')
+      }
+      setShowToast(true)
+      setShowModal(false)
+      setEditingHoliday(null)
+      fetchData()
+    } catch {
+      setToastMessage('Failed to save holiday')
+      setShowToast(true)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this holiday?')) return
+    try {
+      await holidayService.delete(id)
+      setHolidays((prev) => prev.filter((h) => h.id !== id))
+      setToastMessage('Holiday deleted successfully')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to delete holiday')
+      setShowToast(true)
+    }
+  }
+
+  const handleAnnounce = async (id: string) => {
+    try {
+      await holidayService.update(id, { status: 'upcoming' })
+      setHolidays((prev) => prev.map((h) => h.id === id ? { ...h, status: 'upcoming' as const } : h))
+      setToastMessage('Holiday announced successfully')
+      setShowToast(true)
+    } catch {
+      setToastMessage('Failed to announce holiday')
+      setShowToast(true)
+    }
+  }
 
   const filteredHolidays = useMemo(() => {
     let result = [...holidays]
@@ -153,6 +210,13 @@ export default function HolidayManagementPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleCreate}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
+          >
+            <MdAdd className="text-lg" />
+            <span className="hidden sm:inline">Create Holiday</span>
+          </button>
+          <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50 transition-all shadow-sm"
           >
@@ -193,7 +257,18 @@ export default function HolidayManagementPage() {
         </div>
       </div>
 
-      <HolidayList holidays={filteredHolidays} />
+      <HolidayList
+        holidays={filteredHolidays}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAnnounce={handleAnnounce}
+      />
+      <HolidayFormModal
+        isOpen={showModal}
+        holiday={editingHoliday}
+        onClose={() => { setShowModal(false); setEditingHoliday(null) }}
+        onSave={handleSave}
+      />
       <Toast
         message={toastMessage}
         isVisible={showToast}

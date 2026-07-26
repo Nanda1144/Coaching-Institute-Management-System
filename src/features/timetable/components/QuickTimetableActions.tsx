@@ -14,8 +14,8 @@ interface QuickTimetableActionsProps {
 const defaultEntries: TimetableEntry[] = []
 
 const actions = [
-  { label: 'Create Timetable', icon: MdPlaylistAddCheck, color: '#3b82f6', bg: '#dbeafe', route: '/timetable/create' },
-  { label: 'View Calendar', icon: MdCalendarMonth, color: '#10b981', bg: '#d1fae5', route: '/timetable/calendar' },
+  { label: 'Create Timetable', icon: MdPlaylistAddCheck, color: '#3b82f6', bg: '#dbeafe', route: '/dashboard/timetable/create' },
+  { label: 'View Calendar', icon: MdCalendarMonth, color: '#10b981', bg: '#d1fae5', route: '/dashboard/timetable/calendar' },
   { label: 'Edit Schedule', icon: MdEditCalendar, color: '#8b5cf6', bg: '#ede9fe', route: null, action: 'edit' },
   { label: 'Check Conflicts', icon: MdWarning, color: '#f59e0b', bg: '#fef3c7', route: null, action: 'conflicts' },
 ]

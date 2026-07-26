@@ -1,16 +1,41 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MdSchool, MdAssessment, MdWarning, MdCalendarMonth } from 'react-icons/md'
-
-const actions = [
-  { label: 'Timetable', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: '/dashboard/faculty/timetable' },
-  { label: 'Conflicts Alert', icon: MdWarning, color: '#ef4444', bg: '#fee2e2', route: '/dashboard/timetable/calendar' },
-  { label: 'Calendar View', icon: MdCalendarMonth, color: '#3b82f6', bg: '#dbeafe', route: '/dashboard/timetable/calendar' },
-  { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: '/dashboard/attendance/reports' },
-]
+import { useAuth } from '../contexts/AuthContext'
 
 export default function QuickActions() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const role = user?.role || ''
+
+  const isFaculty = ['FACULTY', 'HOD'].includes(role)
+  const isAdmin = ['SUPER_ADMIN', 'ADMIN'].includes(role)
+  const isStudent = role === 'STUDENT'
+
+  const timetableRoute = isFaculty
+    ? '/dashboard/faculty/timetable'
+    : isAdmin
+    ? '/dashboard/timetable'
+    : isStudent
+    ? '/dashboard/student/timetable'
+    : '/dashboard/child-timetable'
+
+  const calendarRoute = isAdmin || isFaculty
+    ? '/dashboard/timetable/calendar'
+    : isStudent
+    ? '/dashboard/student/timetable'
+    : '/dashboard/child-timetable'
+
+  const reportRoute = isAdmin || isFaculty
+    ? '/dashboard/attendance/reports'
+    : '/dashboard/my-attendance'
+
+  const actions = [
+    { label: 'Timetable', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: timetableRoute },
+    { label: 'Conflicts Alert', icon: MdWarning, color: '#ef4444', bg: '#fee2e2', route: calendarRoute },
+    { label: 'Calendar View', icon: MdCalendarMonth, color: '#3b82f6', bg: '#dbeafe', route: calendarRoute },
+    { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: reportRoute },
+  ]
 
   const handleClick = (route: string) => {
     navigate(route)

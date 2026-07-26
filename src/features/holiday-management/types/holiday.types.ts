@@ -1,5 +1,5 @@
 export type HolidayType = 'national' | 'festival' | 'academic' | 'event'
-export type HolidayStatus = 'upcoming' | 'ongoing' | 'completed'
+export type HolidayStatus = 'draft' | 'upcoming' | 'ongoing' | 'completed'
 
 export interface Holiday {
   id: string

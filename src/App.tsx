@@ -150,7 +150,7 @@ function MainLayout({ children }: { children: ReactNode }) {
       <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       <div className={`dashboard-main ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
-        <main className="page-container">
+        <main className="page-container" style={{ minHeight: 'calc(100vh - 140px)' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -166,6 +166,9 @@ function MainLayout({ children }: { children: ReactNode }) {
             </motion.div>
           </AnimatePresence>
         </main>
+        <footer className="px-4 md:px-6 py-3 border-t border-neutral-200/60 bg-white/50 text-center text-xs text-neutral-400">
+          &copy; {new Date().getFullYear()} EduManage. All rights reserved.
+        </footer>
       </div>
     </div>
   )
@@ -188,8 +191,8 @@ function DashboardRoutes() {
       <Route path="/" element={<Dashboard />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/holidays" element={<HolidayManagementPage />} />
-      <Route path="/student/timetable" element={<StudentTimetablePage />} />
-      <Route path="/faculty/timetable" element={<FacultyTimetablePage />} />
+      <Route path="/student/timetable" element={<RoleGuard roles={['STUDENT', 'SUPER_ADMIN', 'ADMIN', 'HOD']}><StudentTimetablePage /></RoleGuard>} />
+      <Route path="/faculty/timetable" element={<RoleGuard roles={['FACULTY', 'HOD', 'SUPER_ADMIN', 'ADMIN']}><FacultyTimetablePage /></RoleGuard>} />
       <Route path="/attendance" element={<AttendanceDashboard />} />
       <Route path="/attendance/manual" element={<ManualAttendancePage />} />
       <Route path="/attendance/face-recognition" element={<FaceRecognitionPage />} />

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  MdMenu, MdNotifications, MdSearch, MdDarkMode, MdLightMode,
+  MdMenu, MdNotifications, MdSearch,
   MdClose, MdCheckCircle, MdWarning, MdInfo,
 } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
@@ -14,7 +14,6 @@ interface NavbarProps {
 
 export default function Navbar({ onToggleSidebar }: NavbarProps) {
   const { user: authUser } = useAuth()
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
   const [showNotifications, setShowNotifications] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
@@ -25,11 +24,6 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
   const name = authUser?.name || authUser?.email || 'User'
   const email = authUser?.email || ''
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode)
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -106,21 +100,6 @@ export default function Navbar({ onToggleSidebar }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="p-2.5 rounded-xl hover:bg-neutral-100 transition-colors text-neutral-500 relative group"
-            aria-label="Toggle dark mode"
-          >
-            <motion.div
-              key={darkMode ? 'dark' : 'light'}
-              initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {darkMode ? <MdLightMode className="text-xl" /> : <MdDarkMode className="text-xl" />}
-            </motion.div>
-          </button>
-
           <div className="relative" ref={notifRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}

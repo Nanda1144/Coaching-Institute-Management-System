@@ -4,13 +4,13 @@ import {
   MdDashboard, MdPeople, MdSchool, MdCalendarMonth, MdAssignment,
   MdSettings, MdLogout, MdHowToVote, MdPerson,
   MdLibraryBooks, MdGroup, MdRateReview, MdNotifications, MdAttachMoney,
-  MdEvent, MdAssessment, MdFace, MdFingerprint,
-  MdQrCode, MdHistory, MdAnalytics, MdBook, MdSearch,
+  MdEvent, MdFace, MdFingerprint,
+  MdQrCode, MdHistory, MdAnalytics, MdBook,
   MdChevronLeft, MdStars, MdAccountTree, MdEdit,
   MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity,
 } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN']
 const STUDENT_ROLES = ['STUDENT']
@@ -33,7 +33,6 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/admin/parents', icon: MdGroup, label: 'Parents' },
       { to: '/dashboard/faculty', icon: MdPeople, label: 'Faculty' },
       { to: '/dashboard/departments', icon: MdAccountTree, label: 'Departments' },
-      { to: '/dashboard/courses', icon: MdBook, label: 'Courses' },
       { to: '/dashboard/admin/batches', icon: MdGroup, label: 'Batches' },
       { to: '/dashboard/admin/branches', icon: MdAccountTree, label: 'Branches' },
     ],
@@ -43,8 +42,6 @@ const adminNavItems: NavItem[] = [
     children: [
       { to: '/dashboard/schedule', icon: MdCalendarMonth, label: 'Timetable' },
       { to: '/dashboard/timetable/calendar', icon: MdCalendarMonth, label: 'Calendar' },
-      { to: '/dashboard/student/timetable', icon: MdPerson, label: 'My Schedule' },
-      { to: '/dashboard/faculty/timetable', icon: MdCalendarMonth, label: 'My Timetable' },
       { to: '/dashboard/holidays', icon: MdStars, label: 'Holidays' },
     ],
   },
@@ -58,7 +55,6 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/attendance/qr', icon: MdQrCode, label: 'QR Attendance' },
       { to: '/dashboard/attendance/history', icon: MdHistory, label: 'History' },
       { to: '/dashboard/attendance/analytics', icon: MdAnalytics, label: 'Analytics' },
-      { to: '/dashboard/attendance/reports', icon: MdAssessment, label: 'Reports' },
       { to: '/dashboard/attendance/correction', icon: MdEdit, label: 'Corrections' },
     ],
   },
@@ -72,10 +68,8 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/admin/certificates', icon: MdMilitaryTech, label: 'Certificates' },
     ],
   },
-  { to: '/dashboard/admin/reports', icon: MdAssessment, label: 'Reports', badge: 'New' },
   { to: '/dashboard/admin/notifications', icon: MdNotifications, label: 'Notifications' },
   { to: '/dashboard/admin/permissions', icon: MdSecurity, label: 'Permissions' },
-  { to: '/dashboard/faculty/search', icon: MdSearch, label: 'Advanced Search' },
 ]
 
 const facultyNavItems: NavItem[] = [
@@ -230,6 +224,7 @@ function NavGroup({ item }: { item: NavItem; isOpen: boolean }) {
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { logout, user } = useAuth()
   const navigate = useNavigate()
+  const sidebarRef = useRef<HTMLDivElement>(null)
   const role = user?.role || ''
   const isAdmin = ADMIN_ROLES.includes(role)
   const isStudent = STUDENT_ROLES.includes(role)
@@ -237,6 +232,68 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const navItems = isAdmin ? adminNavItems : isStudent ? studentNavItems : isParent ? parentNavItems : facultyNavItems
   const userName = user?.name || user?.email || 'User'
   const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
+  const sidebarWidthRef = useRef(280)
+  const [logo, setLogo] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_settings')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        return parsed?.institute?.logo || ''
+      }
+    } catch { /* ignore */ }
+    return ''
+  })
+
+  useEffect(() => {
+    const handleStorage = () => {
+      try {
+        const saved = localStorage.getItem('app_settings')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setLogo(parsed?.institute?.logo || '')
+        }
+      } catch { /* ignore */ }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem('sidebarWidth')
+    const w = saved ? Number(saved) : 280
+    sidebarWidthRef.current = w
+    return w
+  })
+  const [isResizing, setIsResizing] = useState(false)
+
+  useEffect(() => {
+    sidebarWidthRef.current = sidebarWidth
+    document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`)
+    document.documentElement.classList.toggle('sidebar-resizing', isResizing)
+  }, [sidebarWidth, isResizing])
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isResizing) return
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(220, Math.min(500, e.clientX))
+      setSidebarWidth(newWidth)
+    }
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      localStorage.setItem('sidebarWidth', String(sidebarWidthRef.current))
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
 
   function handleLogout() {
     logout()
@@ -255,16 +312,21 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
         initial={false}
         animate={{
           x: isOpen ? 0 : -300,
-          width: isOpen ? 280 : 0,
+          width: isOpen ? sidebarWidth : 0,
         }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={isResizing ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed left-0 top-0 z-40 h-screen bg-white border-r border-neutral-200/80 shadow-sm flex flex-col overflow-hidden"
+        style={isResizing ? { width: sidebarWidth } : undefined}
       >
-        <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-md shadow-primary-200">
-              <MdSchool className="text-white text-xl" />
-            </div>
+            {logo ? (
+              <img src={logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-md shadow-primary-200">
+                <MdSchool className="text-white text-xl" />
+              </div>
+            )}
             <div>
               <h1 className="text-base font-bold text-neutral-800 leading-tight gradient-text">EduManage</h1>
               <p className="text-[10px] text-neutral-400 font-medium tracking-wide uppercase">CIMS Platform</p>
@@ -272,7 +334,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </div>
           <button
             onClick={onToggle}
-            className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 transition-colors hidden lg:block"
+            className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 transition-colors hidden lg:block shrink-0"
           >
             <MdChevronLeft className="text-lg" />
           </button>
@@ -284,7 +346,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           ))}
         </nav>
 
-        <div className="px-3 py-3 border-t border-neutral-100 space-y-0.5">
+        <div className="px-3 py-3 border-t border-neutral-100 space-y-0.5 shrink-0">
           <NavLink
             to="/dashboard/settings"
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 transition-all duration-200"
@@ -309,6 +371,14 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
             </div>
           </div>
         </div>
+
+        {/* Resize handle */}
+        <div
+          ref={sidebarRef}
+          onMouseDown={handleMouseDown}
+          className={`absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:w-1.5 hover:bg-primary-400/40 active:bg-primary-500/60 transition-all z-50 ${isResizing ? 'bg-primary-500/60 w-1.5' : ''}`}
+          style={{ touchAction: 'none' }}
+        />
       </motion.aside>
     </>
   )

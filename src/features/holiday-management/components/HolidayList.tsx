@@ -1,13 +1,16 @@
 import { motion } from 'framer-motion'
-import { MdCalendarMonth, MdVisibility, MdSchool } from 'react-icons/md'
+import { MdCalendarMonth, MdEdit, MdDelete, MdAnnouncement, MdSchool } from 'react-icons/md'
 import type { Holiday, HolidayType } from '../types/holiday.types'
 import { HOLIDAY_TYPE_CONFIG } from '../types/holiday.types'
 
 interface HolidayListProps {
   holidays: Holiday[]
+  onEdit: (holiday: Holiday) => void
+  onDelete: (id: string) => void
+  onAnnounce: (id: string) => void
 }
 
-export default function HolidayList({ holidays }: HolidayListProps) {
+export default function HolidayList({ holidays, onEdit, onDelete, onAnnounce }: HolidayListProps) {
   if (holidays.length === 0) {
     return (
       <motion.div
@@ -93,20 +96,43 @@ export default function HolidayList({ holidays }: HolidayListProps) {
                           ? 'bg-blue-50 text-blue-600'
                           : h.status === 'ongoing'
                             ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-gray-50 text-gray-500'
+                            : h.status === 'draft'
+                              ? 'bg-amber-50 text-amber-600'
+                              : 'bg-gray-50 text-gray-500'
                       }`}
                     >
-                      {h.status === 'upcoming' ? 'Upcoming' : h.status === 'ongoing' ? 'Ongoing' : 'Completed'}
+                      {h.status === 'upcoming' ? 'Upcoming' : h.status === 'ongoing' ? 'Ongoing' : h.status === 'draft' ? 'Draft' : 'Completed'}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => alert(`Holiday details: ${h.name}\nDate: ${formatted}\nType: ${cfg.label}\nDepartment: ${h.department}\nStatus: ${h.status}\n\n${h.description}`)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors ml-auto"
-                    >
-                      <MdVisibility className="text-xs" />
-                      Details
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      {h.status === 'draft' && (
+                        <button
+                          onClick={() => onAnnounce(h.id)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                          title="Announce"
+                        >
+                          <MdAnnouncement className="text-xs" />
+                          Announce
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onEdit(h)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                        title="Edit"
+                      >
+                        <MdEdit className="text-xs" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onDelete(h.id)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-danger bg-danger/5 hover:bg-danger/10 transition-colors"
+                        title="Delete"
+                      >
+                        <MdDelete className="text-xs" />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </motion.tr>
               )

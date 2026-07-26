@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MdSearch, MdAttachMoney, MdDownload, MdAdd, MdCheckCircle, MdWarning, MdReceipt, MdAccountBalanceWallet, MdSend } from 'react-icons/md'
 import { useFeeTransactions, usePendingFees, useFeeStructure } from '../hooks/useReactQuery'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,6 +31,63 @@ export default function AdminFeesPage() {
 
   const totalCollected = txList.filter((t: any) => t.status === 'paid').reduce((s: number, t: any) => s + t.amount, 0)
   const totalPending = pendingList.reduce((s: number, p: any) => s + p.amount, 0)
+
+  const downloadReceipt = (t: any) => {
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    doc.setFontSize(18)
+    doc.setTextColor(79, 70, 229)
+    doc.text('EduManage', pageWidth / 2, 25, { align: 'center' })
+    doc.setFontSize(10)
+    doc.setTextColor(100, 100, 100)
+    doc.text('Fee Payment Receipt', pageWidth / 2, 33, { align: 'center' })
+
+    doc.setDrawColor(200, 200, 200)
+    doc.line(14, 39, pageWidth - 14, 39)
+
+    doc.setFontSize(11)
+    doc.setTextColor(50, 50, 50)
+    const leftX = 14
+    let y = 50
+    doc.text(`Receipt #: ${t.receiptNo || t.id || 'N/A'}`, leftX, y)
+    y += 8
+    doc.text(`Date: ${t.date ? new Date(t.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}`, leftX, y)
+    y += 14
+
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Student Details', leftX, y)
+    y += 8
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.text(`Name: ${t.student || 'N/A'}`, leftX, y)
+    y += 7
+    doc.text(`Roll No: ${t.roll || 'N/A'}`, leftX, y)
+    y += 14
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Description', 'Amount']],
+      body: [
+        [t.description || 'Fee Payment', `Rs. ${(t.amount || 0).toLocaleString()}`],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255] },
+    })
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Total Amount: Rs. ${(t.amount || 0).toLocaleString()}`, leftX, finalY)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(150, 150, 150)
+    doc.text('This is a computer-generated receipt.', pageWidth / 2, finalY + 15, { align: 'center' })
+
+    doc.save(`receipt-${t.roll || t.id || 'unknown'}.pdf`)
+  }
 
   const loading = txLoading || pendingLoading || structureLoading
 
@@ -148,7 +207,7 @@ export default function AdminFeesPage() {
                                   <span className={`badge ${t.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>{t.status}</span>
                                 </td>
                                 <td className="text-center">
-                                  <button className="btn btn-ghost btn-sm text-primary hover:text-primary-dark">
+                                  <button onClick={() => downloadReceipt(t)} className="btn btn-ghost btn-sm text-primary hover:text-primary-dark">
                                     <MdDownload size={14} /> PDF
                                   </button>
                                 </td>

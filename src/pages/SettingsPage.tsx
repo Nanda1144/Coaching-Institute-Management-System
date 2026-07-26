@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   MdSecurity, MdNotifications, MdPalette, MdBackup,
-  MdSave, MdBusiness, MdCalendarMonth, MdCancel, MdCheckCircle,
+  MdSave, MdBusiness, MdCalendarMonth, MdCancel, MdCheckCircle, MdUpload,
 } from 'react-icons/md'
 import settingsService from '../services/settings/settings.service'
 
@@ -56,6 +56,7 @@ const FIELD_TYPES: Record<string, Record<string, { type: string; options?: strin
     address: { type: 'text' },
     phone: { type: 'text' },
     email: { type: 'email' },
+    logo: { type: 'file' },
   },
   academic: {
     academicYear: { type: 'text' },
@@ -119,6 +120,16 @@ export default function SettingsPage() {
       ...prev,
       [activeSection]: { ...(prev[activeSection] || {}), [key]: value },
     }))
+  }
+
+  const handleFileUpload = (key: string, file: File | null) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      handleFieldChange(key, dataUrl)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSave = () => {
@@ -285,6 +296,22 @@ export default function SettingsPage() {
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
+                      ) : field.type === 'file' ? (
+                        <div className="space-y-2">
+                          {values[key] ? (
+                            <div className="flex items-center gap-3">
+                              <img src={values[key]} alt="Logo preview" className="w-12 h-12 rounded-lg object-contain border border-neutral-200" />
+                              <button onClick={() => handleFieldChange(key, '')} className="text-xs text-danger hover:underline">Remove</button>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-neutral-400 mb-1">No logo uploaded</div>
+                          )}
+                          <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 bg-white text-sm text-neutral-600 hover:bg-neutral-50 cursor-pointer transition-all">
+                            <MdUpload className="text-base" />
+                            Choose file
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(key, e.target.files?.[0] || null)} />
+                          </label>
+                        </div>
                       ) : (
                         <input
                           type={field.type}

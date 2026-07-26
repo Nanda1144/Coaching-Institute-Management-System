@@ -388,8 +388,11 @@ body {
   margin-left: 0;
   transition: margin-left 0.35s var(--ease-out);
 }
+.sidebar-resizing .dashboard-main {
+  transition: none;
+}
 .dashboard-main.sidebar-open {
-  margin-left: 280px;
+  margin-left: var(--sidebar-width, 280px);
 }
 
 /* ── Page Container ── */
