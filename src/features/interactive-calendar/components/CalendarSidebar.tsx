@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { MdFilterList } from 'react-icons/md'
 import { EVENT_TYPE_CONFIG } from '../types/calendar.types'
 import type { CalendarFilters, EventType } from '../types/calendar.types'

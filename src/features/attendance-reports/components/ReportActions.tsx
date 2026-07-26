@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MdDownload, MdPictureAsPdf, MdTableChart, MdPrint, MdCheckCircle } from 'react-icons/md'
+import { MdDownload, MdPrint, MdCheckCircle } from 'react-icons/md'
 import * as XLSX from 'xlsx'
 import type { SummaryStats } from '../types/attendanceReports.types'
 
