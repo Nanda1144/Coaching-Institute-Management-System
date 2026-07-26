@@ -1,55 +1,69 @@
 # Agent Context — EduManage Faculty Dashboard
 
 ## Architecture
-- React + Vite + TypeScript SPA
-- No backend deployed; all API calls served by a **mock adapter** (`src/services/mockAdapter.ts`)
-- Mock adapter auto-enables when `VITE_API_BASE_URL` is undefined, empty string, or `VITE_USE_MOCK=true` (see `src/services/api.ts:7`)
-- Axios instance at `src/services/api.ts` uses `VITE_API_BASE_URL || '/api'` as base URL
+- **Frontend**: React + Vite + TypeScript SPA (root directory)
+- **Backend**: Express + Prisma + PostgreSQL (`backend/` directory)
+- Frontend Axios instance (`src/services/api.ts`) uses `VITE_API_BASE_URL || '/api'` as base URL
+- **Local dev**: Vite proxies `/api` → `http://localhost:5000` (see `vite.config.ts:8`)
+
+## Deployment (Single Vercel Project)
+Both frontend and backend are deployed together in one Vercel project:
+
+- **Serverless function**: `api/index.ts` — imports Express app from `backend/src/app.ts`
+- **Frontend static build**: Vite outputs to `dist/`
+- **Build command** (in `vercel.json`): `npm run build:vercel`
+  - Installs backend deps, generates Prisma client, compiles backend TS
+  - Then builds frontend with Vite
+- **Env vars** (set in Vercel dashboard):
+  - `DATABASE_URL` — PostgreSQL connection string (Supabase)
+  - `JWT_SECRET` — random secret string
+  - `JWT_REFRESH_SECRET` — another random secret
+  - `CORS_ORIGIN` — the Vercel deployment URL itself (e.g. `https://faculty-dashboard.vercel.app`)
+  - `COOKIE_SECRET` — random secret
+  - `VITE_API_BASE_URL` — leave empty (defaults to `/api` on same origin)
+
+### How routing works
+- `api/vercel.json` routes `/api/(.*)` → `api/index.ts` (Express serverless function)
+- Everything else → `index.html` (SPA client-side routing)
 
 ## Critical Decisions & Fixes
 
-### Mock adapter auto-enable (prevents 404s on Vercel)
-- **Why**: On Vercel, no backend exists — `/api/*` returns 404.
-- **Fix** (`src/services/api.ts:7`): Auto-enable mock when `VITE_API_BASE_URL === undefined` (default when env var not set).
-- **Don't change**: The mock adapter enables itself — do NOT remove this logic. Do NOT require `VITE_USE_MOCK=true` env var to be manually set for Vercel deploys.
+### Mock adapter (disabled in production)
+- **`src/services/api.ts`**: Mock only enabled when `VITE_USE_MOCK=true` or `VITE_API_BASE_URL=''`
+- **Don't enable mock in production** — real backend is deployed in same project
 
-### SPA routing (prevents direct URL 404s)
-- **Why**: Without `vercel.json`, navigating directly to `/dashboard/settings` returns Vercel 404.
-- **Fix**: `vercel.json` with rewrite `"/(.*)" → "/index.html"`.
-- **Don't change**: Keep this file. Do not delete it.
+### SPA routing
+- `vercel.json` has rewrite `"/(.*)" → "/index.html"` for client-side routing
 
 ### Role-aware navigation
-- **`QuickActions.tsx`** and **`QuickTimetableActions.tsx`** use `useAuth()` to determine user role and generate correct routes (e.g. `/dashboard/faculty/timetable` vs `/dashboard/student/timetable`).
-- **Don't change**: Routes are role-prefixed. Adding new action cards must follow the same pattern.
+- `QuickActions.tsx` and `QuickTimetableActions.tsx` use `useAuth()` to generate role-prefixed routes
 
 ### Sidebar resize
-- Sidebar width stored as CSS var `--sidebar-width` on `<html>` element.
-- `.dashboard-main.sidebar-open` uses `var(--sidebar-width, 280px)`.
-- During drag, `.sidebar-resizing` class disables transitions to prevent jank.
-- **Don't change**: Both Sidebar.tsx and index.css must stay in sync.
+- CSS var `--sidebar-width` on `<html>` element; `.sidebar-resizing` class disables transitions
 
 ### Settings localStorage fallback
-- **`settings.service.ts`**: If `/api/settings` call fails, reads/writes from `localStorage` key `app_settings`.
-- **Don't change**: This is the only persistence mechanism when using mock adapter (no real backend).
+- `settings.service.ts`: If `/api/settings` fails, reads/writes from `localStorage` key `app_settings`
+- This is a **development fallback only** — real settings persist in backend DB
 
 ### Logo upload
-- Settings → Institute section has a logo upload field.
-- Logo stored in localStorage, displayed in sidebar.
-- **Don't change**: Logo persists only in localStorage; no backend upload endpoint.
+- Settings → Institute section uploads logo; stored in localStorage
+- Not yet backed by backend (no upload endpoint for institute logo)
 
-### Removed features
-- Reports, Advanced Search, My Schedule, My Timetable removed from admin sidebar.
-- Theme toggle removed from Navbar (incomplete feature).
-- **Don't change**: These are intentionally removed. Do not re-add.
+### Removed features (intentional)
+- Reports, Advanced Search, My Schedule, My Timetable removed from admin sidebar
+- Theme toggle removed from Navbar
 
-## Build & Deploy
-- Build: `npm run build` (runs `tsc && vite build`)
-- Type-check: `npx tsc --noEmit`
-- Vercel config: Build Command = `npm run build`, Install = `npm install`, Output Dir = `dist`
-- No environment variables needed on Vercel (mock adapter auto-enables)
-- No backend needed — mock adapter provides full data
+## Backend Structure
+- Express server in `backend/src/server.ts` (only used locally)
+- Routes mounted under `/api/` prefix (e.g. `/api/auth`, `/api/faculty`, `/api/timetable`)
+- Prisma ORM with PostgreSQL (Supabase)
+- Health check at `GET /api/health`
+- Serverless entry: `api/index.ts` at project root (exports Express app for Vercel)
 
 ## Common Pitfalls
-- If adding new API endpoints, add corresponding mock data in `mockAdapter.ts` — otherwise calls fail silently.
-- If adding new dashboard pages, ensure the route follows the role-prefixed pattern (`/dashboard/:role/…`).
-- `vercel.json` must exist with the SPA rewrite rule for any production deployment.
+- If adding new API endpoints, add corresponding route in `backend/src/app.ts` and controller/service
+- If adding new frontend pages, ensure route follows role-prefixed pattern (`/dashboard/:role/…`)
+- Backend env vars must be set in Vercel dashboard (`.env` file only works locally)
+- File uploads won't persist on Vercel without Cloudinary/S3 config
+- Run `npm run build` locally (frontend only) for quick verification
+- Vercel build uses `npm run build:vercel` which builds both frontend + backend
