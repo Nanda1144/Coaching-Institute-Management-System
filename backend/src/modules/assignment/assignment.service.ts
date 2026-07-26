@@ -237,12 +237,24 @@ export const assignmentService = {
   },
 
   async getByFaculty(facultyId: string) {
-    const facultyExists = await db.findUnique('faculty', [{ column: 'id', value: facultyId }]);
+    const facultyExists = await db.findFirst('faculty', {
+      where: [
+        {
+          operator: 'OR',
+          conditions: [
+            { column: 'id', value: facultyId },
+            { column: 'facultyId', value: facultyId },
+          ],
+        },
+        { column: 'isDeleted', value: false },
+      ],
+    });
     if (!facultyExists) throw AppError.notFound('Faculty not found');
 
+    const id = facultyExists.id;
     const assignments = await db.findMany('assignments', {
       where: [
-        { column: 'facultyId', value: facultyId },
+        { column: 'facultyId', value: id },
         { column: 'isDeleted', value: false },
       ],
       orderBy: [{ column: 'createdAt', dir: 'DESC' }],

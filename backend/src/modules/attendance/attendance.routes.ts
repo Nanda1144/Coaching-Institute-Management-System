@@ -29,10 +29,6 @@ router.get('/stats', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HO
 router.get('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.READ_ATTENDANCE), validate(attendanceQuerySchema, 'query'), attendanceController.findAll);
 router.post('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.CREATE_ATTENDANCE), validate(createAttendanceSchema), attendanceController.create);
 router.get('/export', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler('attendances', 'Attendance'));
-router.get('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.findById);
-router.patch('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.UPDATE_ATTENDANCE), validate(updateAttendanceSchema), attendanceController.update);
-router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.DELETE_ATTENDANCE), attendanceController.delete);
-
 router.post('/bulk-delete', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkDeleteHandler('attendances', 'Attendance'));
 router.post('/bulk-update', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler('attendances', 'Attendance'));
 router.post('/import', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler('attendances', 'Attendance'));
@@ -54,5 +50,9 @@ router.post('/corrections', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, User
 router.patch('/corrections/:id/approve', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), attendanceController.approveCorrection);
 router.patch('/corrections/:id/reject', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), attendanceController.rejectCorrection);
 router.get('/corrections', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), attendanceController.getCorrections);
+
+router.get('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.findById);
+router.patch('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.UPDATE_ATTENDANCE), validate(updateAttendanceSchema), attendanceController.update);
+router.delete('/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.DELETE_ATTENDANCE), attendanceController.delete);
 
 export default router;

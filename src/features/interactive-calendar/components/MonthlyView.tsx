@@ -7,11 +7,12 @@ interface MonthlyViewProps {
   monthDays: Array<{ date: Date; isCurrentMonth: boolean }>
   getEventsForDate: (date: Date) => CalendarEvent[]
   onDragStart: (id: string) => void
+  totalEvents?: number
 }
 
 const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function MonthlyView({ monthDays, getEventsForDate, onDragStart }: MonthlyViewProps) {
+export default function MonthlyView({ monthDays, getEventsForDate, onDragStart, totalEvents }: MonthlyViewProps) {
   const todayStr = new Date().toDateString()
   const hasEvents = monthDays.some((d) => getEventsForDate(d.date).length > 0)
 
@@ -32,7 +33,11 @@ export default function MonthlyView({ monthDays, getEventsForDate, onDragStart }
       {!hasEvents ? (
         <div className="text-center py-12">
           <MdEventBusy className="text-4xl text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">No events this month</p>
+          <p className="text-gray-500 text-sm">
+            {totalEvents && totalEvents > 0
+              ? `${totalEvents} events loaded — none fall in this month`
+              : 'No events to display'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-7">

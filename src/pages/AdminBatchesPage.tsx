@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { MdGroup, MdAdd, MdEdit, MdDelete, MdPerson, MdSchool, MdPeople, MdSchedule, MdViewModule, MdTableView, MdClose } from 'react-icons/md'
+import { MdGroup, MdAdd, MdEdit, MdDelete, MdPerson, MdSchool, MdPeople, MdSchedule, MdViewModule, MdTableView, MdClose, MdBook } from 'react-icons/md'
+import { useNavigate } from 'react-router-dom'
 import { useBatchList, useCreateBatch, useUpdateBatch, useDeleteBatch } from '../hooks/useReactQuery'
 import { useToast } from '../contexts/ToastContext'
 import SearchBar from '../features/batch-management/components/SearchBar'
@@ -25,6 +26,7 @@ const itemVariants = {
 }
 
 export default function AdminBatchesPage() {
+  const navigate = useNavigate()
   const { showInfo, showSuccess, showError } = useToast()
   const [showCreate, setShowCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -176,6 +178,9 @@ export default function AdminBatchesPage() {
           </div>
           <button onClick={() => setShowCreate(!showCreate)} className="btn btn-primary">
             <MdAdd size={18} /> {showCreate ? 'Cancel' : 'Create Batch'}
+          </button>
+          <button onClick={() => navigate('/dashboard/courses')} className="btn btn-outline">
+            <MdBook size={18} /> Courses
           </button>
         </div>
       </motion.div>

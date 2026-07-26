@@ -2,14 +2,15 @@ import type { UseFormRegister, FieldErrors } from 'react-hook-form'
 import type { RegistrationFormData } from '../types/registration.types'
 import FormField from './FormField'
 import SelectField from './SelectField'
-import { qualificationOptions, specializationOptions, departmentOptions, designationOptions } from '../data/registrationData'
+import { qualificationOptions, specializationOptions, designationOptions } from '../data/registrationData'
 
 interface AcademicDetailsSectionProps {
   register: UseFormRegister<RegistrationFormData>
   errors: FieldErrors<RegistrationFormData>
+  departmentOptions?: string[]
 }
 
-export default function AcademicDetailsSection({ register, errors }: AcademicDetailsSectionProps) {
+export default function AcademicDetailsSection({ register, errors, departmentOptions }: AcademicDetailsSectionProps) {
   return (
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md p-6 space-y-5">
       <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
@@ -50,7 +51,7 @@ export default function AcademicDetailsSection({ register, errors }: AcademicDet
           registration={register('department', { required: 'Department is required' })}
           error={errors.department}
           required
-          options={departmentOptions}
+          options={departmentOptions ?? ['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electronics', 'Mechanical', 'Civil', 'English', 'Biotechnology', 'Business Administration']}
         />
         <SelectField
           label="Designation"

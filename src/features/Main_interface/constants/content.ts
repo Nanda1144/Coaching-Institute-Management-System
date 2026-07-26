@@ -210,6 +210,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Professional',
     description: 'Ideal for growing institutes with advanced needs.',
     price: 499,
+    currency: '₹',
     interval: 'month',
     features: [
       'Up to 1,000 students',
@@ -230,6 +231,7 @@ export const PRICING_PLANS: PricingPlan[] = [
     name: 'Enterprise',
     description: 'For large institutions requiring full customization.',
     price: 1499,
+    currency: '₹',
     interval: 'month',
     features: [
       'Unlimited students',

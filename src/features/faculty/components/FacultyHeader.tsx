@@ -1,16 +1,12 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { MdChevronRight, MdHome, MdAdd, MdDownload, MdArrowDropDown } from 'react-icons/md'
+import { motion } from 'framer-motion'
+import { MdChevronRight, MdHome, MdAdd, MdDownload } from 'react-icons/md'
 
 interface FacultyHeaderProps {
   onAdd: () => void
   onExportCSV: () => void
-  onExportXLSX: () => void
 }
 
-export default function FacultyHeader({ onAdd, onExportCSV, onExportXLSX }: FacultyHeaderProps) {
-  const [exportOpen, setExportOpen] = useState(false)
-
+export default function FacultyHeader({ onAdd, onExportCSV }: FacultyHeaderProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -29,41 +25,15 @@ export default function FacultyHeader({ onAdd, onExportCSV, onExportXLSX }: Facu
         <p className="text-sm text-gray-500 mt-0.5">Manage all faculty members across departments</p>
       </div>
       <div className="flex items-center gap-3">
-        <div className="relative">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setExportOpen(!exportOpen)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-all shadow-sm hover:shadow"
-          >
-            <MdDownload className="text-lg" />
-            Export
-            <MdArrowDropDown className="text-lg" />
-          </motion.button>
-          <AnimatePresence>
-            {exportOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="absolute right-0 mt-1 w-48 bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden z-50 origin-top"
-              >
-                <button
-                  onClick={() => { onExportCSV(); setExportOpen(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Download as CSV
-                </button>
-                <button
-                  onClick={() => { onExportXLSX(); setExportOpen(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Download as XLSX
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onExportCSV}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-all shadow-sm hover:shadow"
+        >
+          <MdDownload className="text-lg" />
+          Export CSV
+        </motion.button>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}

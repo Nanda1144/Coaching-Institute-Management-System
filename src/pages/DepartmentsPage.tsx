@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MdSchool, MdSearch, MdAdd, MdEdit, MdDelete, MdClose } from 'react-icons/md'
+import { MdSchool, MdSearch, MdAdd, MdEdit, MdDelete, MdClose, MdArrowBack } from 'react-icons/md'
+import { useNavigate } from 'react-router-dom'
 import LoadingSpinner from '../components/LoadingSpinner'
 import api from '../services/api'
 
@@ -8,7 +9,9 @@ interface Department {
   id: string
   name: string
   code: string
+  logo?: string
   facultyCount?: number
+  studentCount?: number
   courseCount?: number
 }
 
@@ -23,13 +26,14 @@ const itemVariants = {
 }
 
 export default function DepartmentsPage() {
+  const navigate = useNavigate()
   const [departments, setDepartments] = useState<Department[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Department | null>(null)
-  const [form, setForm] = useState({ name: '', code: '' })
+  const [form, setForm] = useState({ name: '', code: '', logo: '' })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -51,13 +55,13 @@ export default function DepartmentsPage() {
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ name: '', code: '' })
+    setForm({ name: '', code: '', logo: '' })
     setShowModal(true)
   }
 
   const openEdit = (dept: Department) => {
     setEditing(dept)
-    setForm({ name: dept.name, code: dept.code })
+    setForm({ name: dept.name, code: dept.code, logo: dept.logo || '' })
     setShowModal(true)
   }
 
@@ -104,9 +108,12 @@ export default function DepartmentsPage() {
             <h1 className="gradient-text text-3xl font-bold tracking-tight">Departments</h1>
             <p className="text-neutral-500 text-sm mt-1">Manage all academic departments</p>
           </div>
-          <button onClick={openCreate} className="btn btn-primary">
-            <MdAdd size={18} /> Add Department
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm !px-1.5" title="Back"><MdArrowBack size={18} /></button>
+            <button onClick={openCreate} className="btn btn-primary">
+              <MdAdd size={18} /> Add Department
+            </button>
+          </div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="relative max-w-md">
@@ -120,7 +127,10 @@ export default function DepartmentsPage() {
               <span className="text-danger text-xl font-bold">!</span>
             </div>
             <h3>{error}</h3>
-            <button onClick={load} className="btn btn-primary">Retry</button>
+            <div className="flex gap-2">
+              <button onClick={() => navigate(-1)} className="btn btn-ghost"><MdArrowBack size={16} /> Back</button>
+              <button onClick={load} className="btn btn-primary">Retry</button>
+            </div>
           </motion.div>
         )}
 
@@ -136,9 +146,13 @@ export default function DepartmentsPage() {
             {filtered.map((dept) => (
               <motion.div key={dept.id} variants={itemVariants} className="card p-6 hover:shadow-card-hover group">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-md">
-                    <MdSchool className="text-white" size={20} />
-                  </div>
+                  {dept.logo ? (
+                    <img src={dept.logo} alt={dept.name} className="w-10 h-10 rounded-md object-cover shadow-md" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-md">
+                      <MdSchool className="text-white" size={20} />
+                    </div>
+                  )}
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button onClick={() => openEdit(dept)} className="p-1.5 rounded-lg hover:bg-neutral-100 text-blue-500"><MdEdit size={16} /></button>
                     <button onClick={() => handleDelete(dept.id)} className="p-1.5 rounded-lg hover:bg-neutral-100 text-red-500"><MdDelete size={16} /></button>
@@ -148,7 +162,7 @@ export default function DepartmentsPage() {
                 <p className="text-xs font-mono text-neutral-400 uppercase mb-3">{dept.code}</p>
                 <div className="flex items-center gap-4 text-xs text-neutral-500 pt-3 border-t border-neutral-100">
                   <span>{dept.facultyCount ?? 0} Faculty</span>
-                  <span>{dept.courseCount ?? 0} Courses</span>
+                  <span>{dept.studentCount ?? 0} Students</span>
                 </div>
               </motion.div>
             ))}
@@ -172,7 +186,11 @@ export default function DepartmentsPage() {
                 <label>Department Code</label>
                 <input type="text" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className="input-field" placeholder="e.g. CS" />
               </div>
-
+              <div className="input-group">
+                <label>Logo URL</label>
+                <input type="text" value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} className="input-field" placeholder="https://example.com/logo.png" />
+                {form.logo && <img src={form.logo} alt="preview" className="w-10 h-10 rounded mt-2 object-cover" />}
+              </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>

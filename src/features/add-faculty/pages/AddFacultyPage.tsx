@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion } from 'framer-motion'
 import { MdChevronRight, MdHome, MdArrowBack } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import type { RegistrationFormData } from '../types/registration.types'
 import facultyService from '../../../services/faculty/faculty.service'
+import api from '../../../services/api'
 import PersonalInfoSection from '../components/PersonalInfoSection'
 import AcademicDetailsSection from '../components/AcademicDetailsSection'
 import EmploymentDetailsSection from '../components/EmploymentDetailsSection'
@@ -17,6 +18,14 @@ export default function AddFacultyPage() {
   const [photoValue, setPhotoValue] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    api.get('/references/departments').then((res) => {
+      const depts: any[] = res.data?.data ?? []
+      setDepartmentOptions(depts.map((d: any) => d.name))
+    }).catch(() => {})
+  }, [])
 
   const {
     register,
@@ -33,7 +42,7 @@ export default function AddFacultyPage() {
     setSubmitError(null)
     try {
       await facultyService.create(data as unknown as Record<string, unknown>)
-      navigate('/faculty')
+      navigate(-1)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create faculty')
     } finally {
@@ -48,7 +57,7 @@ export default function AddFacultyPage() {
   }
 
   const handleCancel = () => {
-    navigate('/faculty')
+    navigate(-1)
   }
 
   return (
@@ -98,7 +107,7 @@ export default function AddFacultyPage() {
           onPhotoChange={setPhotoValue}
         />
 
-        <AcademicDetailsSection register={register} errors={errors} />
+        <AcademicDetailsSection register={register} errors={errors} departmentOptions={departmentOptions} />
 
         <EmploymentDetailsSection register={register} errors={errors} />
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
-import { MdClose, MdWarning } from 'react-icons/md'
+import { MdClose, MdWarning, MdViewModule, MdTableView, MdPerson, MdEdit, MdDelete } from 'react-icons/md'
 import type { Faculty } from '../types/faculty.types'
 import facultyService from '../../../services/faculty/faculty.service'
 import { normalizeFacultyList } from '../../../utils/normalizers'
@@ -28,6 +28,7 @@ export default function FacultyListPage() {
   const [facultyList, setFacultyList] = useState<Faculty[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
   const [toastMessage, setToastMessage] = useState('')
@@ -74,14 +75,6 @@ export default function FacultyListPage() {
     showToastMsg('CSV exported successfully')
   }
 
-  const handleExportXLSX = () => {
-    const ws = XLSX.utils.json_to_sheet(sortedFaculty)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Faculty')
-    XLSX.writeFile(wb, `faculty-list-${new Date().toISOString().slice(0, 10)}.xlsx`)
-    showToastMsg('XLSX exported successfully')
-  }
-
   const handleDelete = async () => {
     if (deleteTarget && deleteReason.trim()) {
       try {
@@ -118,7 +111,15 @@ export default function FacultyListPage() {
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <FacultyHeader onAdd={() => navigate('/dashboard/faculty/add')} onExportCSV={handleExportCSV} onExportXLSX={handleExportXLSX} />
+      <FacultyHeader onAdd={() => navigate('/dashboard/faculty/add')} onExportCSV={handleExportCSV} />
+
+      <div className="flex items-center justify-between">
+        <div />
+        <div className="flex items-center bg-neutral-100 rounded-lg p-0.5">
+          <button className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary-600' : 'text-neutral-500 hover:text-neutral-700'}`} onClick={() => setViewMode('grid')} title="Grid view"><MdViewModule size={18} /></button>
+          <button className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-primary-600' : 'text-neutral-500 hover:text-neutral-700'}`} onClick={() => setViewMode('list')} title="List view"><MdTableView size={18} /></button>
+        </div>
+      </div>
 
       <FacultyFilters
         filters={filters}
@@ -155,6 +156,54 @@ export default function FacultyListPage() {
               Add Faculty Member
             </button>
           )}
+        </motion.div>
+      ) : viewMode === 'grid' ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {paginatedItems.map((f) => (
+            <motion.div
+              key={f.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            >
+              <div className="p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0">
+                    <MdPerson className="text-primary" size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-neutral-800 text-sm truncate">{f.name}</p>
+                    <p className="text-xs text-neutral-400 truncate">{f.email}</p>
+                  </div>
+                  <span className={`badge text-xs ${f.status?.toLowerCase() === 'active' ? 'badge-success' : f.status?.toLowerCase() === 'inactive' ? 'badge-neutral' : 'badge-warning'}`}>{f.status}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600 mb-3">
+                  <div><span className="text-neutral-400">Dept:</span> {f.department || '—'}</div>
+                  <div><span className="text-neutral-400">Phone:</span> {f.phone || '—'}</div>
+                  <div className="col-span-2"><span className="text-neutral-400">Designation:</span> {f.designation || '—'}</div>
+                </div>
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-neutral-100">
+                  <button onClick={() => navigate(`/dashboard/faculty/profile/${f.id}`)} className="btn btn-ghost btn-sm !px-1.5 text-blue-500 hover:bg-blue-50" title="View">View</button>
+                  <button onClick={() => navigate(`/dashboard/faculty/edit/${f.id}`)} className="btn btn-ghost btn-sm !px-1.5 text-amber-600 hover:bg-amber-50" title="Edit"><MdEdit size={15} /></button>
+                  <button onClick={() => setDeleteTarget(f.id)} className="btn btn-ghost btn-sm !px-1.5 text-danger hover:bg-danger-light" title="Delete"><MdDelete size={15} /></button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+          <div className="col-span-full">
+            <FacultyPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={sortedFaculty.length}
+              pageSize={pageSize}
+              goToPage={goToPage}
+            />
+          </div>
         </motion.div>
       ) : (
         <motion.div

@@ -38,8 +38,6 @@ export default function ReportActions({ summary }: ReportActionsProps) {
   }
 
   const buttons: { label: string; icon: typeof MdDownload; desc: string; color: string; bg: string }[] = [
-    { label: 'Download PDF', icon: MdPictureAsPdf, desc: 'Save as PDF document', color: '#ef4444', bg: '#fee2e2' },
-    { label: 'Export Excel', icon: MdTableChart, desc: 'Export to spreadsheet', color: '#10b981', bg: '#d1fae5' },
     { label: 'Print', icon: MdPrint, desc: 'Send to printer', color: '#3b82f6', bg: '#dbeafe' },
   ]
 

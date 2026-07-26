@@ -25,9 +25,9 @@ export default function FloatingIconsLayer() {
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden -z-5" aria-hidden="true">
-      {icons.map((item) => (
+      {icons.map((item, index) => (
         <motion.div
-          key={item.delay}
+          key={index}
           className="absolute select-none"
           style={{ left: item.x, top: item.y, fontSize: 24 }}
           initial={{ opacity: 0, scale: 0.5 }}

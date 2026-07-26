@@ -22,22 +22,22 @@ const THEMES: Record<'light' | 'dark', ThemeColors> = {
   light: {
     scene: '#0B1220',
     particles: '#60A5FA',
-    connections: 'rgba(96,165,250,0.15)',
+    connections: '#60A5FA',
     accent: '#3B82F6',
     accentSecondary: '#10B981',
-    glow: 'rgba(59,130,246,0.12)',
+    glow: '#3B82F6',
     objects: '#E2E8F0',
-    grid: 'rgba(96,165,250,0.06)',
+    grid: '#60A5FA',
   },
   dark: {
     scene: '#0B1220',
     particles: '#60A5FA',
-    connections: 'rgba(96,165,250,0.15)',
+    connections: '#60A5FA',
     accent: '#3B82F6',
     accentSecondary: '#10B981',
-    glow: 'rgba(59,130,246,0.12)',
+    glow: '#3B82F6',
     objects: '#E2E8F0',
-    grid: 'rgba(96,165,250,0.06)',
+    grid: '#60A5FA',
   },
 }
 

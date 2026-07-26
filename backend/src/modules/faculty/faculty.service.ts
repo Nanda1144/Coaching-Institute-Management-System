@@ -76,7 +76,13 @@ export const facultyService = {
   async findById(id: string) {
     const faculty = await db.findFirst('faculty', {
       where: [
-        { column: 'id', value: id },
+        {
+          operator: 'OR',
+          conditions: [
+            { column: 'id', value: id },
+            { column: 'facultyId', value: id },
+          ],
+        },
         { column: 'isDeleted', value: false },
       ],
     });

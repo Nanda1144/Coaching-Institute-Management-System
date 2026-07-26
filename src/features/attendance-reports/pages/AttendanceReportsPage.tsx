@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { MdAssessment } from 'react-icons/md'
+import BackButton from '../../../components/BackButton'
 import ReportStatsCards from '../components/ReportStatsCards'
 import ReportFilters from '../components/ReportFilters'
 import ReportCharts from '../components/ReportCharts'
@@ -72,6 +73,9 @@ export default function AttendanceReportsPage() {
   return (
     <div className="space-y-6">
       <AttendanceNavBar />
+      <div className="flex items-center gap-3 mb-2">
+        <BackButton />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

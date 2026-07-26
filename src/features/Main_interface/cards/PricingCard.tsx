@@ -12,7 +12,7 @@ interface PricingCardProps extends PricingPlan {
 }
 
 export default function PricingCard({
-  name, description, price, currency = '$', interval = 'month', features, highlighted, badge, href,
+  name, description, price, currency = '₹', interval = 'month', features, highlighted, badge, href,
 }: PricingCardProps) {
   return (
     <motion.div

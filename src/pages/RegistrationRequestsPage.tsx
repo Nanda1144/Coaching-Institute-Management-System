@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MdPerson, MdRefresh, MdCheckCircle, MdErrorOutline, MdBlock, MdVisibility } from 'react-icons/md'
+import BackButton from '../components/BackButton'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 import { useToast } from '../contexts/ToastContext'
@@ -50,7 +51,10 @@ export default function RegistrationRequestsPage() {
     },
   })
 
-  const requests = data?.data || []
+  const requests = (() => {
+    const raw = data?.data ?? data
+    return Array.isArray(raw) ? raw : []
+  })()
 
   const isRemarksRequired = statusAction === 'REJECTED' || statusAction === 'HOLD'
 
@@ -81,6 +85,9 @@ export default function RegistrationRequestsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="flex items-center gap-3 mb-2">
+        <BackButton />
+      </div>
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
         <h1 className="gradient-text text-3xl font-bold tracking-tight">Registration Requests</h1>
         <p className="text-neutral-500 text-sm mt-1">Review and manage student registration requests.</p>
