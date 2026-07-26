@@ -2,7 +2,7 @@
 
 ## Architecture
 - **Frontend**: React + Vite + TypeScript SPA (root directory)
-- **Backend**: Express + Prisma + PostgreSQL (`backend/` directory)
+- **Backend**: Express + PostgreSQL (`backend/` directory, uses `pg` not Prisma at runtime)
 - Frontend Axios instance (`src/services/api.ts`) uses `VITE_API_BASE_URL || '/api'` as base URL
 - **Local dev**: Vite proxies `/api` → `http://localhost:5000` (see `vite.config.ts:8`)
 
@@ -11,19 +11,19 @@ Both frontend and backend are deployed together in one Vercel project:
 
 - **Serverless function**: `api/index.ts` — imports Express app from `backend/src/app.ts`
 - **Frontend static build**: Vite outputs to `dist/`
-- **Build command** (in `vercel.json`): `npm run build:vercel`
-  - Installs backend deps, generates Prisma client, compiles backend TS
-  - Then builds frontend with Vite
-- **Env vars** (set in Vercel dashboard):
+- **Build command** (in `vercel.json`): `npm run build`
+  - Only builds the frontend with Vite
+  - Backend TypeScript is compiled on-the-fly by `@vercel/node` when processing `api/index.ts`
+- **Env vars** (set in Vercel dashboard — these are REQUIRED or the app crashes):
   - `DATABASE_URL` — PostgreSQL connection string (Supabase)
-  - `JWT_SECRET` — random secret string
+  - `JWT_SECRET` — random secret string (do NOT use default values)
   - `JWT_REFRESH_SECRET` — another random secret
   - `CORS_ORIGIN` — the Vercel deployment URL itself (e.g. `https://faculty-dashboard.vercel.app`)
   - `COOKIE_SECRET` — random secret
   - `VITE_API_BASE_URL` — leave empty (defaults to `/api` on same origin)
 
 ### How routing works
-- `api/vercel.json` routes `/api/(.*)` → `api/index.ts` (Express serverless function)
+- `vercel.json` rewrites `/api/(.*)` → serverless function at `/api` (Express app handles all API routes)
 - Everything else → `index.html` (SPA client-side routing)
 
 ## Critical Decisions & Fixes
@@ -56,14 +56,14 @@ Both frontend and backend are deployed together in one Vercel project:
 ## Backend Structure
 - Express server in `backend/src/server.ts` (only used locally)
 - Routes mounted under `/api/` prefix (e.g. `/api/auth`, `/api/faculty`, `/api/timetable`)
-- Prisma ORM with PostgreSQL (Supabase)
+- PostgreSQL via `pg` (node-postgres) — Prisma only used in seed scripts (not at runtime)
 - Health check at `GET /api/health`
 - Serverless entry: `api/index.ts` at project root (exports Express app for Vercel)
 
 ## Common Pitfalls
 - If adding new API endpoints, add corresponding route in `backend/src/app.ts` and controller/service
 - If adding new frontend pages, ensure route follows role-prefixed pattern (`/dashboard/:role/…`)
-- Backend env vars must be set in Vercel dashboard (`.env` file only works locally)
+- **Required env vars** must be set in Vercel dashboard — without them the Express app crashes on startup
 - File uploads won't persist on Vercel without Cloudinary/S3 config
 - Run `npm run build` locally (frontend only) for quick verification
-- Vercel build uses `npm run build:vercel` which builds both frontend + backend
+- Vercel automatically compiles `api/index.ts` and its TypeScript dependencies
