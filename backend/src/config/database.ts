@@ -15,6 +15,28 @@ function maskConnectionString(cs: string): string {
   }
 }
 
+async function getIpv4ConnectionString(): Promise<string> {
+  const url = new URL(env.DIRECT_URL);
+  const { address } = await lookup(url.hostname, { family: 4 });
+  url.hostname = address;
+  return url.toString();
+}
+
+function createPool(connectionString: string): Pool {
+  const poolConfig: import('pg').PoolConfig = {
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 30000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
+    ssl: env.DB_SSL_REJECT_UNAUTHORIZED
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false },
+  };
+  return new Pool(poolConfig);
+}
+
 class Database {
   private static instance: Database | null = null;
   private _pool: Pool;
@@ -22,28 +44,16 @@ class Database {
   private _isConnected: boolean = false;
   private _healthCheckTimer: ReturnType<typeof setInterval> | null = null;
   private _reconnecting: boolean = false;
+  private _connectionString: string;
 
   private constructor() {
-    const poolConfig: import('pg').PoolConfig = {
-      connectionString: env.DIRECT_URL,
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 30000,
-      keepAlive: true,
-      keepAliveInitialDelayMillis: 10000,
-      ssl: env.DB_SSL_REJECT_UNAUTHORIZED
-        ? { rejectUnauthorized: true }
-        : { rejectUnauthorized: false },
-    };
-    (poolConfig as any).family = 4;
-    this._pool = new Pool(poolConfig);
-
+    this._connectionString = env.DIRECT_URL;
+    this._pool = createPool(this._connectionString);
     this._pool.on('error', (err) => {
       console.error('[DB] Unexpected pool error:', err.message);
       this._isConnected = false;
     });
-
-    console.log('[DB] Pool created:', maskConnectionString(env.DIRECT_URL));
+    console.log('[DB] Pool created:', maskConnectionString(this._connectionString));
   }
 
   static getInstance(): Database {
@@ -61,25 +71,36 @@ class Database {
     return this._isConnected;
   }
 
-  private async _resolveHostname(): Promise<boolean> {
+  private async _resolveAndRecreatePool(): Promise<void> {
     try {
       const url = new URL(env.DIRECT_URL);
-      const addresses = await lookup(url.hostname);
-      console.log(`[DB] DNS resolved ${url.hostname} -> ${addresses.address}`);
-      return true;
+      const { address } = await lookup(url.hostname, { family: 4 });
+      console.log(`[DB] DNS resolved ${url.hostname} -> ${address} (IPv4)`);
+      const newUrl = new URL(env.DIRECT_URL);
+      newUrl.hostname = address;
+      this._connectionString = newUrl.toString();
     } catch (err) {
-      console.error(`[DB] DNS resolution failed: ${err instanceof Error ? err.message : String(err)}`);
-      return false;
+      console.warn(`[DB] IPv4 DNS resolution failed, using original connection string: ${err instanceof Error ? err.message : String(err)}`);
+      this._connectionString = env.DIRECT_URL;
     }
+
+    try {
+      await this._pool.end();
+    } catch {
+      // ignore close errors
+    }
+
+    this._pool = createPool(this._connectionString);
+    this._pool.on('error', (err) => {
+      console.error('[DB] Unexpected pool error:', err.message);
+      this._isConnected = false;
+    });
   }
 
   async connect(): Promise<void> {
     let lastError: Error | null = null;
 
-    const dnsOk = await this._resolveHostname();
-    if (!dnsOk) {
-      console.warn('[DB] DNS resolution failed — the Supabase host may be unreachable from this network.');
-    }
+    await this._resolveAndRecreatePool();
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -164,27 +185,10 @@ class Database {
     if (this._reconnecting) return;
     this._reconnecting = true;
 
+    await this._resolveAndRecreatePool();
+
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        await this._pool.end();
-      } catch {
-        // ignore close errors
-      }
-
-      try {
-        const poolConfig: import('pg').PoolConfig = {
-          connectionString: env.DIRECT_URL,
-          max: 10,
-          idleTimeoutMillis: 30000,
-          connectionTimeoutMillis: 30000,
-          keepAlive: true,
-          keepAliveInitialDelayMillis: 10000,
-          ssl: env.DB_SSL_REJECT_UNAUTHORIZED
-            ? { rejectUnauthorized: true }
-            : { rejectUnauthorized: false },
-        };
-        (poolConfig as any).family = 4;
-        this._pool = new Pool(poolConfig);
         this._client = await this._pool.connect();
         this._isConnected = true;
         this._reconnecting = false;
