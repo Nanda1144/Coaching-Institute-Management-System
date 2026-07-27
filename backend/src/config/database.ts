@@ -31,11 +31,11 @@ class Database {
       connectionTimeoutMillis: 30000,
       keepAlive: true,
       keepAliveInitialDelayMillis: 10000,
-      family: 4,
       ssl: env.DB_SSL_REJECT_UNAUTHORIZED
         ? { rejectUnauthorized: true }
         : { rejectUnauthorized: false },
     };
+    (poolConfig as any).family = 4;
     this._pool = new Pool(poolConfig);
 
     this._pool.on('error', (err) => {
@@ -179,11 +179,11 @@ class Database {
           connectionTimeoutMillis: 30000,
           keepAlive: true,
           keepAliveInitialDelayMillis: 10000,
-          family: 4,
           ssl: env.DB_SSL_REJECT_UNAUTHORIZED
             ? { rejectUnauthorized: true }
             : { rejectUnauthorized: false },
         };
+        (poolConfig as any).family = 4;
         this._pool = new Pool(poolConfig);
         this._client = await this._pool.connect();
         this._isConnected = true;
