@@ -1,7 +1,6 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 import { env } from './env';
-import { lookup, resolve4 } from 'dns/promises';
-import { Resolver } from 'dns';
+import { lookup, resolve4, Resolver } from 'dns/promises';
 
 const MAX_RETRIES = 10;
 const RETRY_BASE_DELAY_MS = 4000;
