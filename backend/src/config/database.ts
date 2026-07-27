@@ -31,6 +31,7 @@ class Database {
       connectionTimeoutMillis: 30000,
       keepAlive: true,
       keepAliveInitialDelayMillis: 10000,
+      family: 4,
       ssl: env.DB_SSL_REJECT_UNAUTHORIZED
         ? { rejectUnauthorized: true }
         : { rejectUnauthorized: false },
@@ -178,6 +179,7 @@ class Database {
           connectionTimeoutMillis: 30000,
           keepAlive: true,
           keepAliveInitialDelayMillis: 10000,
+          family: 4,
           ssl: env.DB_SSL_REJECT_UNAUTHORIZED
             ? { rejectUnauthorized: true }
             : { rejectUnauthorized: false },
