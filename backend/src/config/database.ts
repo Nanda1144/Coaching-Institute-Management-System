@@ -1,11 +1,9 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 import { env } from './env';
-import * as dns from 'dns';
 
 const MAX_RETRIES = 10;
 const RETRY_BASE_DELAY_MS = 4000;
 const HEALTH_CHECK_INTERVAL_MS = 30000;
-const RECONNECT_DELAY_MS = 5000;
 
 function maskConnectionString(cs: string): string {
   try {
@@ -15,9 +13,9 @@ function maskConnectionString(cs: string): string {
   }
 }
 
-function createPool(connectionString: string): Pool {
-  const poolConfig: import('pg').PoolConfig = {
-    connectionString,
+function createPool(): Pool {
+  return new Pool({
+    connectionString: env.DATABASE_URL,
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 30000,
@@ -26,17 +24,7 @@ function createPool(connectionString: string): Pool {
     ssl: env.DB_SSL_REJECT_UNAUTHORIZED
       ? { rejectUnauthorized: true }
       : { rejectUnauthorized: false },
-    lookup: (hostname: string, options: dns.LookupOptions, callback: (err: Error | null, address: string, family: number) => void) => {
-      dns.lookup(hostname, { ...options, family: 4 }, (err, address, family) => {
-        if (err) {
-          dns.lookup(hostname, options, callback);
-        } else {
-          callback(null, address, family);
-        }
-      });
-    },
-  };
-  return new Pool(poolConfig);
+  });
 }
 
 class Database {
@@ -46,16 +34,14 @@ class Database {
   private _isConnected: boolean = false;
   private _healthCheckTimer: ReturnType<typeof setInterval> | null = null;
   private _reconnecting: boolean = false;
-  private _connectionString: string;
 
   private constructor() {
-    this._connectionString = env.DIRECT_URL;
-    this._pool = createPool(this._connectionString);
+    this._pool = createPool();
     this._pool.on('error', (err) => {
       console.error('[DB] Unexpected pool error:', err.message);
       this._isConnected = false;
     });
-    console.log('[DB] Pool created:', maskConnectionString(this._connectionString));
+    console.log('[DB] Pool created:', maskConnectionString(env.DATABASE_URL));
   }
 
   static getInstance(): Database {
@@ -73,23 +59,13 @@ class Database {
     return this._isConnected;
   }
 
-  private async _resolveAndRecreatePool(): Promise<void> {
+  private _recreatePool(): void {
     try {
-      const url = new URL(env.DIRECT_URL);
-      console.log(`[DB] Resolving ${url.hostname} via pool lookup (IPv4 forced)...`);
-      this._connectionString = env.DIRECT_URL;
-    } catch (err) {
-      console.warn(`[DB] DNS resolution failed: ${err instanceof Error ? err.message : String(err)}`);
-      this._connectionString = env.DIRECT_URL;
-    }
-
-    try {
-      await this._pool.end();
+      this._pool.end();
     } catch {
       // ignore close errors
     }
-
-    this._pool = createPool(this._connectionString);
+    this._pool = createPool();
     this._pool.on('error', (err) => {
       console.error('[DB] Unexpected pool error:', err.message);
       this._isConnected = false;
@@ -98,8 +74,6 @@ class Database {
 
   async connect(): Promise<void> {
     let lastError: Error | null = null;
-
-    await this._resolveAndRecreatePool();
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -184,7 +158,7 @@ class Database {
     if (this._reconnecting) return;
     this._reconnecting = true;
 
-    await this._resolveAndRecreatePool();
+    this._recreatePool();
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
