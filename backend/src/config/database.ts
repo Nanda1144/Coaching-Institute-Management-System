@@ -1,6 +1,6 @@
 import { Pool, PoolClient, QueryResult } from 'pg';
 import { env } from './env';
-import { lookup, resolve4, Resolver } from 'dns/promises';
+import * as dns from 'dns';
 
 const MAX_RETRIES = 10;
 const RETRY_BASE_DELAY_MS = 4000;
@@ -15,26 +15,6 @@ function maskConnectionString(cs: string): string {
   }
 }
 
-async function resolveIpv4(hostname: string): Promise<string | null> {
-  const resolvers = [
-    async () => { const { address } = await lookup(hostname, { family: 4 }); return address; },
-    async () => { const addrs = await resolve4(hostname); return addrs[0]; },
-    async () => {
-      const r = new Resolver();
-      r.setServers(['8.8.8.8', '1.1.1.1']);
-      const addrs = await r.resolve4(hostname);
-      return addrs[0];
-    },
-  ];
-  for (const resolve of resolvers) {
-    try {
-      const addr = await resolve();
-      if (addr) return addr;
-    } catch { /* try next */ }
-  }
-  return null;
-}
-
 function createPool(connectionString: string): Pool {
   const poolConfig: import('pg').PoolConfig = {
     connectionString,
@@ -46,6 +26,15 @@ function createPool(connectionString: string): Pool {
     ssl: env.DB_SSL_REJECT_UNAUTHORIZED
       ? { rejectUnauthorized: true }
       : { rejectUnauthorized: false },
+    lookup: (hostname: string, options: dns.LookupOptions, callback: (err: Error | null, address: string, family: number) => void) => {
+      dns.lookup(hostname, { ...options, family: 4 }, (err, address, family) => {
+        if (err) {
+          dns.lookup(hostname, options, callback);
+        } else {
+          callback(null, address, family);
+        }
+      });
+    },
   };
   return new Pool(poolConfig);
 }
@@ -87,18 +76,8 @@ class Database {
   private async _resolveAndRecreatePool(): Promise<void> {
     try {
       const url = new URL(env.DIRECT_URL);
-      const ipv4 = await resolveIpv4(url.hostname);
-      if (ipv4) {
-        console.log(`[DB] DNS resolved ${url.hostname} -> ${ipv4} (IPv4)`);
-        const newUrl = new URL(env.DIRECT_URL);
-        newUrl.hostname = ipv4;
-        this._connectionString = newUrl.toString();
-      } else {
-        console.warn(`[DB] No IPv4 address found for ${url.hostname}. Trying pooler (port 6543) as fallback.`);
-        const newUrl = new URL(env.DIRECT_URL);
-        newUrl.port = '6543';
-        this._connectionString = newUrl.toString();
-      }
+      console.log(`[DB] Resolving ${url.hostname} via pool lookup (IPv4 forced)...`);
+      this._connectionString = env.DIRECT_URL;
     } catch (err) {
       console.warn(`[DB] DNS resolution failed: ${err instanceof Error ? err.message : String(err)}`);
       this._connectionString = env.DIRECT_URL;
