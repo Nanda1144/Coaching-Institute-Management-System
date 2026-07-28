@@ -233,29 +233,33 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const userName = user?.name || user?.email || 'User'
   const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'
   const sidebarWidthRef = useRef(280)
-  const [logo, setLogo] = useState(() => {
+  const [institute, setInstitute] = useState(() => {
     try {
       const saved = localStorage.getItem('app_settings')
       if (saved) {
         const parsed = JSON.parse(saved)
-        return parsed?.institute?.logo || ''
+        return { name: parsed?.institute?.name || 'EduManage', logo: parsed?.institute?.logo || '' }
       }
     } catch { /* ignore */ }
-    return ''
+    return { name: 'EduManage', logo: '' }
   })
 
   useEffect(() => {
-    const handleStorage = () => {
+    const handleUpdate = () => {
       try {
         const saved = localStorage.getItem('app_settings')
         if (saved) {
           const parsed = JSON.parse(saved)
-          setLogo(parsed?.institute?.logo || '')
+          setInstitute({ name: parsed?.institute?.name || 'EduManage', logo: parsed?.institute?.logo || '' })
         }
       } catch { /* ignore */ }
     }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
+    window.addEventListener('storage', handleUpdate)
+    window.addEventListener('appSettingsChanged', handleUpdate)
+    return () => {
+      window.removeEventListener('storage', handleUpdate)
+      window.removeEventListener('appSettingsChanged', handleUpdate)
+    }
   }, [])
 
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -320,15 +324,15 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       >
         <div className="flex items-center justify-between px-5 py-5 border-b border-neutral-100 shrink-0">
           <div className="flex items-center gap-3">
-            {logo ? (
-              <img src={logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
+            {institute.logo ? (
+              <img src={institute.logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-md shadow-primary-200">
                 <MdSchool className="text-white text-xl" />
               </div>
             )}
             <div>
-              <h1 className="text-base font-bold text-neutral-800 leading-tight gradient-text">EduManage</h1>
+              <h1 className="text-base font-bold text-neutral-800 leading-tight gradient-text">{institute.name}</h1>
               <p className="text-[10px] text-neutral-400 font-medium tracking-wide uppercase">CIMS Platform</p>
             </div>
           </div>

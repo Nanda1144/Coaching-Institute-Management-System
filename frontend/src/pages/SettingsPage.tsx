@@ -22,6 +22,7 @@ const DEFAULT_VALUES: Record<string, Record<string, any>> = {
     address: '123 Education Lane',
     phone: '+1 234 567 8900',
     email: 'admin@edumanage.edu',
+    logo: '',
   },
   academic: {
     academicYear: '2026-2027',
@@ -133,7 +134,11 @@ export default function SettingsPage() {
   }
 
   const handleSave = () => {
-    updateMutation.mutate(formValues[activeSection] || {})
+    updateMutation.mutate(formValues[activeSection] || {}, {
+      onSuccess: () => {
+        window.dispatchEvent(new Event('appSettingsChanged'))
+      },
+    })
   }
 
   const currentSection = SECTION_META.find((s) => s.id === activeSection)
