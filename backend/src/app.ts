@@ -44,6 +44,7 @@ import revaluationRoutes from './modules/revaluation/revaluation.routes';
 import scholarshipRoutes from './modules/scholarship/scholarship.routes';
 import cloudDocumentsRoutes from './modules/cloud-documents/cloud-documents.routes';
 import paymentGatewayRoutes from './modules/payment-gateways/payment-gateways.routes';
+import settingsRoutes from './modules/settings/settings.routes';
 
 const app = express();
 
@@ -160,6 +161,7 @@ app.use('/api/scholarships', scholarshipRoutes);
 app.use('/api/cloud-documents', cloudDocumentsRoutes);
 app.use('/api/payment-gateways', paymentGatewayRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Error handling
 app.use(notFoundHandler);

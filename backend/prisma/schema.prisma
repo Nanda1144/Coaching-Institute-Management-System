@@ -1221,6 +1221,17 @@ model Upload {
   @@map("uploads")
 }
 
+model AppSetting {
+  id        String   @id @default(uuid()) @map("id")
+  section   String   @unique
+  data      Json     @default("{}")
+  updatedBy String?  @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
 model BlacklistedToken {
   id        String   @id @default(uuid()) @map("id")
   token     String   @unique
