@@ -7,9 +7,10 @@ import {
   createAttendanceSchema,
   updateAttendanceSchema,
   attendanceQuerySchema,
-  faceRecognitionSchema,
+  createFaceRecognitionSessionSchema,
   fingerprintSchema,
   qrSessionSchema,
+  createQrSessionSchema,
   qrScanSchema,
   correctionSchema,
 } from './attendance.validator';
@@ -33,7 +34,7 @@ router.post('/bulk-delete', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), cre
 router.post('/bulk-update', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createBulkUpdateHandler('attendances', 'Attendance'));
 router.post('/import', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler('attendances', 'Attendance'));
 
-router.post('/face-recognition/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(faceRecognitionSchema), attendanceController.createFaceRecognitionSession);
+router.post('/face-recognition/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(createFaceRecognitionSessionSchema), attendanceController.createFaceRecognitionSession);
 router.patch('/face-recognition/:sessionId/verify', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.verifyFaceRecognition);
 router.get('/face-recognition/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getFaceRecognitionSession);
 
@@ -41,7 +42,7 @@ router.post('/fingerprint/mark', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN,
 router.patch('/fingerprint/:sessionId/verify', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.verifyFingerprint);
 router.get('/fingerprint/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getFingerprintSession);
 
-router.post('/qr/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(qrSessionSchema), attendanceController.createQrSession);
+router.post('/qr/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(createQrSessionSchema), attendanceController.createQrSession);
 router.post('/qr/scan', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(qrScanSchema), attendanceController.scanQr);
 router.get('/qr/active', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getActiveQrSessions);
 router.get('/qr/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getQrSession);

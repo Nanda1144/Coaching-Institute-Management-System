@@ -53,6 +53,10 @@ export const qrSessionSchema = z.object({
   endTime: z.string().datetime(),
 });
 
+export const createQrSessionSchema = z.object({
+  duration: z.number().int().positive().optional().default(900),
+});
+
 export const qrScanSchema = z.object({
   qrToken: z.string().min(1),
   studentId: z.string().uuid(),

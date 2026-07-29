@@ -1,12 +1,15 @@
 import { Response } from 'express';
+import crypto from 'crypto';
 import { IAuthRequest } from '../../shared/middleware/auth.middleware';
 import { asyncHandler } from '../../shared/middleware/error-handler.middleware';
 import { sendSuccess, sendCreated } from '../../shared/utils/api-response';
+import { AppError } from '../../shared/errors/AppError';
 import { attendanceService } from './attendance.service';
 import { faceRecognitionService } from './face-recognition.service';
 import { fingerprintAttendanceService } from './fingerprint-attendance.service';
 import { qrAttendanceService } from './qr-attendance.service';
 import { correctionService } from './correction.service';
+import * as db from '../../shared/utils/db';
 
 export const attendanceController = {
   create: asyncHandler(async (req: IAuthRequest, res: Response) => {
@@ -52,14 +55,23 @@ export const attendanceController = {
   }),
 
   createFaceRecognitionSession: asyncHandler(async (req: IAuthRequest, res: Response) => {
-    const session = await faceRecognitionService.createSession(req.body, req.user!.id);
-    sendCreated(res, session, 'Face recognition session created');
+    const sessionId = crypto.randomUUID();
+    const student = await db.findUnique('students', [{ column: 'id', value: req.body.studentId }], ['id', 'full_name', 'roll_number', 'department', 'batch', 'profile_image']);
+    const session = await faceRecognitionService.createSession({
+      sessionId,
+      studentId: req.body.studentId,
+      confidence: req.body.confidence ?? 0,
+      imageUrl: req.body.imageUrl,
+      deviceId: req.body.deviceId,
+      metadata: req.body.metadata,
+    }, req.user!.id);
+    sendCreated(res, { ...session, student }, 'Face recognition session created');
   }),
 
   verifyFaceRecognition: asyncHandler(async (req: IAuthRequest, res: Response) => {
     const { studentId, confidence } = req.body;
     const result = await faceRecognitionService.verifyRecognition(
-      req.params.sessionId, studentId, confidence, req.user!.id
+      req.params.sessionId, studentId, confidence ?? 0.95, req.user!.id
     );
     sendSuccess(res, result, 'Face recognition verified');
   }),
@@ -88,7 +100,20 @@ export const attendanceController = {
   }),
 
   createQrSession: asyncHandler(async (req: IAuthRequest, res: Response) => {
-    const session = await qrAttendanceService.createSession(req.body, req.user!.id);
+    const duration = req.body.duration ?? 900;
+    const now = new Date();
+    const end = new Date(now.getTime() + duration * 1000);
+    const batch = await db.findFirst('batches', { where: [{ column: 'status', value: 'active' }], select: ['id'] });
+    const subject = await db.findFirst('subjects', { select: ['id'] });
+    if (!batch || !subject) {
+      throw AppError.badRequest('No active batch or subject found. Please set up batches and subjects first.');
+    }
+    const session = await qrAttendanceService.createSession({
+      subjectId: subject.id,
+      batchId: batch.id,
+      startTime: now.toISOString(),
+      endTime: end.toISOString(),
+    }, req.user!.id);
     sendCreated(res, session, 'QR session created');
   }),
 

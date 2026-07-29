@@ -5,6 +5,7 @@ import QRGenerator from '../components/QRGenerator'
 import QRScanner from '../components/QRScanner'
 import AttendanceHistoryTable from '../components/AttendanceHistoryTable'
 import QRActions from '../components/QRActions'
+import StudentSearchModal from '../../face-recognition/components/StudentSearchModal'
 import Toast from '../../../components/Toast'
 import attendanceService from '../../../services/attendance/attendance.service'
 import AttendanceNavBar from '../../../components/AttendanceNavBar'
@@ -14,6 +15,7 @@ const QR_DURATION = 900
 
 export default function QRAttendancePage() {
   const [qrData, setQrData] = useState<QRCodeData | null>(null)
+  const [qrToken, setQrToken] = useState<string>('')
   const [qrStatus, setQrStatus] = useState<QRStatus>('valid')
   const [isScannerOn, setIsScannerOn] = useState(false)
   const [scanStatus, setScanStatus] = useState<QRStatus>('valid')
@@ -22,6 +24,7 @@ export default function QRAttendancePage() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showStudentSearch, setShowStudentSearch] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -52,15 +55,10 @@ export default function QRAttendancePage() {
   const handleGenerate = useCallback(async () => {
     clearTimer()
     try {
-      const session = await attendanceService.createQRSession({
-        course: '',
-        faculty: '',
-        subject: '',
-        batch: '',
-        section: '',
-        duration: QR_DURATION,
-      })
-      const sessionData = session?.data || session || {}
+      const session = await attendanceService.createQRSession({ duration: QR_DURATION })
+      const sessionData = session?.data ?? session ?? {}
+      const token = sessionData.qrToken || ''
+      setQrToken(token)
       const newData: QRCodeData = {
         id: sessionData.id || `QR-${Date.now()}`,
         course: sessionData.course || '',
@@ -68,8 +66,8 @@ export default function QRAttendancePage() {
         subject: sessionData.subject || '',
         batch: sessionData.batch || '',
         section: sessionData.section || '',
-        generatedAt: sessionData.generatedAt || new Date().toISOString(),
-        expiresAt: sessionData.expiresAt || new Date(Date.now() + QR_DURATION * 1000).toISOString(),
+        generatedAt: sessionData.generatedAt || sessionData.createdAt || new Date().toISOString(),
+        expiresAt: sessionData.expiresAt || sessionData.expiryTime || new Date(Date.now() + QR_DURATION * 1000).toISOString(),
       }
       setQrData(newData)
       setQrStatus('valid')
@@ -98,45 +96,48 @@ export default function QRAttendancePage() {
   }, [handleGenerate])
 
   const handleStartScanner = useCallback(() => {
+    if (!qrToken) {
+      setToastMessage('Please generate a QR code first')
+      setShowToast(true)
+      return
+    }
     setIsScannerOn(true)
     setScanStatus('valid')
-  }, [])
+  }, [qrToken])
 
   const handleStopScanner = useCallback(() => {
     setIsScannerOn(false)
     setScanStatus('valid')
   }, [])
 
-  useEffect(() => {
-    if (!isScannerOn) return
-
-    const scanSequence = async () => {
-      try {
-        const result = await attendanceService.scanQR({ timestamp: new Date().toISOString() })
-        if (result?.status === 'expired' || qrStatus === 'expired') {
-          setScanStatus('expired')
-          setToastMessage('Scanned QR code has expired')
-          setShowToast(true)
-          return
-        }
-        if (result?.status === 'success' || result?.attendanceMarked) {
-          setScanStatus('attendance_success')
-          setToastMessage('Attendance marked successfully via QR scan')
-          setShowToast(true)
-        } else {
-          setScanStatus('valid')
-          setToastMessage('QR scan processed')
-          setShowToast(true)
-        }
-      } catch {
-        setScanStatus('expired')
-        setToastMessage('QR scan failed')
+  const handleScanStudent = useCallback(async (student: { id: string; fullName: string }) => {
+    setShowStudentSearch(false)
+    try {
+      const result = await attendanceService.scanQR({ qrToken, studentId: student.id })
+      if (result?.success || result?.data) {
+        setScanStatus('attendance_success')
+        setToastMessage(`Attendance marked for ${student.fullName}`)
+        setShowToast(true)
+      } else {
+        setScanStatus('valid')
+        setToastMessage('QR scan processed')
         setShowToast(true)
       }
+    } catch {
+      setScanStatus('valid')
+      setToastMessage('QR scan failed. Please try again.')
+      setShowToast(true)
     }
+  }, [qrToken])
 
-    scanSequence()
-  }, [isScannerOn, qrStatus])
+  const handleCaptureClick = useCallback(() => {
+    if (!qrToken) {
+      setToastMessage('Please generate a QR code first')
+      setShowToast(true)
+      return
+    }
+    setShowStudentSearch(true)
+  }, [qrToken])
 
   useEffect(() => {
     return () => clearTimer()
@@ -189,6 +190,12 @@ export default function QRAttendancePage() {
             scanStatus={scanStatus}
             onStart={handleStartScanner}
             onStop={handleStopScanner}
+            onCapture={handleCaptureClick}
+          />
+          <StudentSearchModal
+            isOpen={showStudentSearch}
+            onClose={() => { setShowStudentSearch(false); if (!isScannerOn) setIsScannerOn(false) }}
+            onSelect={handleScanStudent}
           />
           <AttendanceHistoryTable records={records} />
         </div>

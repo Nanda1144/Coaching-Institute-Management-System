@@ -7,6 +7,7 @@ import RecognitionStatus from '../components/RecognitionStatus'
 import StudentInfoCard from '../components/StudentInfoCard'
 import RecognitionHistory from '../components/RecognitionHistory'
 import StatisticsCards from '../components/StatisticsCards'
+import StudentSearchModal from '../components/StudentSearchModal'
 import Toast from '../../../components/Toast'
 import attendanceService from '../../../services/attendance/attendance.service'
 import AttendanceNavBar from '../../../components/AttendanceNavBar'
@@ -22,6 +23,7 @@ export default function FaceRecognitionPage() {
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showStudentSearch, setShowStudentSearch] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,26 +64,38 @@ export default function FaceRecognitionPage() {
     setRecognizedStudent(null)
   }, [])
 
-  const handleCapture = useCallback(async () => {
+  const handleCapture = useCallback(() => {
     if (!isCameraOn) return
+    setShowStudentSearch(true)
+  }, [isCameraOn])
+
+  const handleStudentSelect = useCallback(async (student: { id: string; fullName: string; rollNumber: string; department: string; batch: string }) => {
+    setShowStudentSearch(false)
     setStatus('detecting')
     try {
-      const session = await attendanceService.createFaceRecognition({ timestamp: new Date().toISOString() })
-      const sid = session?.id || session?.sessionId || `session-${Date.now()}`
+      const sessionRes = await attendanceService.createFaceRecognition({
+        studentId: student.id,
+        confidence: 0.95,
+      })
+      const sessionData = sessionRes?.data ?? sessionRes
+      const sid = sessionData?.sessionId || sessionData?.id || `session-${Date.now()}`
       setStatus('detected')
-      const studentData = session?.student || session?.data || {}
       const recognized: RecognizedStudent = {
-        id: studentData.id || studentData.studentId || '',
-        name: studentData.name || studentData.studentName || 'Unknown',
-        rollNumber: studentData.rollNumber || '',
-        department: studentData.department || '',
-        batch: studentData.batch || '',
+        id: student.id,
+        name: student.fullName,
+        rollNumber: student.rollNumber,
+        department: student.department,
+        batch: student.batch,
       }
       setRecognizedStudent(recognized)
-      const verification = await attendanceService.verifyFaceRecognition(sid, { timestamp: new Date().toISOString() })
-      if (verification?.status === 'success' || verification?.verified) {
+      const verificationRes = await attendanceService.verifyFaceRecognition(sid, {
+        studentId: student.id,
+        confidence: 0.95,
+      })
+      const verified = verificationRes?.data?.status === 'verified' || verificationRes?.verified
+      if (verificationRes?.success || verified) {
         setStatus('marked')
-        setToastMessage(`Attendance marked for ${recognized.name}`)
+        setToastMessage(`Attendance marked for ${student.fullName}`)
         setShowToast(true)
       } else {
         setStatus('detected')
@@ -93,7 +107,7 @@ export default function FaceRecognitionPage() {
       setToastMessage('Face recognition failed. Please try again.')
       setShowToast(true)
     }
-  }, [isCameraOn])
+  }, [])
 
   if (loading) {
     return (
@@ -152,6 +166,11 @@ export default function FaceRecognitionPage() {
             onStopCamera={handleStopCamera}
             onCapture={handleCapture}
             status={status}
+          />
+          <StudentSearchModal
+            isOpen={showStudentSearch}
+            onClose={() => setShowStudentSearch(false)}
+            onSelect={handleStudentSelect}
           />
           <RecognitionHistory records={records} />
         </div>

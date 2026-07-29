@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { MdCameraAlt, MdCamera, MdCheckCircle, MdCancel, MdTimerOff, MdHowToVote } from 'react-icons/md'
+import { MdCameraAlt, MdCamera, MdCheckCircle, MdCancel, MdTimerOff, MdHowToVote, MdPersonSearch } from 'react-icons/md'
 import type { QRStatus } from '../types/qrAttendance.types'
 
 interface QRScannerProps {
@@ -7,6 +7,7 @@ interface QRScannerProps {
   scanStatus: QRStatus
   onStart: () => void
   onStop: () => void
+  onCapture?: () => void
 }
 
 const scanStatusConfig: Record<QRStatus, { label: string; icon: typeof MdCheckCircle; color: string; bg: string }> = {
@@ -181,15 +182,28 @@ export default function QRScanner({ isScannerOn, scanStatus, onStart, onStop }: 
               Start Scanner
             </motion.button>
           ) : (
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={onStop}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-all"
-            >
-              <MdCamera className="text-lg" />
-              Stop Scanner
-            </motion.button>
+            <>
+              {onCapture && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={onCapture}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-light text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
+                >
+                  <MdPersonSearch className="text-lg" />
+                  Select Student
+                </motion.button>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={onStop}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-all"
+              >
+                <MdCamera className="text-lg" />
+                Stop Scanner
+              </motion.button>
+            </>
           )}
         </div>
       </div>
