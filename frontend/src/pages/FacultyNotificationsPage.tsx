@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { MdNotifications, MdInfo, MdCheckCircle, MdWarning, MdEvent, MdRefresh } from 'react-icons/md'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MdNotifications, MdInfo, MdCheckCircle, MdWarning, MdEvent, MdRefresh, MdSend, MdClose, MdPeople, MdPerson } from 'react-icons/md'
 import api from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -25,6 +25,9 @@ export default function FacultyNotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showSendModal, setShowSendModal] = useState(false)
+  const [sendForm, setSendForm] = useState({ title: '', message: '', target: 'STUDENT' })
+  const [sending, setSending] = useState(false)
 
   const fetchNotifications = () => {
     setLoading(true)
@@ -45,6 +48,21 @@ export default function FacultyNotificationsPage() {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, readAt: new Date().toISOString() } : n))
   }
 
+  const handleSend = async () => {
+    if (!sendForm.title.trim() || !sendForm.message.trim()) return
+    setSending(true)
+    try {
+      await api.post('/notifications', { title: sendForm.title, message: sendForm.message, target: sendForm.target })
+      setShowSendModal(false)
+      setSendForm({ title: '', message: '', target: 'STUDENT' })
+      fetchNotifications()
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to send notification')
+    } finally {
+      setSending(false)
+    }
+  }
+
   const unread = notifications.filter((n) => !n.readAt).length
 
   return (
@@ -58,6 +76,9 @@ export default function FacultyNotificationsPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => setShowSendModal(true)} className="btn btn-primary btn-sm flex items-center gap-1.5">
+              <MdSend size={16} /> Send Notification
+            </button>
             {unread > 0 && (
               <button onClick={() => { notifications.filter(n => !n.readAt).forEach(n => markRead(n.id)) }} className="btn btn-ghost btn-sm">Mark all as read</button>
             )}
@@ -116,6 +137,93 @@ export default function FacultyNotificationsPage() {
           </motion.div>
         )}
       </motion.div>
+
+      <AnimatePresence>
+        {showSendModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
+            onClick={() => setShowSendModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-neutral-800 flex items-center gap-2">
+                  <MdSend className="text-primary-500" /> Send Notification
+                </h2>
+                <button onClick={() => setShowSendModal(false)} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400">
+                  <MdClose size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Send To</label>
+                  <div className="flex gap-3">
+                    {[
+                      { value: 'STUDENT', label: 'Students', icon: MdPeople },
+                      { value: 'PARENT', label: 'Parents', icon: MdPerson },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSendForm((f) => ({ ...f, target: opt.value }))}
+                        className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                          sendForm.target === opt.value
+                            ? 'border-primary-500 bg-primary-50 text-primary-700'
+                            : 'border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                        }`}
+                      >
+                        <opt.icon size={18} />
+                        <span className="text-sm font-medium">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Title</label>
+                  <input
+                    type="text"
+                    value={sendForm.title}
+                    onChange={(e) => setSendForm((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="Notification title"
+                    className="input-field w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Message</label>
+                  <textarea
+                    value={sendForm.message}
+                    onChange={(e) => setSendForm((f) => ({ ...f, message: e.target.value }))}
+                    placeholder="Write your notification message..."
+                    rows={4}
+                    className="input-field w-full resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setShowSendModal(false)} className="btn btn-ghost flex-1">Cancel</button>
+                  <button
+                    onClick={handleSend}
+                    disabled={sending || !sendForm.title.trim() || !sendForm.message.trim()}
+                    className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+                  >
+                    {sending ? 'Sending...' : <><MdSend size={18} /> Send</>}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -10,7 +10,7 @@ export class QrAttendanceService {
   async createSession(data: {
     subjectId: string;
     batchId: string;
-    classroomId?: string;
+    classroomId: string;
     startTime: string;
     endTime: string;
   }, userId: string) {
@@ -25,7 +25,7 @@ export class QrAttendanceService {
       facultyId: userId,
       subjectId: data.subjectId,
       batchId: data.batchId,
-      classroomId: data.classroomId ?? '',
+      classroomId: data.classroomId,
       attendanceDate: now,
       startTime: start.toISOString(),
       endTime: end.toISOString(),

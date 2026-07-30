@@ -8,9 +8,18 @@ import EmptyState from './EmptyState'
 export default function UpcomingSchedule() {
   const { data: entries, isLoading, isError, error, refetch } = useTimetableListShared()
 
+  const today = new Date().toISOString().split('T')[0]
+
   const schedules = useMemo(() => {
     if (!Array.isArray(entries)) return []
-    return entries.slice(0, 8).map((entry, index) => ({
+    const todayEntries = entries.filter((e: any) => {
+      if (e.date) {
+        const entryDate = typeof e.date === 'string' ? e.date.split('T')[0] : new Date(e.date).toISOString().split('T')[0]
+        return entryDate === today
+      }
+      return false
+    })
+    return todayEntries.slice(0, 8).map((entry, index) => ({
       id: entry.id || index + 1,
       facultyName: getFacultyName(entry.faculty) || (typeof entry.faculty === 'string' ? entry.faculty : 'Unknown'),
       subject: entry.subject || entry.course || 'Unknown',
@@ -18,7 +27,7 @@ export default function UpcomingSchedule() {
       time: entry.time || 'TBD',
       department: entry.department || 'General',
     }))
-  }, [entries])
+  }, [entries, today])
 
   if (isLoading) {
     return (

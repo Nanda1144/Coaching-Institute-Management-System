@@ -40,7 +40,7 @@ export const faceRecognitionSchema = z.object({
 export const fingerprintSchema = z.object({
   sessionId: z.string().min(1),
   fingerprintId: z.string().min(1),
-  studentId: z.string().uuid(),
+  studentId: z.string().min(1),
   scannerId: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });

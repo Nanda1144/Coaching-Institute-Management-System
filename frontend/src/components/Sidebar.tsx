@@ -7,7 +7,7 @@ import {
   MdEvent, MdFace, MdFingerprint,
   MdQrCode, MdHistory, MdAnalytics, MdBook,
   MdChevronLeft, MdStars, MdAccountTree, MdEdit,
-  MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity,
+  MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity, MdAssessment, MdCrown,
 } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -35,12 +35,13 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/departments', icon: MdAccountTree, label: 'Departments' },
       { to: '/dashboard/admin/batches', icon: MdGroup, label: 'Batches' },
       { to: '/dashboard/admin/branches', icon: MdAccountTree, label: 'Branches' },
+      { to: '/dashboard/courses', icon: MdBook, label: 'Courses' },
     ],
   },
   {
     to: '#', icon: MdCalendarMonth, label: 'Schedule',
     children: [
-      { to: '/dashboard/schedule', icon: MdCalendarMonth, label: 'Timetable' },
+      { to: '/dashboard/schedule', icon: MdCalendarMonth, label: 'Schedule' },
       { to: '/dashboard/timetable/calendar', icon: MdCalendarMonth, label: 'Calendar' },
       { to: '/dashboard/holidays', icon: MdStars, label: 'Holidays' },
     ],
@@ -55,6 +56,7 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/attendance/qr', icon: MdQrCode, label: 'QR Attendance' },
       { to: '/dashboard/attendance/history', icon: MdHistory, label: 'History' },
       { to: '/dashboard/attendance/analytics', icon: MdAnalytics, label: 'Analytics' },
+      { to: '/dashboard/attendance/reports', icon: MdAssessment, label: 'Reports' },
       { to: '/dashboard/attendance/correction', icon: MdEdit, label: 'Corrections' },
     ],
   },
@@ -68,8 +70,10 @@ const adminNavItems: NavItem[] = [
       { to: '/dashboard/admin/certificates', icon: MdMilitaryTech, label: 'Certificates' },
     ],
   },
+  { to: '/dashboard/admin/reports', icon: MdAssessment, label: 'Reports' },
   { to: '/dashboard/admin/notifications', icon: MdNotifications, label: 'Notifications' },
   { to: '/dashboard/admin/permissions', icon: MdSecurity, label: 'Permissions' },
+  { to: '/dashboard/subscription', icon: MdCrown, label: 'Subscription', badge: 'Pro' },
 ]
 
 const facultyNavItems: NavItem[] = [
@@ -82,6 +86,7 @@ const facultyNavItems: NavItem[] = [
   { to: '/dashboard/assignments', icon: MdAssignment, label: 'Assignments' },
   { to: '/dashboard/materials', icon: MdLibraryBooks, label: 'Study Materials' },
   { to: '/dashboard/marks', icon: MdRateReview, label: 'Marks & Results' },
+  { to: '/dashboard/registration-requests', icon: MdPerson, label: 'Registration Requests' },
   { to: '/dashboard/faculty/notifications', icon: MdNotifications, label: 'Notifications' },
   { to: '/dashboard/holidays', icon: MdStars, label: 'Holidays' },
 ]
@@ -351,13 +356,15 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
         </nav>
 
         <div className="px-3 py-3 border-t border-neutral-100 space-y-0.5 shrink-0">
-          <NavLink
-            to="/dashboard/settings"
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 transition-all duration-200"
-          >
-            <MdSettings className="text-lg text-neutral-400" />
-            Settings
-          </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/dashboard/settings"
+              className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 transition-all duration-200"
+            >
+              <MdSettings className="text-lg text-neutral-400" />
+              Settings
+            </NavLink>
+          )}
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-danger hover:bg-danger/5 w-full transition-all duration-200"

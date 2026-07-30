@@ -3,13 +3,13 @@ import { motion } from 'framer-motion'
 import { MdHowToVote, MdFace, MdFingerprint, MdQrCode, MdAssessment, MdAnalytics, MdHistory } from 'react-icons/md'
 
 const links = [
-  { to: '/attendance/manual', label: 'Manual Attendance', icon: MdHowToVote },
-  { to: '/attendance/face-recognition', label: 'Face Recognition', icon: MdFace },
-  { to: '/attendance/fingerprint', label: 'Fingerprints', icon: MdFingerprint },
-  { to: '/attendance/qr', label: 'QR Attendance', icon: MdQrCode },
-  { to: '/attendance/reports', label: 'Attendance Report', icon: MdAssessment },
-  { to: '/attendance/analytics', label: 'Attendance Analytics', icon: MdAnalytics },
-  { to: '/attendance/history', label: 'Attendance History', icon: MdHistory },
+  { to: '/dashboard/attendance/manual', label: 'Manual Attendance', icon: MdHowToVote },
+  { to: '/dashboard/attendance/face-recognition', label: 'Face Recognition', icon: MdFace },
+  { to: '/dashboard/attendance/fingerprint', label: 'Fingerprints', icon: MdFingerprint },
+  { to: '/dashboard/attendance/qr', label: 'QR Attendance', icon: MdQrCode },
+  { to: '/dashboard/attendance/reports', label: 'Attendance Report', icon: MdAssessment },
+  { to: '/dashboard/attendance/analytics', label: 'Attendance Analytics', icon: MdAnalytics },
+  { to: '/dashboard/attendance/history', label: 'Attendance History', icon: MdHistory },
 ]
 
 export default function AttendanceNavBar() {

@@ -46,6 +46,26 @@ const attendanceService = {
     return data;
   },
 
+  async scanFaceAndMarkAttendance(scanData: { faceImage: string; confidence?: number; deviceId?: string; metadata?: Record<string, unknown> }) {
+    const { data } = await api.post('/attendance/face-recognition/scan', scanData);
+    return data;
+  },
+
+  async enrollStudentFace(enrollData: { studentId: string; faceImage: string; metadata?: Record<string, unknown> }) {
+    const { data } = await api.post('/attendance/face-recognition/enroll', enrollData);
+    return data;
+  },
+
+  async getEnrolledFaces() {
+    const { data } = await api.get('/attendance/face-recognition/enrolled');
+    return data;
+  },
+
+  async unenrollStudentFace(studentId: string) {
+    const { data } = await api.delete(`/attendance/face-recognition/enrolled/${studentId}`);
+    return data;
+  },
+
   async markFingerprint(fingerprintData: Record<string, unknown>) {
     const { data } = await api.post('/attendance/fingerprint/mark', fingerprintData);
     return data;

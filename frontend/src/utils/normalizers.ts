@@ -366,6 +366,57 @@ export function normalizeAdminDashboardStats(response: unknown): AdminDashboardS
   }
 }
 
+export interface StudentDashboardStats {
+  attendanceRate: number
+  upcomingExams: any[]
+  pendingAssignments: number
+  pendingFees: number
+  notifications: number
+  enrollment: { course: string; semester: number }
+}
+
+export function normalizeStudentDashboardStats(response: unknown): StudentDashboardStats | null {
+  const obj = safeObject<Record<string, unknown>>(unwrapApiObject(response) || {})
+  if (!obj) return null
+  return {
+    attendanceRate: safeNumber(obj.attendanceRate),
+    upcomingExams: safeArray(obj.upcomingExams),
+    pendingAssignments: safeNumber(obj.pendingAssignments),
+    pendingFees: safeNumber(obj.pendingFees),
+    notifications: safeNumber(obj.notifications),
+    enrollment: {
+      course: safeString((obj.enrollment as any)?.course) || 'N/A',
+      semester: safeNumber((obj.enrollment as any)?.semester) || 1,
+    },
+  }
+}
+
+export interface ParentDashboardStats {
+  attendanceRate: number
+  upcomingExams: any[]
+  pendingFees: number
+  pendingAssignments: number
+  studentName: string
+  studentRoll: string
+  studentCourse: string
+  studentSemester: number
+}
+
+export function normalizeParentDashboardStats(response: unknown): ParentDashboardStats | null {
+  const obj = safeObject<Record<string, unknown>>(unwrapApiObject(response) || {})
+  if (!obj) return null
+  return {
+    attendanceRate: safeNumber(obj.attendanceRate),
+    upcomingExams: safeArray(obj.upcomingExams),
+    pendingFees: safeNumber(obj.pendingFees),
+    pendingAssignments: safeNumber(obj.pendingAssignments),
+    studentName: safeString(obj.studentName) || 'N/A',
+    studentRoll: safeString(obj.studentRoll) || '',
+    studentCourse: safeString(obj.studentCourse) || 'N/A',
+    studentSemester: safeNumber(obj.studentSemester) || 1,
+  }
+}
+
 /* ─────────── HOLIDAYS ─────────── */
 
 const HOLIDAY_TYPES = ['national', 'festival', 'academic', 'event'] as const

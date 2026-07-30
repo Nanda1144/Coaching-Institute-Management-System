@@ -32,6 +32,8 @@ router.get('/profile', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.AD
 
 router.get('/dashboard', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), facultyController.getDashboardStats);
 
+router.get('/batches', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), facultyController.getAssignedBatches);
+
 // Student registration approval (must be before /:id)
 router.get('/registration-requests', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.READ_STUDENT), studentRegistrationController.getAll);
 router.patch('/registration-requests/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), requirePermission(Permission.UPDATE_STUDENT), validate(registrationApprovalSchema), studentRegistrationController.review);

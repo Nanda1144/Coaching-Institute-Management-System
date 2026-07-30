@@ -36,6 +36,19 @@ export const reportController = {
     sendSuccess(res, data, 'Exam report generated');
   }),
 
+  getMonthlyAttendance: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const { month, year, batchId, subjectId } = req.query as any;
+    const facultyId = req.user!.facultyId || req.user!.id;
+    const data = await reportService.getMonthlyAttendance({
+      month: Number(month) || new Date().getMonth() + 1,
+      year: Number(year) || new Date().getFullYear(),
+      facultyId,
+      batchId,
+      subjectId,
+    });
+    sendSuccess(res, data, 'Monthly attendance report generated');
+  }),
+
   getStudentReport: asyncHandler(async (req: IAuthRequest, res: Response) => {
     const data = await reportService.getStudentReport(req.query as any);
     if (!data) {

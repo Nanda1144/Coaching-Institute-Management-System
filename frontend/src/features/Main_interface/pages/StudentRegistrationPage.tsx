@@ -72,7 +72,7 @@ export default function StudentRegistrationPage() {
 
   useEffect(() => {
     if (form.department) {
-      api.get('/references/courses', { params: { department: form.department } }).then((res) => {
+      api.get('/references/courses').then((res) => {
         setCourses(res.data?.data ?? [])
       }).catch(() => {})
       api.get('/references/faculty', { params: { department: form.department } }).then((res) => {
@@ -332,7 +332,7 @@ export default function StudentRegistrationPage() {
                           <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone *</label>
                           <div className="relative">
                             <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input type="tel" value={form.phone} onChange={(e) => update('phone', e.target.value)} placeholder="9876543210" className={cn(inputClass('phone'), 'pl-10')} />
+                            <input type="tel" name="phone" autoComplete="tel-national" value={form.phone} onChange={(e) => update('phone', e.target.value)} placeholder="9876543210" className={cn(inputClass('phone'), 'pl-10')} />
                           </div>
                           {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                         </div>

@@ -52,7 +52,9 @@ export default function FacultyProfilePage() {
           experience: norm.experience,
           email: norm.email,
           phone: norm.phone,
-          address: (rawProfile as any)?.address || '',
+          address: typeof (rawProfile as any)?.address === 'object'
+            ? Object.values((rawProfile as any).address).filter(Boolean).join(', ')
+            : (rawProfile as any)?.address || '',
           dob: (rawProfile as any)?.dateOfBirth ? new Date((rawProfile as any).dateOfBirth).toISOString().split('T')[0] : '',
           gender: (rawProfile as any)?.gender || '',
           qualification: norm.qualification,

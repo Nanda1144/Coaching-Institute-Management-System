@@ -6,7 +6,7 @@ async function findAll(query: EvaluationQueryInput) {
   const { page = 1, limit = 10, facultyId, status, submissionId } = query;
   const skip = (page - 1) * limit;
 
-  const where: any[] = [{ column: 'isDeleted', value: false }];
+  const where: any[] = [{ column: 'deletedAt', operator: 'IS NULL' }];
   if (facultyId) where.push({ column: 'facultyId', value: facultyId });
   if (status) where.push({ column: 'status', value: status });
   if (submissionId) where.push({ column: 'submissionId', value: submissionId });
@@ -36,7 +36,7 @@ async function findById(id: string) {
   const evaluation = await db.findFirst('evaluations', {
     where: [
       { column: 'id', value: id },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
   });
 
@@ -61,7 +61,7 @@ async function create(data: CreateEvaluationInput, userId: string) {
   const submission = await db.findFirst('assignment_submissions', {
     where: [
       { column: 'id', value: data.submissionId },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
   });
 
@@ -90,7 +90,7 @@ async function update(id: string, data: UpdateEvaluationInput, userId: string) {
   const evaluation = await db.findFirst('evaluations', {
     where: [
       { column: 'id', value: id },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
   });
 
@@ -137,7 +137,7 @@ async function publish(id: string, userId: string) {
   const evaluation = await db.findFirst('evaluations', {
     where: [
       { column: 'id', value: id },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
   });
 
@@ -164,14 +164,14 @@ async function remove(id: string, userId: string) {
   const existing = await db.findFirst('evaluations', {
     where: [
       { column: 'id', value: id },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
   });
   if (!existing) throw AppError.notFound('Evaluation not found');
 
   await db.update('evaluations',
     [{ column: 'id', value: id }],
-    { isDeleted: true, deletedAt: new Date(), updatedById: userId },
+    { deletedAt: new Date(), updatedById: userId },
   );
   return { message: 'Evaluation deleted successfully' };
 }
@@ -180,7 +180,7 @@ async function getByFaculty(facultyId: string) {
   const evaluations = await db.findMany('evaluations', {
     where: [
       { column: 'facultyId', value: facultyId },
-      { column: 'isDeleted', value: false },
+      { column: 'deletedAt', operator: 'IS NULL' },
     ],
     orderBy: [{ column: 'createdAt', dir: 'desc' }],
   });

@@ -36,8 +36,11 @@ export default function ParentNotificationsPage() {
   })
 
   useEffect(() => {
-    if (response?.data) {
-      setNotifications(response.data)
+    const raw = response?.data
+    if (Array.isArray(raw)) {
+      setNotifications(raw)
+    } else if (raw?.notifications) {
+      setNotifications(raw.notifications)
     }
   }, [response])
 

@@ -7,7 +7,7 @@ const notificationService = {
   },
 
   async send(notificationData: Record<string, unknown>) {
-    const { data } = await api.post('/notifications/send', notificationData);
+    const { data } = await api.post('/notifications', notificationData);
     return data;
   },
 };

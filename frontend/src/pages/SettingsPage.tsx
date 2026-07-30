@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
   MdSecurity, MdNotifications, MdPalette, MdBackup,
@@ -87,6 +87,7 @@ const FIELD_TYPES: Record<string, Record<string, { type: string; options?: strin
 }
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient()
   const [activeSection, setActiveSection] = useState('institute')
   const [formValues, setFormValues] = useState<Record<string, Record<string, any>>>({})
 
@@ -137,6 +138,7 @@ export default function SettingsPage() {
     updateMutation.mutate(formValues[activeSection] || {}, {
       onSuccess: () => {
         window.dispatchEvent(new Event('appSettingsChanged'))
+        queryClient.invalidateQueries({ queryKey: ['settings'] })
       },
     })
   }

@@ -30,6 +30,7 @@ import parentDashboardRoutes from './modules/parent-dashboard/parent-dashboard.r
 import studentRoutes from './modules/student/student.routes';
 import parentRoutes from './modules/parent/parent.routes';
 import examRoutes from './modules/exam/exam.routes';
+import examMarksRoutes from './modules/exam-marks/exam-marks.routes';
 import feeRoutes from './modules/fee/fee.routes';
 import notificationRoutes from './modules/notification/notification.routes';
 import reportRoutes from './modules/reports/reports.routes';
@@ -45,6 +46,8 @@ import scholarshipRoutes from './modules/scholarship/scholarship.routes';
 import cloudDocumentsRoutes from './modules/cloud-documents/cloud-documents.routes';
 import paymentGatewayRoutes from './modules/payment-gateways/payment-gateways.routes';
 import settingsRoutes from './modules/settings/settings.routes';
+import auditRoutes from './modules/audit/audit.routes';
+import subscriptionRoutes from './modules/subscription/subscription.routes';
 
 const app = express();
 
@@ -100,6 +103,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(env.COOKIE_SECRET));
 
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {
+    res.status(503).json({ success: false, message: 'Request timeout — the server is overloaded or the database is unreachable. Please try again.' });
+  });
+  next();
+});
+
 // Swagger API docs
 import { setupSwagger } from './config/swagger';
 setupSwagger(app);
@@ -146,6 +156,7 @@ app.use('/api/parent-dashboard', parentDashboardRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/parents', parentRoutes);
 app.use('/api/exams', examRoutes);
+app.use('/api/exams/:examId/marks', examMarksRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
@@ -162,6 +173,8 @@ app.use('/api/cloud-documents', cloudDocumentsRoutes);
 app.use('/api/payment-gateways', paymentGatewayRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Error handling
 app.use(notFoundHandler);

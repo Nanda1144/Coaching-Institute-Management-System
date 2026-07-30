@@ -12,7 +12,12 @@ export const register = asyncHandler(async (req: IAuthRequest, res: Response) =>
 });
 
 export const getAll = asyncHandler(async (req: IAuthRequest, res: Response) => {
-  const requests = await studentRegistrationService.getAll(req.query as any);
+  const query = { ...req.query } as any;
+  const role = req.user?.role || '';
+  if (role === 'FACULTY' || role === 'HOD') {
+    query.facultyId = req.user?.id;
+  }
+  const requests = await studentRegistrationService.getAll(query);
   sendSuccess(res, requests, 'Registration requests retrieved successfully');
 });
 

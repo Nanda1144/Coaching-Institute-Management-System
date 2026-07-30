@@ -4,6 +4,17 @@ import { MdClose, MdPreview, MdSave, MdAnnouncement, MdCalendarMonth } from 'rea
 import type { Holiday, HolidayType } from '../types/holiday.types'
 import { HOLIDAY_TYPE_CONFIG } from '../types/holiday.types'
 
+function getDateStr(h: Holiday | null): string {
+  if (!h) return ''
+  const d = (h as any).startDate || (h as any).date || h.date
+  if (!d) return ''
+  try {
+    return typeof d === 'string' ? d.slice(0, 10) : new Date(d).toISOString().slice(0, 10)
+  } catch {
+    return ''
+  }
+}
+
 interface HolidayFormModalProps {
   isOpen: boolean
   holiday: Holiday | null
@@ -43,11 +54,15 @@ export default function HolidayFormModal({ isOpen, holiday, onClose, onSave }: H
 
   useEffect(() => {
     if (holiday) {
-      setName(holiday.name)
-      setDate(holiday.date.slice(0, 10))
-      setType(holiday.type)
-      setDepartment(holiday.department)
-      setDescription(holiday.description)
+      setName((holiday as any).holidayName || holiday.name || '')
+      setDate(getDateStr(holiday))
+      setType((holiday as any).holidayType || holiday.type || 'national')
+      setDepartment(
+        Array.isArray((holiday as any).applicableDepartments)
+          ? (holiday as any).applicableDepartments[0]
+          : (holiday as any).department || holiday.department || 'All Departments'
+      )
+      setDescription(holiday.description || '')
     } else {
       setName('')
       setDate('')
@@ -71,7 +86,20 @@ export default function HolidayFormModal({ isOpen, holiday, onClose, onSave }: H
     if (!date) return
     setSaving(true)
     try {
-      await onSave({ id: holiday?.id, name: name.trim(), date, day: dayName, type, department, description: description.trim() }, status)
+      const payload: Record<string, unknown> = {
+        id: holiday?.id,
+        holidayName: name.trim(),
+        name: name.trim(),
+        startDate: date,
+        date,
+        day: dayName,
+        holidayType: type,
+        type,
+        department,
+        applicableDepartments: [department],
+        description: description.trim(),
+      }
+      await onSave(payload as any, status)
     } finally {
       setSaving(false)
     }

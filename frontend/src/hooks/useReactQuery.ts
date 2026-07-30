@@ -26,6 +26,8 @@ import {
   normalizeAttendanceList,
   normalizeDashboardStats,
   normalizeAdminDashboardStats,
+  normalizeStudentDashboardStats,
+  normalizeParentDashboardStats,
   normalizeHolidayList,
   normalizeAssignmentList,
   normalizeMaterialList,
@@ -88,7 +90,7 @@ export function useStudentDashboard(studentId: string) {
     queryKey: ['studentDashboard', studentId],
     queryFn: async () => {
       const result = await dashboardService.getStudentStats(studentId)
-      return result
+      return normalizeStudentDashboardStats(result)
     },
     enabled: !!studentId,
     staleTime: 30000,
@@ -101,7 +103,7 @@ export function useParentDashboard(parentId: string) {
     queryKey: ['parentDashboard', parentId],
     queryFn: async () => {
       const result = await dashboardService.getParentStats(parentId)
-      return result
+      return normalizeParentDashboardStats(result)
     },
     enabled: !!parentId,
     staleTime: 30000,

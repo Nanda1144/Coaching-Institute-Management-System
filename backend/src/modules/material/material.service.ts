@@ -74,8 +74,40 @@ export async function findById(id: string) {
 export async function create(data: CreateMaterialInput, userId: string) {
   const materialCode = generateMaterialCode();
 
+  const enriched = { ...data };
+  const faculty = await db.findUnique('faculty', [{ column: 'id', value: userId }]);
+  if (faculty) {
+    if (!enriched.departmentId && faculty.department) {
+      const dept = await db.findUnique('departments', [{ column: 'name', value: faculty.department }]);
+      if (dept) enriched.departmentId = dept.id;
+    }
+    if (!enriched.courseId) {
+      const courses = faculty.assignedCourses as string[] | undefined;
+      if (courses?.length) enriched.courseId = courses[0];
+    }
+    if (!enriched.semesterId) {
+      const semesters = faculty.assignedSemesters as string[] | undefined;
+      if (semesters?.length) enriched.semesterId = semesters[0];
+    }
+    if (!enriched.subjectId) {
+      const subjects = faculty.assignedSubjects as string[] | undefined;
+      if (subjects?.length) enriched.subjectId = subjects[0];
+    }
+    if (!enriched.batchId) {
+      const batches = faculty.assignedBatches as string[] | undefined;
+      if (batches?.length) enriched.batchId = batches[0];
+    }
+  }
+
+  if (!enriched.fileName) enriched.fileName = 'file';
+  if (!enriched.originalFileName) enriched.originalFileName = enriched.fileName;
+  if (!enriched.fileUrl) enriched.fileUrl = '#';
+  if (!enriched.fileExtension) enriched.fileExtension = '.bin';
+  if (!enriched.mimeType) enriched.mimeType = 'application/octet-stream';
+  if (!enriched.fileSize) enriched.fileSize = 0;
+
   const material = await db.create('study_materials', {
-    ...data,
+    ...enriched,
     materialCode,
     uploadedById: userId,
     createdBy: userId,

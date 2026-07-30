@@ -25,6 +25,16 @@ const examService = {
     const { data } = await api.delete(`/exams/${id}`);
     return data;
   },
+
+  async getMarks(examId: string) {
+    const { data } = await api.get(`/exams/${examId}/marks`);
+    return data;
+  },
+
+  async uploadMarks(examId: string, marks: any[]) {
+    const { data } = await api.post(`/exams/${examId}/marks/upload`, { marks });
+    return data;
+  },
 };
 
 export default examService;

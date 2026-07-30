@@ -7,9 +7,9 @@ import { settingsController } from './settings.controller';
 
 const router = Router();
 
-router.get('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), settingsController.getAll);
+router.get('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY, UserRole.STUDENT, UserRole.PARENT), settingsController.getAll);
 
-router.get('/:section', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), validate(sectionParamSchema, 'params'), settingsController.getSection);
+router.get('/:section', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY, UserRole.STUDENT, UserRole.PARENT), validate(sectionParamSchema, 'params'), settingsController.getSection);
 
 router.patch('/:section', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), requirePermission(Permission.MANAGE_SETTINGS), validate(sectionParamSchema, 'params'), validate(updateSettingsSchema), settingsController.upsert);
 

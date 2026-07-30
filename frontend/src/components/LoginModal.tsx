@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MdClose, MdVisibility, MdVisibilityOff, MdEmail, MdLock, MdPerson, MdPhone, MdArrowBack } from 'react-icons/md'
+import { MdClose, MdVisibility, MdVisibilityOff, MdEmail, MdLock, MdArrowBack, MdSchool } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
-import authService from '../services/auth/auth.service'
 
 type ModalView = 'login' | 'signup' | 'forgot' | 'help'
 
@@ -22,11 +22,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Signup state
-  const [signupData, setSignupData] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '' })
-  const [signupError, setSignupError] = useState('')
-  const [signupLoading, setSignupLoading] = useState(false)
-  const [signupSuccess, setSignupSuccess] = useState(false)
+
 
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('')
@@ -46,25 +42,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }
 
-  async function handleSignup(e: FormEvent) {
-    e.preventDefault()
-    setSignupError('')
-    setSignupLoading(true)
-    try {
-      await authService.register(signupData)
-      setSignupSuccess(true)
-      setTimeout(() => {
-        setView('login')
-        setSignupSuccess(false)
-        setEmail(signupData.email)
-      }, 2000)
-    } catch (err: any) {
-      setSignupError(err?.response?.data?.message || err?.message || 'Registration failed')
-    } finally {
-      setSignupLoading(false)
-    }
-  }
-
   function handleForgotPassword(e: FormEvent) {
     e.preventDefault()
     setForgotSent(true)
@@ -73,9 +50,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   function resetView() {
     setView('login')
     setError('')
-    setSignupError('')
     setForgotSent(false)
-    setSignupSuccess(false)
   }
 
   function closeModal() {
@@ -197,110 +172,45 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 </form>
               )}
 
-              {/* Sign Up Form */}
+              {/* Sign Up Info */}
               {view === 'signup' && (
-                <form onSubmit={handleSignup} className="space-y-4">
-                  {signupSuccess ? (
-                    <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-sm text-green-700 text-center">
-                      Registration successful! Redirecting to login...
+                <div className="space-y-4">
+                  <div className="p-5 rounded-xl bg-blue-50 border border-blue-100">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                        <MdSchool className="text-blue-600 text-lg" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Student Registration</p>
+                        <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                          Only students can self-register through this portal. If you are a student, click the button below to create your account.
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">First Name</label>
-                          <div className="relative">
-                            <MdPerson className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                              type="text"
-                              value={signupData.firstName}
-                              onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
-                              placeholder="First Name"
-                              required
-                              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">Last Name</label>
-                          <div className="relative">
-                            <MdPerson className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                              type="text"
-                              value={signupData.lastName}
-                              onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
-                              placeholder="Last Name"
-                              required
-                              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                        <div className="relative">
-                          <MdEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                          <input
-                            type="email"
-                            value={signupData.email}
-                            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                            placeholder="Enter your email"
-                            required
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
-                        <div className="relative">
-                          <MdPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                          <input
-                            type="tel"
-                            value={signupData.phone}
-                            onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
-                            placeholder="Enter your phone number"
-                            required
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                        <div className="relative">
-                          <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                          <input
-                            type="password"
-                            value={signupData.password}
-                            onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                            placeholder="Create a password"
-                            required
-                            minLength={6}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all"
-                          />
-                        </div>
-                      </div>
+                  </div>
 
-                      {signupError && (
-                        <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600">{signupError}</div>
-                      )}
+                  <Link
+                    to="/student-registration"
+                    onClick={onClose}
+                    className="block w-full text-center py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md"
+                  >
+                    Register as Student
+                  </Link>
 
-                      <button
-                        type="submit"
-                        disabled={signupLoading}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md disabled:opacity-50"
-                      >
-                        {signupLoading ? 'Creating Account...' : 'Create Account'}
-                      </button>
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <p className="text-xs font-medium text-amber-800">For Faculty & Parents</p>
+                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                      Account creation for faculty and parents is managed by your coaching institute. Please contact your respective institute management to get your login credentials.
+                    </p>
+                  </div>
 
-                      <p className="text-center text-sm text-gray-500">
-                        Already have an account?{' '}
-                        <button type="button" onClick={() => setView('login')} className="text-blue-600 hover:text-blue-700 font-medium">
-                          Sign In
-                        </button>
-                      </p>
-                    </>
-                  )}
-                </form>
+                  <p className="text-center text-sm text-gray-500">
+                    Already have an account?{' '}
+                    <button type="button" onClick={() => setView('login')} className="text-blue-600 hover:text-blue-700 font-medium">
+                      Sign In
+                    </button>
+                  </p>
+                </div>
               )}
 
               {/* Forgot Password */}

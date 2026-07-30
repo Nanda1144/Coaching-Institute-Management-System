@@ -14,6 +14,7 @@ router.get('/faculty', ...guard, reportController.getFaculty);
 router.get('/fees', ...guard, reportController.getFees);
 router.get('/exams', ...guard, reportController.getExams);
 router.get('/student', ...guard, reportController.getStudentReport);
+router.get('/attendance/monthly', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), reportController.getMonthlyAttendance);
 router.get('/export/pdf', ...guard, reportController.exportPdf);
 router.get('/export/excel', ...guard, reportController.exportExcel);
 

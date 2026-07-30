@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MdAssignment, MdSearch, MdAdd, MdMoreVert } from 'react-icons/md'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -24,6 +25,7 @@ const itemVariants = {
 }
 
 export default function AssignmentsPage() {
+  const navigate = useNavigate()
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -71,7 +73,7 @@ export default function AssignmentsPage() {
             <h1 className="gradient-text text-3xl font-bold tracking-tight">Assignments</h1>
             <p className="text-neutral-500 text-sm mt-1">Manage faculty assignments and workload</p>
           </div>
-          <button className="btn btn-primary">
+          <button onClick={() => navigate('/dashboard/assignments/create')} className="btn btn-primary">
             <MdAdd size={18} /> New Assignment
           </button>
         </motion.div>

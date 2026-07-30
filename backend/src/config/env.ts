@@ -27,10 +27,9 @@ export const env = {
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'dev-cookie-secret-change-in-production',
   DB_SSL_REJECT_UNAUTHORIZED: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
   SKIP_AUTH: process.env.SKIP_AUTH || 'false',
-  EMAILJS_SERVICE_ID: process.env.EMAILJS_SERVICE_ID || '',
-  EMAILJS_TEMPLATE_ID: process.env.EMAILJS_TEMPLATE_ID || '',
-  EMAILJS_USER_ID: process.env.EMAILJS_USER_ID || '',
-  EMAILJS_PRIVATE_KEY: process.env.EMAILJS_PRIVATE_KEY || '',
+  BREVO_API_KEY: process.env.BREVO_API_KEY || '',
+  BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL || 'noreply@ciiims.edu',
+  BREVO_FROM_NAME: process.env.BREVO_FROM_NAME || 'CIMS',
   CLOUD_PROVIDER: process.env.CLOUD_PROVIDER || 'local',
 } as const;
 

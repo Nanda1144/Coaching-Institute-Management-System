@@ -6,6 +6,7 @@ import { sendSuccess, sendCreated } from '../../shared/utils/api-response';
 import { AppError } from '../../shared/errors/AppError';
 import { attendanceService } from './attendance.service';
 import { faceRecognitionService } from './face-recognition.service';
+import { studentFaceService } from './student-face.service';
 import { fingerprintAttendanceService } from './fingerprint-attendance.service';
 import { qrAttendanceService } from './qr-attendance.service';
 import { correctionService } from './correction.service';
@@ -81,6 +82,35 @@ export const attendanceController = {
     sendSuccess(res, session, 'Face recognition session fetched');
   }),
 
+  scanFaceAndMarkAttendance: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const result = await faceRecognitionService.scanAndMarkAttendance({
+      faceImage: req.body.faceImage,
+      confidence: req.body.confidence,
+      deviceId: req.body.deviceId,
+      metadata: req.body.metadata,
+    }, req.user!.id);
+    sendCreated(res, result, 'Attendance marked via face recognition');
+  }),
+
+  enrollStudentFace: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const enrolled = await studentFaceService.enroll({
+      studentId: req.body.studentId,
+      faceImage: req.body.faceImage,
+      metadata: req.body.metadata,
+    }, req.user!.id);
+    sendSuccess(res, enrolled, 'Student face enrolled');
+  }),
+
+  getEnrolledFaces: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const enrolled = await studentFaceService.getEnrolledStudents();
+    sendSuccess(res, enrolled, 'Enrolled faces fetched');
+  }),
+
+  unenrollStudentFace: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const result = await studentFaceService.unenroll(req.params.studentId);
+    sendSuccess(res, result, 'Student face unenrolled');
+  }),
+
   markFingerprintAttendance: asyncHandler(async (req: IAuthRequest, res: Response) => {
     const record = await fingerprintAttendanceService.markAttendance(req.body, req.user!.id);
     sendCreated(res, record, 'Fingerprint attendance marked');
@@ -108,9 +138,18 @@ export const attendanceController = {
     if (!batch || !subject) {
       throw AppError.badRequest('No active batch or subject found. Please set up batches and subjects first.');
     }
+    let classroomId = req.body.classroomId;
+    if (!classroomId) {
+      const classroom = await db.findFirst('classrooms', { select: ['id'], where: [] });
+      if (classroom) classroomId = classroom.id;
+    }
+    if (!classroomId) {
+      throw AppError.badRequest('No classroom found. Please create a classroom first or provide a classroomId.');
+    }
     const session = await qrAttendanceService.createSession({
       subjectId: subject.id,
       batchId: batch.id,
+      classroomId,
       startTime: now.toISOString(),
       endTime: end.toISOString(),
     }, req.user!.id);

@@ -15,7 +15,7 @@ export default function Section({ id, title, subtitle, description, className, c
     <section
       id={id}
       className={cn(
-        'py-16 sm:py-20 lg:py-24',
+        'py-16 sm:py-20 lg:py-24 scroll-mt-20',
         bgStyles[variant],
         variant === 'gradient' && 'text-white',
         className,

@@ -15,7 +15,7 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), requirePermission(Permission.READ_TIMETABLE), validate(timetableQuerySchema, 'query'), timetableController.getAll);
+router.get('/', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY, UserRole.STUDENT, UserRole.PARENT), requirePermission(Permission.READ_TIMETABLE), validate(timetableQuerySchema, 'query'), timetableController.getAll);
 router.get('/faculty/:facultyId', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), timetableController.getByFaculty);
 router.get('/faculty/:facultyId/day/:dayOfWeek', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), timetableController.getByDay);
 router.get('/export', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createExportHandler('timetables', 'Timetable'));

@@ -31,7 +31,12 @@ export default function PersonalInfo({ profile }: PersonalInfoProps) {
             <div>
               <p className="text-xs text-gray-500">{item.label}</p>
               <p className="text-sm font-medium text-gray-700">
-                {profile[item.key as keyof FacultyProfile] || '-'}
+                {(() => {
+                  const val = profile[item.key as keyof FacultyProfile]
+                  if (typeof val === 'object' && val !== null)
+                    return Object.values(val as Record<string, unknown>).filter(Boolean).join(', ')
+                  return val || '-'
+                })()}
               </p>
             </div>
           </div>

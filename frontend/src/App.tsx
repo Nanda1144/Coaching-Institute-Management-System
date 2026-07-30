@@ -84,6 +84,7 @@ const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage'))
 const AdminBranchesPage = lazy(() => import('./pages/AdminBranchesPage'))
 const AdminCertificatesPage = lazy(() => import('./pages/AdminCertificatesPage'))
 const AdminPermissionsPage = lazy(() => import('./pages/AdminPermissionsPage'))
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'))
 const RegistrationRequestsPage = lazy(() => import('./pages/RegistrationRequestsPage'))
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -189,17 +190,17 @@ function DashboardRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/holidays" element={<HolidayManagementPage />} />
+      <Route path="/settings" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'HOD']}><SettingsPage /></RoleGuard>} />
+      <Route path="/holidays" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><HolidayManagementPage /></RoleGuard>} />
       <Route path="/student/timetable" element={<RoleGuard roles={['STUDENT', 'SUPER_ADMIN', 'ADMIN', 'HOD']}><StudentTimetablePage /></RoleGuard>} />
       <Route path="/faculty/timetable" element={<RoleGuard roles={['FACULTY', 'HOD', 'SUPER_ADMIN', 'ADMIN']}><FacultyTimetablePage /></RoleGuard>} />
-      <Route path="/attendance" element={<AttendanceDashboard />} />
-      <Route path="/attendance/manual" element={<ManualAttendancePage />} />
-      <Route path="/attendance/face-recognition" element={<FaceRecognitionPage />} />
-      <Route path="/attendance/fingerprint" element={<FingerprintAttendancePage />} />
-      <Route path="/attendance/qr" element={<QRAttendancePage />} />
-      <Route path="/attendance/history" element={<AttendanceHistoryPage />} />
-      <Route path="/attendance/analytics" element={<AttendanceAnalyticsPage />} />
+      <Route path="/attendance" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><AttendanceDashboard /></RoleGuard>} />
+      <Route path="/attendance/manual" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><ManualAttendancePage /></RoleGuard>} />
+      <Route path="/attendance/face-recognition" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><FaceRecognitionPage /></RoleGuard>} />
+      <Route path="/attendance/fingerprint" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><FingerprintAttendancePage /></RoleGuard>} />
+      <Route path="/attendance/qr" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><QRAttendancePage /></RoleGuard>} />
+      <Route path="/attendance/history" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><AttendanceHistoryPage /></RoleGuard>} />
+      <Route path="/attendance/analytics" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><AttendanceAnalyticsPage /></RoleGuard>} />
       <Route path="/assignments" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><AssignmentsPage /></RoleGuard>} />
       <Route path="/students" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><FacultyStudentsPage /></RoleGuard>} />
       <Route path="/materials" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN', 'HOD', 'FACULTY']}><FacultyMaterialsPage /></RoleGuard>} />
@@ -232,6 +233,7 @@ function DashboardRoutes() {
       <Route path="/admin/branches" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminBranchesPage /></RoleGuard>} />
       <Route path="/admin/certificates" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminCertificatesPage /></RoleGuard>} />
       <Route path="/admin/permissions" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><AdminPermissionsPage /></RoleGuard>} />
+      <Route path="/subscription" element={<RoleGuard roles={['SUPER_ADMIN', 'ADMIN']}><SubscriptionPage /></RoleGuard>} />
       <Route path="/my-profile" element={<RoleGuard roles={['STUDENT']}><StudentProfilePage /></RoleGuard>} />
       <Route path="/my-attendance" element={<RoleGuard roles={['STUDENT']}><StudentAttendancePage /></RoleGuard>} />
       <Route path="/my-assignments" element={<RoleGuard roles={['STUDENT']}><StudentAssignmentsPage /></RoleGuard>} />

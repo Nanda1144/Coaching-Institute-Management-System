@@ -42,4 +42,9 @@ export const facultyController = {
     const stats = await facultyService.getDashboardStats(req.user!.id);
     sendSuccess(res, stats, 'Dashboard stats retrieved successfully');
   }),
+
+  getAssignedBatches: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const batches = await facultyService.getAssignedBatches(req.user!.id);
+    sendSuccess(res, batches, 'Assigned batches retrieved successfully');
+  }),
 };

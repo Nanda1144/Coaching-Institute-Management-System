@@ -1579,7 +1579,7 @@ async function main() {
   ];
   const revaList: { id: string; examId: string; studentId: string; subjectId: string | null; currentMarks: number; expectedMarks: number; reason: string; status: string; reviewedById: string | null; reviewedAt: Date | null; remarks: string | null; revisedMarks: number | null }[] = [];
   const revaTimelineList: { id: string; revaluationId: string; action: string; comment: string | null; performedBy: string | null }[] = [];
-  const examIds = (await prisma.$queryRawUnsafe<{ id: string }[]>('SELECT id FROM exam_schedules LIMIT 10')).map((r: any) => r.id);
+  const examIds = (await prisma.$queryRawUnsafe<{ id: string }[]>('SELECT id FROM exams LIMIT 10')).map((r: any) => r.id);
   const subjectIds = (await prisma.$queryRawUnsafe<{ id: string }[]>('SELECT id FROM subjects LIMIT 30')).map((r: any) => r.id);
   for (let i = 0; i < 15; i++) {
     const student = studentList[i % studentList.length];

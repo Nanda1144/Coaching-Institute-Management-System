@@ -31,11 +31,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const handleNavClick = useCallback((href: string) => {
     setMobileOpen(false)
     if (href.startsWith('#')) {
-      scrollToSection(href.slice(1))
+      if (pathname !== '/') {
+        navigate('/' + href)
+      } else {
+        scrollToSection(href.slice(1))
+      }
     } else {
       navigate(href)
     }
-  }, [navigate])
+  }, [navigate, pathname])
 
   useEffect(() => {
     setMobileOpen(false)

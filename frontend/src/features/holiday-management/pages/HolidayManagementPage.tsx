@@ -12,12 +12,13 @@ import SpecialEvents from '../components/SpecialEvents'
 import HolidaySkeleton from '../components/HolidaySkeleton'
 import HolidayFormModal from '../components/HolidayFormModal'
 import holidayService from '../../../services/holiday/holiday.service'
+import api from '../../../services/api'
 import type { HolidayFilters as FilterType } from '../types/holiday.types'
 import type { Holiday, SpecialEvent, HolidayStats } from '../types/holiday.types'
 
 const initialFilters: FilterType = { search: '', department: '', month: '', type: '' }
 
-const departmentOptions = ['All Departments', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electronics', 'Mechanical', 'Civil', 'English', 'Biotechnology', 'Business Administration']
+const DEFAULT_DEPT_OPTIONS = ['All Departments', 'Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Electronics', 'Mechanical', 'Civil', 'English', 'Biotechnology', 'Business Administration']
 
 const monthOptions = [
   { value: '', label: 'All Months' },
@@ -49,6 +50,7 @@ export default function HolidayManagementPage() {
   const [holidayStats, setHolidayStats] = useState<HolidayStats>({ totalHolidays: 0, upcomingHolidays: 0, specialEvents: 0, workingDays: 0 })
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [specialEvents, setSpecialEvents] = useState<SpecialEvent[]>([])
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>(DEFAULT_DEPT_OPTIONS)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -56,10 +58,11 @@ export default function HolidayManagementPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [holidaysRes, statsRes, eventsRes] = await Promise.allSettled([
+      const [holidaysRes, statsRes, eventsRes, deptRes] = await Promise.allSettled([
         holidayService.getAll(),
         holidayService.getStats(),
         holidayService.getSpecialEvents(),
+        api.get('/references/departments'),
       ])
       if (holidaysRes.status === 'fulfilled') {
         const data = holidaysRes.value
@@ -67,14 +70,18 @@ export default function HolidayManagementPage() {
         setHolidays(Array.isArray(rawData) ? rawData : (rawData?.data ?? []))
       }
       if (statsRes.status === 'fulfilled') {
-        const data = statsRes.value
-        const s = (data?.data ?? data) as HolidayStats
+        const statsData = statsRes.value
+        const s = (statsData?.data ?? statsData) as HolidayStats
         if (s) setHolidayStats(s)
       }
       if (eventsRes.status === 'fulfilled') {
         const data = eventsRes.value
         const rawEvents = data?.data ?? []
         setSpecialEvents(Array.isArray(rawEvents) ? rawEvents : (rawEvents?.data ?? []))
+      }
+      if (deptRes.status === 'fulfilled' && deptRes.value?.data?.data) {
+        const depts: any[] = deptRes.value.data.data
+        setDepartmentOptions(['All Departments', ...depts.map((d: any) => d.name)])
       }
     } catch {
       setHolidays([])

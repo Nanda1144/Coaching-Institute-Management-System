@@ -31,10 +31,12 @@ export default function DepartmentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<Department | null>(null)
   const [form, setForm] = useState({ name: '', code: '', logo: '' })
   const [saving, setSaving] = useState(false)
+  const perPage = 12
 
   const load = async () => {
     try {
@@ -97,6 +99,9 @@ export default function DepartmentsPage() {
     d.name.toLowerCase().includes(search.toLowerCase()) ||
     d.code.toLowerCase().includes(search.toLowerCase())
   )
+  const totalPages = Math.ceil(filtered.length / perPage)
+  const paginated = filtered.slice((page - 1) * perPage, page * perPage)
+  useEffect(() => { setPage(1) }, [search])
 
   if (loading) return <LoadingSpinner text="Loading departments..." />
 
@@ -142,8 +147,9 @@ export default function DepartmentsPage() {
         )}
 
         {!error && filtered.length > 0 && (
+          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((dept) => (
+            {paginated.map((dept) => (
               <motion.div key={dept.id} variants={itemVariants} className="card p-6 hover:shadow-card-hover group">
                 <div className="flex items-start justify-between mb-4">
                   {dept.logo ? (
@@ -167,6 +173,17 @@ export default function DepartmentsPage() {
               </motion.div>
             ))}
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="btn btn-ghost btn-sm px-3">Prev</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button key={p} onClick={() => setPage(p)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${p === page ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-neutral-500 hover:bg-neutral-50'}`}>{p}</button>
+              ))}
+              <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="btn btn-ghost btn-sm px-3">Next</button>
+            </div>
+          )}
+          <div className="text-center text-xs text-neutral-400 pt-2">Showing {paginated.length} of {filtered.length} departments</div>
+          </>
         )}
       </motion.div>
 

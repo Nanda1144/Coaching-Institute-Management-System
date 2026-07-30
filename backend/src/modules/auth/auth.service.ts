@@ -85,7 +85,8 @@ async function login(email: string, password: string) {
 
   if (detectedRole === 'FACULTY') {
     const { password: _, ...userData } = user;
-    const tokens = generateTokens({ ...user, role });
+    const facultyPermissions = ROLE_PERMISSIONS[role] ?? [];
+    const tokens = generateTokens({ ...user, role, permissions: facultyPermissions });
     return { user: { ...userData, role }, ...tokens, role };
   } else if (detectedRole === 'STUDENT') {
     const { password: _, ...userData } = user;

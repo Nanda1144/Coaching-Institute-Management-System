@@ -58,7 +58,7 @@ const settingsService = {
       const { data } = await api.patch(`/settings/${section}`, values);
       if (data?.data) {
         const current = getLocalSettings().data || {};
-        current[section] = data.data;
+        current[section] = data.data.data || data.data;
         localStorage.setItem('app_settings', JSON.stringify(current));
       }
       return data;

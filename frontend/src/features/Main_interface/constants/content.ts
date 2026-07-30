@@ -8,6 +8,7 @@ import {
   Globe,
   UserPlus,
   Lock,
+  User,
 } from 'lucide-react'
 import type { Feature, Stat, Testimonial, Course, PricingPlan, FaqItem, TeamMember, ServiceDetail, Developer, WorkflowStep, WorkingModel, DownloadAppData } from '../types'
 
@@ -78,40 +79,7 @@ export const STATS: Stat[] = [
   { id: 'centers', value: 50, suffix: '+', label: 'Learning Centers', trend: 'up', trendValue: '5%' },
 ]
 
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    id: 't1',
-    name: 'Dr. Rajesh Kumar',
-    role: 'Institute Director, Excel Academy',
-    content:
-      'CIMS has transformed how we manage our institute. The attendance tracking and analytics alone saved us 20+ hours per week. Absolutely indispensable.',
-    rating: 5,
-  },
-  {
-    id: 't2',
-    name: 'Prof. Sunita Sharma',
-    role: 'Dean of Academics, Bright Future College',
-    content:
-      'The course management module is brilliant. Scheduling conflicts dropped by 90% and faculty coordination has never been smoother.',
-    rating: 5,
-  },
-  {
-    id: 't3',
-    name: 'Amit Verma',
-    role: 'Operations Head, Success Institute',
-    content:
-      'Implementing CIMS was the best decision we made. The student portal and parent communication features are game-changers.',
-    rating: 5,
-  },
-  {
-    id: 't4',
-    name: 'Priya Patel',
-    role: 'Academic Coordinator, Merit Academy',
-    content:
-      'The reporting and analytics give us insights we never had before. We can now make data-driven decisions for student success.',
-    rating: 4,
-  },
-]
+
 
 export const COURSES: Course[] = [
   {
@@ -453,69 +421,80 @@ export const SERVICE_DETAILS: ServiceDetail[] = [
 export const DEVELOPERS: Developer[] = [
   {
     id: 'd1',
-    name: 'Arjun Mehta',
-    designation: 'Lead Full-Stack Developer',
-    skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker'],
+    name: 'Chowdam Nanda Kishore',
+    designation: 'Team Leader | Full-Stack Developer | Backend Developer',
+    skills: ['React.js', 'Node.js', 'Express.js', 'PostgreSQL', 'Prisma ORM', 'REST APIs', 'JWT Authentication'],
     shortDescription: 'Full-stack engineer with 7+ years building scalable ed-tech platforms.',
     fullDescription:
-      'Arjun is our lead full-stack developer with deep expertise in building high-performance web applications. He architects the core platform, ensuring scalability, security, and seamless user experiences across all CIMS modules.',
-    contribution: 'Architected and led development of the entire CIMS platform backend and frontend core.',
+      'Chowdam Nanda Kishore serves as the Team Leader and Lead Full-Stack Developer for EduMatrix ERP. He was responsible for planning the overall architecture, designing secure backend services, integrating PostgreSQL with Prisma ORM, implementing Role-Based Access Control (RBAC), and ensuring seamless communication between frontend and backend modules. He also supervised project execution, resolved technical challenges, and maintained code quality throughout developmentt.',
+    contribution: 'Led the complete development of EduMatrix ERP by designing the system architecture, backend services, database structure, authentication system, and API integration. Coordinated the team, assigned development tasks, reviewed code, and ensured smooth integration of all project modules.',
     responsibilities: [
-      'System architecture and technology stack decisions',
-      'Core platform development and code reviews',
-      'Performance optimization and scalability',
-      'Mentoring junior developers',
+      'Project planning and team coordination', 
+      'System architecture design',
+      'Backend API development',
+      'PostgreSQL database design',
+      'Authentication and authorization',
+      'API integration',
+      'Performance optimization',
+      'Final deployment and testing',
     ],
-    projectContribution: 'Led the development of 12+ core modules including student management, attendance, and analytics.',
-    email: 'arjun.mehta@cims.edu',
-    phone: '+1 (555) 234-5678',
-    linkedin: 'https://linkedin.com/in/arjun-mehta',
-    github: 'https://github.com/arjunmehta',
-    githubAvatar: 'https://avatars.githubusercontent.com/arjunmehta?size=200',
+    projectContribution: 'Designed 20+ backend APIs, implemented RBAC for 5 user roles, and integrated PostgreSQL with Prisma ORM for efficient data management. Developed the authentication system using JWT and ensured secure data flow between frontend and backend modules. Supervised the team to deliver a fully functional ERP system within the project timeline.',
+
+    email: 'nandalearner12@gmail.com',
+    phone: '+91 9963517534',
+    linkedin: 'https://linkedin.com/in/nanda-kishore-c-394221318',
+    github: 'https://github.com/Nanda1144',
+    githubAvatar: 'https://avatars.githubusercontent.com/Nanda1144?size=200',
   },
   {
     id: 'd2',
-    name: 'Sneha Patel',
-    designation: 'Frontend Lead',
+    name: 'Grishma',
+    designation: 'Frontend Developer | UI/UX Designer',
     skills: ['React', 'TypeScript', 'TailwindCSS', 'Framer Motion', 'Next.js'],
     shortDescription: 'UI/UX focused frontend developer passionate about pixel-perfect interfaces.',
     fullDescription:
-      'Sneha leads our frontend team, crafting beautiful and intuitive user interfaces. She specializes in creating responsive, accessible, and performant web applications with modern design systems.',
-    contribution: 'Designed and built the complete CIMS frontend architecture and component library.',
+      'Grishma worked on creating attractive, responsive, and user-friendly interfaces for the administration panel. She implemented reusable UI components, dashboard layouts, forms, tables, and integrated frontend screens with backend APIs to provide a smooth user experience.',
+    contribution: 'Developed the Admin Dashboard and designed responsive user interfaces with reusable components for a modern user experience.',
     responsibilities: [
-      'Frontend architecture and component library',
-      'UI/UX implementation and design system',
-      'Responsive design and cross-browser compatibility',
-      'Animation and interaction design',
+      'Admin Dashboard Development',
+      'UI/UX Design',
+      'Responsive Layouts',
+      'API Integration',
+      'Form Validation',
+      'Dashboard Components', 
+      'User Experience Enhancement'
     ],
-    projectContribution: 'Created 50+ reusable UI components and implemented the complete admin dashboard interface.',
-    email: 'sneha.patel@cims.edu',
-    phone: '+1 (555) 345-6789',
-    linkedin: 'https://linkedin.com/in/sneha-patel',
+    projectContribution: 'Admin Dashboard , Institute Management UI, Branch Management, User Management ,Dashboard Analytics, Responsive Components',
+    email: 'girigrishma997@gmail.com',
+    phone: '+91 9160410577',
+    linkedin: 'https://linkedin.com/in/grishma',
     github: 'https://github.com/snehapatel',
     githubAvatar: 'https://avatars.githubusercontent.com/snehapatel?size=200',
   },
   {
     id: 'd3',
-    name: 'Rahul Verma',
-    designation: 'Backend Developer',
-    skills: ['Node.js', 'Python', 'GraphQL', 'MongoDB', 'AWS'],
-    shortDescription: 'Backend specialist focused on APIs, databases, and cloud infrastructure.',
+    name: 'Shaik Malin',
+    designation: 'Frontend Developer | Student & Parent Portal Developer',
+    skills: ['React', 'TypeScript', 'TailwindCSS', 'Framer Motion', 'Next.js'],
+    shortDescription: 'Frontend developer with expertise in creating responsive and engaging user interfaces.',
     fullDescription:
-      'Rahul is our backend expert responsible for designing robust APIs, managing databases, and deploying cloud infrastructure. He ensures the platform handles millions of transactions reliably.',
-    contribution: 'Built the complete REST and GraphQL API layer with optimized database schemas.',
+      'Shaik Malin is our frontend expert responsible for developing intuitive user interfaces and seamless user experiences. He specializes in React, TypeScript, and modern CSS frameworks.',
+    contribution: 'Developed the student and parent portal interfaces with a focus on usability and performance.',
     responsibilities: [
-      'API design and development',
-      'Database schema design and optimization',
-      'Cloud infrastructure and deployment',
-      'Security and data protection',
+      'Frontend Development',
+      'UI/UX Design',
+      'Responsive Layouts',
+      'API Integration',
+      'Form Validation',
+      'Component Development', 
+      'User Experience Enhancement'
     ],
-    projectContribution: 'Developed 40+ API endpoints and implemented real-time data synchronization across modules.',
-    email: 'rahul.verma@cims.edu',
-    phone: '+1 (555) 456-7890',
-    linkedin: 'https://linkedin.com/in/rahul-verma',
-    github: 'https://github.com/rahulverma',
-    githubAvatar: 'https://avatars.githubusercontent.com/rahulverma?size=200',
+    projectContribution: 'Student Portal , Parent Portal , Institute Management UI, Branch Management, User Management ,Dashboard Analytics, Responsive Components',
+    email: 'reshmashaik9915@gmail.com',
+    phone: '+91 9502688445',
+    linkedin: 'https://linkedin.com/in/malin-shaik-9a0b1a1b3',
+    github: 'https://github.com/shaikmalin',
+    githubAvatar: 'https://avatars.githubusercontent.com/shaikmalin?size=200',
   },
 ]
 

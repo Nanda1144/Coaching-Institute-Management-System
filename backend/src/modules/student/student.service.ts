@@ -13,7 +13,14 @@ export const studentService = {
     if (params?.department && params.department !== 'all') {
       where.push({ column: 'department', value: String(params.department) });
     }
-    return db.findMany('students', { where, orderBy: [{ column: 'createdAt', dir: 'DESC' }] });
+    const page = Number(params?.page) || 1;
+    const limit = Number(params?.limit) || 10;
+    const offset = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      db.findMany('students', { where, orderBy: [{ column: 'createdAt', dir: 'DESC' }], limit, offset }),
+      db.count('students', where),
+    ]);
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   async getById(id: string) {

@@ -1,13 +1,15 @@
+import { useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { MdVideocam, MdVideocamOff, MdCameraAlt } from 'react-icons/md'
+import { MdVideocam, MdVideocamOff, MdPhotoCamera } from 'react-icons/md'
 import type { RecognitionStatusType } from '../types/faceRecognition.types'
 
 interface CameraPreviewProps {
   isCameraOn: boolean
   onStartCamera: () => void
   onStopCamera: () => void
-  onCapture: () => void
+  onCapture: (imageData: string) => void
   status: RecognitionStatusType
+  capturedImage: string | null
 }
 
 const statusMessages: Record<RecognitionStatusType, string> = {
@@ -18,8 +20,49 @@ const statusMessages: Record<RecognitionStatusType, string> = {
   failed: 'Recognition failed. Please try again.',
 }
 
-export default function CameraPreview({ isCameraOn, onStartCamera, onStopCamera, onCapture, status }: CameraPreviewProps) {
+export default function CameraPreview({ isCameraOn, onStartCamera, onStopCamera, onCapture, status, capturedImage }: CameraPreviewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const isActive = isCameraOn && status !== 'waiting'
+
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isCameraOn) {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
+        .then(stream => {
+          streamRef.current = stream
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream
+          }
+        })
+        .catch(() => {
+          onStopCamera()
+        })
+    } else {
+      stopStream()
+    }
+    return () => stopStream()
+  }, [isCameraOn, onStopCamera, stopStream])
+
+  const handleCapture = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    canvas.width = video.videoWidth || 640
+    canvas.height = video.videoHeight || 480
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const imageData = canvas.toDataURL('image/jpeg', 0.92)
+    onCapture(imageData)
+  }, [onCapture])
 
   return (
     <motion.div
@@ -50,95 +93,98 @@ export default function CameraPreview({ isCameraOn, onStartCamera, onStopCamera,
 
       <div className="p-5">
         <div className="relative rounded-xl overflow-hidden bg-gray-900 aspect-[4/3] flex items-center justify-center">
+          <canvas ref={canvasRef} className="hidden" />
+
           {isCameraOn ? (
             <>
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                <div className="text-center">
-                  <motion.div
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <MdVideocam className="text-6xl text-gray-600 mx-auto mb-2" />
-                  </motion.div>
-                  <p className="text-gray-500 text-xs">Camera Feed Preview</p>
-                  <p className="text-gray-600 text-[10px] mt-1">Camera feed active</p>
-                </div>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`absolute inset-0 w-full h-full object-cover ${capturedImage ? 'opacity-30' : 'opacity-100'}`}
+              />
 
-                {status === 'detecting' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0"
-                  >
-                    <div className="absolute top-1/4 left-1/4 right-1/4 h-1/2 border-2 border-cyan-400/60 rounded-xl">
-                      <motion.div
-                        className="absolute -top-0.5 left-0 right-0 h-1 bg-cyan-400 shadow-lg shadow-cyan-400/50"
-                        animate={{ top: ['0%', '100%', '0%'] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                      />
-                    </div>
-                  </motion.div>
-                )}
+              {capturedImage ? (
+                <img
+                  src={capturedImage}
+                  alt="Captured"
+                  className="absolute inset-0 w-full h-full object-contain z-10 p-2"
+                />
+              ) : null}
 
-                {status === 'detected' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0"
-                  >
-                    <div className="absolute top-1/4 left-1/4 right-1/4 h-1/2 border-2 border-green-400 rounded-xl shadow-lg shadow-green-400/30">
-                      <div className="absolute -top-0.5 left-0 right-0 h-1 bg-green-400 shadow-lg shadow-green-400/50" />
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.5, repeat: Infinity }}
-                        className="absolute inset-0 flex items-center justify-center"
-                      >
-                        <svg className="w-16 h-16 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                        </svg>
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                )}
+              <div className="absolute inset-0 bg-gradient-to-br from-gray-800/30 to-gray-900/30 pointer-events-none" />
 
-                {status === 'marked' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 bg-green-900/40 flex items-center justify-center"
-                  >
+              {status === 'detecting' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 z-20"
+                >
+                  <div className="absolute top-1/4 left-1/4 right-1/4 h-1/2 border-2 border-cyan-400/60 rounded-xl">
                     <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                      className="text-center"
+                      className="absolute -top-0.5 left-0 right-0 h-1 bg-cyan-400 shadow-lg shadow-cyan-400/50"
+                      animate={{ top: ['0%', '100%', '0%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {status === 'detected' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute inset-0 z-20"
+                >
+                  <div className="absolute top-1/4 left-1/4 right-1/4 h-1/2 border-2 border-green-400 rounded-xl shadow-lg shadow-green-400/30">
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 0] }}
+                      transition={{ duration: 0.5, repeat: Infinity }}
+                      className="absolute inset-0 flex items-center justify-center"
                     >
-                      <svg className="w-20 h-20 text-green-400 mx-auto" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-16 h-16 text-green-400" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                       </svg>
-                      <p className="text-green-300 text-sm font-medium mt-2">Attendance Marked</p>
                     </motion.div>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.div>
+              )}
 
-                {status === 'failed' && (
+              {status === 'marked' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute inset-0 bg-green-900/40 flex items-center justify-center z-20"
+                >
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0 bg-red-900/40 flex items-center justify-center"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                    className="text-center"
                   >
-                    <div className="text-center">
-                      <motion.div
-                        animate={{ x: [-4, 4, -4] }}
-                        transition={{ duration: 0.3, repeat: Infinity }}
-                      >
-                        <MdVideocamOff className="text-6xl text-red-400 mx-auto mb-2" />
-                      </motion.div>
-                      <p className="text-red-300 text-sm font-medium">Recognition Failed</p>
-                    </div>
+                    <svg className="w-20 h-20 text-green-400 mx-auto" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                    <p className="text-green-300 text-sm font-medium mt-2">Attendance Marked</p>
                   </motion.div>
-                )}
-              </div>
+                </motion.div>
+              )}
+
+              {status === 'failed' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 bg-red-900/40 flex items-center justify-center z-20"
+                >
+                  <div className="text-center">
+                    <motion.div animate={{ x: [-4, 4, -4] }} transition={{ duration: 0.3, repeat: Infinity }}>
+                      <MdVideocamOff className="text-6xl text-red-400 mx-auto mb-2" />
+                    </motion.div>
+                    <p className="text-red-300 text-sm font-medium">Recognition Failed</p>
+                  </div>
+                </motion.div>
+              )}
             </>
           ) : (
             <div className="text-center">
@@ -174,10 +220,11 @@ export default function CameraPreview({ isCameraOn, onStartCamera, onStopCamera,
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={onCapture}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
+                onClick={handleCapture}
+                disabled={status === 'detecting' || status === 'marked'}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <MdCameraAlt className="text-lg" />
+                <MdPhotoCamera className="text-lg" />
                 Capture Image
               </motion.button>
             </>

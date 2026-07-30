@@ -282,7 +282,7 @@ export const facultyService = {
       db.count('assignments', [
         { column: 'facultyId', value: facultyId },
         { column: 'status', value: 'active' },
-        { column: 'deletedAt', value: null, operator: 'is' },
+        { column: 'deletedAt', operator: 'IS NULL' },
       ]),
       db.findMany('timetables', {
         where: [
@@ -310,5 +310,16 @@ export const facultyService = {
       upcomingSchedule,
       recentActivities,
     };
+  },
+
+  async getAssignedBatches(facultyId: string) {
+    const faculty = await db.findUnique('faculty', [{ column: 'id', value: facultyId }]);
+    if (!faculty) throw AppError.notFound('Faculty not found');
+    const batchIds = (faculty.assignedBatches as string[]) || [];
+    if (batchIds.length === 0) return [];
+    return db.findMany('batches', {
+      where: [{ column: 'id', operator: 'IN', value: batchIds }, { column: 'isDeleted', value: false }],
+      orderBy: [{ column: 'batchName', dir: 'ASC' }],
+    });
   },
 };

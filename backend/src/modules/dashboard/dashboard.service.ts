@@ -135,12 +135,12 @@ export const dashboardService = {
     let totalAttendance = 0;
     let presentAttendance = 0;
     try {
-      totalAttendance = await db.count('attendance', [
+      totalAttendance = await db.count('attendances', [
         { column: 'studentId', value: student.id },
       ]);
     } catch { totalAttendance = 0; }
     try {
-      presentAttendance = await db.count('attendance', [
+      presentAttendance = await db.count('attendances', [
         { column: 'studentId', value: student.id },
         { column: 'attendanceStatus', value: 'present' },
       ]);
@@ -171,14 +171,14 @@ export const dashboardService = {
     let pendingFees = 0;
     try {
       pendingFees = await db.count('fee_pending', [
-        { column: 'studentId', value: student.id },
+        { column: 'student', value: student.id },
         { column: 'isDeleted', value: false },
       ]);
     } catch { pendingFees = 0; }
 
     let notifications = 0;
     try {
-      notifications = await db.count('notifications', [
+      notifications = await db.count('notification_broadcasts', [
         { column: 'isDeleted', value: false },
       ]);
     } catch { notifications = 0; }
@@ -214,33 +214,15 @@ export const dashboardService = {
     let pendingAssignments = 0;
 
     if (student) {
-      const totalAttendance = await db.count('attendances', [
-        { column: 'studentId', value: student.id },
-      ]);
-      const presentAttendance = await db.count('attendance', [
-        { column: 'studentId', value: student.id },
-        { column: 'attendanceStatus', value: 'present' },
-      ]);
+      let totalAttendance = 0;
+      try { totalAttendance = await db.count('attendances', [{ column: 'studentId', value: student.id }]); } catch { totalAttendance = 0; }
+      let presentAttendance = 0;
+      try { presentAttendance = await db.count('attendances', [{ column: 'studentId', value: student.id }, { column: 'attendanceStatus', value: 'present' }]); } catch { presentAttendance = 0; }
       attendanceRate = totalAttendance > 0 ? Math.round((presentAttendance / totalAttendance) * 100) : 0;
 
-      pendingFees = await db.count('fee_pending', [
-        { column: 'roll', value: roll },
-        { column: 'isDeleted', value: false },
-      ]);
-
-      upcomingExams = await db.findMany('exams', {
-        where: [
-          { column: 'date', operator: '>=', value: today() },
-          { column: 'status', value: 'scheduled' },
-        ],
-        orderBy: [{ column: 'date', dir: 'ASC' }],
-        limit: 5,
-      });
-
-      pendingAssignments = await db.count('assignments', [
-        { column: 'status', value: 'active' },
-        { column: 'deletedAt', value: null },
-      ]);
+      try { pendingFees = await db.count('fee_pending', [{ column: 'roll', value: roll }, { column: 'isDeleted', value: false }]); } catch { pendingFees = 0; }
+      try { upcomingExams = await db.findMany('exams', { where: [{ column: 'date', operator: '>=', value: today() }, { column: 'status', value: 'scheduled' }], orderBy: [{ column: 'date', dir: 'ASC' }], limit: 5 }); } catch { upcomingExams = []; }
+      try { pendingAssignments = await db.count('assignments', [{ column: 'status', value: 'active' }, { column: 'deletedAt', value: null }]); } catch { pendingAssignments = 0; }
     }
 
     const result = {

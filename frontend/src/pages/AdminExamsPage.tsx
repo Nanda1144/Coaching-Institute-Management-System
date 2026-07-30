@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { MdSearch, MdEvent, MdAdd, MdEdit, MdDelete, MdRateReview, MdPublish, MdCalendarMonth, MdSubject, MdPerson } from 'react-icons/md'
 import { useExamList, useCreateExam, useUpdateExam, useDeleteExam } from '../hooks/useReactQuery'
+import EnterMarksModal from '../features/exams/components/EnterMarksModal'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -18,6 +19,7 @@ export default function AdminExamsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editData, setEditData] = useState<Record<string, string>>({})
+  const [marksExam, setMarksExam] = useState<{ id: string; title: string } | null>(null)
 
   const { data: exams, isLoading, isError, error, refetch } = useExamList()
   const createExam = useCreateExam()
@@ -206,7 +208,10 @@ export default function AdminExamsPage() {
                             <MdPublish size={14} /> Publish
                           </button>
                         ) : (
-                          <button className="btn btn-sm !bg-amber-50 !text-amber-700 hover:!bg-amber-100 !border-0">
+                          <button
+                            onClick={() => setMarksExam({ id: exam.id, title: exam.title })}
+                            className="btn btn-sm !bg-amber-50 !text-amber-700 hover:!bg-amber-100 !border-0"
+                          >
                             <MdRateReview size={14} /> Enter Marks
                           </button>
                         )}
@@ -219,6 +224,14 @@ export default function AdminExamsPage() {
           </motion.div>
         )}
       </motion.div>
+
+      <EnterMarksModal
+        isOpen={marksExam !== null}
+        onClose={() => setMarksExam(null)}
+        examId={marksExam?.id || ''}
+        examTitle={marksExam?.title || ''}
+        onSuccess={() => refetch()}
+      />
     </div>
   )
 }

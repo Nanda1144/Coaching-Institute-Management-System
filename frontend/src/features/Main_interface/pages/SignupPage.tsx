@@ -1,12 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UserPlus, Mail, Lock, Eye, EyeOff, User, GraduationCap, Users, UserCheck, Shield, ChevronRight, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
-import { FaGithub, FaTwitter, FaGoogle } from 'react-icons/fa'
-import Button from '../components/Button'
+import { UserPlus, User, GraduationCap, Users, UserCheck, Shield, ChevronRight, AlertCircle } from 'lucide-react'
 import PageTransition from '../animations/PageTransition'
 import { cn } from '../utils/cn'
-import api from '../../../services/api'
 
 const roles = [
   { id: 'student', label: 'Student', icon: User, description: 'Access courses, track progress, view attendance and grades.', gradient: 'from-blue-600 to-indigo-600' },
@@ -17,67 +14,21 @@ const roles = [
 
 export default function SignupPage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<'role' | 'form' | 'success'>('role')
-  const [selectedRole, setSelectedRole] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [agree, setAgree] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [submitError, setSubmitError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  const [step] = useState<'role' | 'success'>('role')
+  const [alertMsg, setAlertMsg] = useState('')
 
   const selectRole = (roleId: string) => {
+    setAlertMsg('')
     if (roleId === 'student') {
       navigate('/student-registration')
       return
     }
-    setSelectedRole(roleId); setTimeout(() => setStep('form'), 300)
+    setAlertMsg(
+      roleId === 'admin'
+        ? 'Admin accounts are created by the system administrator. Please contact your institute management.'
+        : 'Self-registration is only available for students. Faculty and parents should contact their respective coaching institute management to get account credentials.'
+    )
   }
-
-  const validate = () => {
-    const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = 'Full name is required'
-    if (!email.trim()) errs.email = 'Email is required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email format'
-    if (!password.trim()) errs.password = 'Password is required'
-    else if (password.length < 6) errs.password = 'At least 6 characters'
-    if (password !== confirmPassword) errs.confirmPassword = 'Passwords do not match'
-    if (!agree) errs.agree = 'You must agree to the terms'
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setSubmitError('')
-    if (!validate()) return
-    if (selectedRole === 'student') {
-      setSubmitting(true)
-      try {
-        const nameParts = name.trim().split(/\s+/)
-        await api.post('/student-auth/register', {
-          firstName: nameParts[0] || name,
-          lastName: nameParts.slice(1).join(' ') || 'Student',
-          email,
-          password,
-          phone: '',
-          department: 'General',
-        })
-        setStep('success')
-      } catch (err: any) {
-        setSubmitError(err?.response?.data?.message || err?.message || 'Registration failed. Please try again.')
-      } finally {
-        setSubmitting(false)
-      }
-    } else {
-      setSubmitError('Only student self-registration is available. Please contact your institute administrator for other roles.')
-    }
-  }
-
-  const selectedRoleData = roles.find((r) => r.id === selectedRole)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex overflow-hidden relative">
@@ -178,192 +129,27 @@ export default function SignupPage() {
                         )
                       })}
                     </div>
-                    <p className="text-center text-sm text-gray-500 mt-6">
-                      Already have an account?{' '}
-                      <Link to="/login" className="text-blue-600 hover:underline font-semibold">Sign in</Link>
-                    </p>
-                  </motion.div>
-                )}
 
-                {step === 'form' && (
-                  <motion.div
-                    key="form"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <button
-                      onClick={() => setStep('role')}
-                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
-                    >
-                      <ArrowLeft size={16} /> Back to roles
-                    </button>
-                    <div className="flex items-items gap-3 mb-6 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                      {selectedRoleData && (
-                        <>
-                          <div className={cn('w-10 h-10 rounded-lg bg-gradient-to-br flex items-center justify-center', selectedRoleData.gradient)}>
-                            <selectedRoleData.icon className="text-white" size={18} aria-hidden="true" />
-                          </div>
+                    {alertMsg && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200"
+                      >
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={18} />
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              Signing up as {selectedRoleData.label}
-                            </p>
-                            <p className="text-xs text-gray-400">{selectedRoleData.description}</p>
+                            <p className="text-sm font-medium text-amber-800">Registration not available</p>
+                            <p className="text-xs text-amber-700 mt-1">{alertMsg}</p>
                           </div>
-                        </>
-                      )}
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      {submitError && (
-                        <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-600 flex items-start gap-2">
-                          <AlertCircle size={16} className="mt-0.5 shrink-0" /> {submitError}
                         </div>
-                      )}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
-                        <div className="relative">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} aria-hidden="true" />
-                          <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })) }}
-                            placeholder="John Doe"
-                            className={cn(
-                              'w-full pl-10 pr-4 py-3 rounded-xl border bg-white/80 backdrop-blur-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all',
-                              errors.name ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-400',
-                            )}
-                          />
-                        </div>
-                        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-                        <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} aria-hidden="true" />
-                          <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: '' })) }}
-                            placeholder="you@example.com"
-                            className={cn(
-                              'w-full pl-10 pr-4 py-3 rounded-xl border bg-white/80 backdrop-blur-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all',
-                              errors.email ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-400',
-                            )}
-                          />
-                        </div>
-                        {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} aria-hidden="true" />
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: '' })) }}
-                            placeholder="Min. 6 characters"
-                            className={cn(
-                              'w-full pl-10 pr-10 py-3 rounded-xl border bg-white/80 backdrop-blur-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all',
-                              errors.password ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-400',
-                            )}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                        {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} aria-hidden="true" />
-                          <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirmPassword: '' })) }}
-                            placeholder="Repeat your password"
-                            className={cn(
-                              'w-full pl-10 pr-4 py-3 rounded-xl border bg-white/80 backdrop-blur-sm text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition-all',
-                              errors.confirmPassword ? 'border-red-300 focus:ring-red-400' : 'border-gray-200 focus:ring-blue-400',
-                            )}
-                          />
-                        </div>
-                        {errors.confirmPassword && <p className="text-xs text-red-500 mt-1">{errors.confirmPassword}</p>}
-                      </div>
-                      <div>
-                        <label className="flex items-start gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={agree}
-                            onChange={(e) => { setAgree(e.target.checked); setErrors((p) => ({ ...p, agree: '' })) }}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5"
-                          />
-                          <span className="text-xs text-gray-500">
-                            I agree to the{' '}
-                            <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{' '}
-                            <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>
-                          </span>
-                        </label>
-                        {errors.agree && <p className="text-xs text-red-500 mt-1">{errors.agree}</p>}
-                      </div>
-                      <Button variant="gradient" size="lg" type="submit" className="w-full" loading={submitting} icon={submitting ? undefined : <UserPlus size={18} />}>
-                        {submitting ? 'Creating Account...' : 'Create Account'}
-                      </Button>
-                    </form>
-
-                    <div className="mt-6">
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="bg-white/80 backdrop-blur-sm px-3 text-gray-400">Or sign up with</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 mt-4">
-                        {[
-                          { icon: FaGoogle, label: 'Google', href: '#' },
-                          { icon: FaGithub, label: 'GitHub', href: '#' },
-                          { icon: FaTwitter, label: 'Twitter', href: '#' },
-                        ].map((p) => (
-                          <a
-                            key={p.label}
-                            href={p.href}
-                            className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 bg-white/50 hover:bg-white hover:shadow-md transition-all text-sm text-gray-600 hover:text-gray-900"
-                          >
-                            <p.icon size={18} /><span className="hidden sm:inline">{p.label}</span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
+                      </motion.div>
+                    )}
 
                     <p className="text-center text-sm text-gray-500 mt-6">
                       Already have an account?{' '}
                       <Link to="/login" className="text-blue-600 hover:underline font-semibold">Sign in</Link>
                     </p>
-                  </motion.div>
-                )}
-
-                {step === 'success' && (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-center py-8"
-                  >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="text-emerald-600" size={28} aria-hidden="true" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Account Created!</h3>
-                    <p className="text-sm text-gray-500 mb-6">Welcome to CIMS. Your account has been created successfully.</p>
-                    <Link to="/login">
-                      <Button variant="gradient" size="md" icon={<UserPlus size={18} />}>Proceed to Login</Button>
-                    </Link>
                   </motion.div>
                 )}
               </AnimatePresence>

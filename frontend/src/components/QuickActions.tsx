@@ -30,9 +30,13 @@ export default function QuickActions() {
     ? '/dashboard/attendance/reports'
     : '/dashboard/my-attendance'
 
+  const attendanceRoute = isAdmin || isFaculty
+    ? '/dashboard/attendance/analytics'
+    : '/dashboard/my-attendance'
+
   const actions = [
     { label: 'Timetable', icon: MdSchool, color: '#8b5cf6', bg: '#ede9fe', route: timetableRoute },
-    { label: 'Conflicts Alert', icon: MdWarning, color: '#ef4444', bg: '#fee2e2', route: calendarRoute },
+    { label: 'Attendance', icon: MdWarning, color: '#ef4444', bg: '#fee2e2', route: attendanceRoute },
     { label: 'Calendar View', icon: MdCalendarMonth, color: '#3b82f6', bg: '#dbeafe', route: calendarRoute },
     { label: 'Generate Report', icon: MdAssessment, color: '#f59e0b', bg: '#fef3c7', route: reportRoute },
   ]

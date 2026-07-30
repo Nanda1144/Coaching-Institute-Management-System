@@ -107,12 +107,25 @@ export default function FacultyMaterialsPage() {
     }
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', uploadForm.file)
-      formData.append('title', uploadForm.title)
-      formData.append('description', uploadForm.description)
-      formData.append('materialType', uploadForm.materialType)
-      await materialService.create(Object.fromEntries(formData) as any)
+      const file = uploadForm.file
+      const ext = '.' + (file.name.split('.').pop() || 'bin')
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      await materialService.create({
+        title: uploadForm.title,
+        description: uploadForm.description,
+        materialType: uploadForm.materialType,
+        fileName: file.name,
+        originalFileName: file.name,
+        fileUrl: base64,
+        fileExtension: ext,
+        mimeType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+      })
       setShowUploadModal(false)
       setUploadForm({ title: '', description: '', materialType: 'PDF', file: null })
       setToastMessage('Material uploaded successfully')

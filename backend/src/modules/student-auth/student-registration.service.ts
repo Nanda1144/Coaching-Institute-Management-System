@@ -44,7 +44,6 @@ export const studentRegistrationService = {
       status: 'PENDING',
     });
 
-    // Notify the preferred faculty if specified
     if (data.preferredFacultyId) {
       await sendNotification(
         'New Registration Request',
@@ -88,7 +87,7 @@ export const studentRegistrationService = {
 
     if (status === 'APPROVED') {
       const hashedPassword = request.password || await bcrypt.hash('welcome@123', env.BCRYPT_SALT_ROUNDS);
-      await db.create('students', {
+      const student = await db.create('students', {
         studentId: `STU-${Date.now()}`,
         rollNumber: `ROLL-${Date.now()}`,
         firstName: request.firstName,
@@ -109,7 +108,25 @@ export const studentRegistrationService = {
         createdById: userId || null,
       });
 
-      // Create parent record if parent details provided
+      // Auto-assign to batch if batchId provided or faculty has assigned batches
+      const targetBatchId = extra?.batchId || null;
+      if (targetBatchId) {
+        try {
+          const allocated = await db.findUnique('batch_students', [{ column: 'batchId', value: targetBatchId }, { column: 'studentId', value: student.id }]);
+          if (!allocated) {
+            const batch = await db.findUnique('batches', [{ column: 'id', value: targetBatchId }]);
+            if (batch) {
+              await db.create('batch_students', { batchId: targetBatchId, studentId: student.id });
+              await db.update('batches', [{ column: 'id', value: targetBatchId }], {
+                currentStrength: (batch.currentStrength || 0) + 1,
+              });
+            }
+          }
+        } catch {
+          // Best-effort batch allocation
+        }
+      }
+
       if (request.parentEmail) {
         const parentExists = await db.findUnique('parents', [{ column: 'email', value: request.parentEmail }]);
         if (!parentExists) {
@@ -125,7 +142,8 @@ export const studentRegistrationService = {
         }
       }
 
-      await sendNotification('Registration Approved', `Your registration has been approved. You can now log in with your credentials.`, request.email);
+      const reasonText = remarks ? ` Message: ${remarks}` : '';
+      await sendNotification('Registration Approved', `Your registration has been approved. You can now log in with your credentials.${reasonText}`, request.email);
     } else if (status === 'HOLD') {
       await sendNotification('Registration On Hold', `Your registration has been put on hold. Reason: ${remarks || 'Pending verification'}`, request.email);
     } else if (status === 'REJECTED') {

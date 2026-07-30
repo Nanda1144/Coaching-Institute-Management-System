@@ -17,13 +17,13 @@ async function getOverview(studentId: string) {
   let totalAssignments = 0;
 
   try {
-    totalClasses = await db.count('attendance', [
+    totalClasses = await db.count('attendances', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
     ]);
   } catch { totalClasses = 0; }
   try {
-    attendedClasses = await db.count('attendance', [
+    attendedClasses = await db.count('attendances', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
       { column: 'attendanceStatus', value: 'present' },
@@ -48,14 +48,14 @@ async function getOverview(studentId: string) {
   let feesPaid = 0;
   try {
     const fees = await db.findMany('fee_transactions', {
-      where: [{ column: 'studentId', value: studentId }],
+      where: [{ column: 'student', value: studentId }],
     });
     feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount || 0), 0);
     feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount || f.amount || 0), 0);
   } catch {
     try {
       const fees = await db.findMany('fee_pending', {
-        where: [{ column: 'studentId', value: studentId }],
+        where: [{ column: 'student', value: studentId }],
       });
       feesTotal = fees.reduce((sum: number, f: any) => sum + Number(f.amount || 0), 0);
       feesPaid = fees.reduce((sum: number, f: any) => sum + Number(f.paidAmount || 0), 0);
@@ -103,7 +103,7 @@ async function getAttendance(studentId: string, month?: number, year?: number) {
 
   let records: any[] = [];
   try {
-    records = await db.findMany('attendance', {
+    records = await db.findMany('attendances', {
       where,
       orderBy: [{ column: 'attendanceDate', dir: 'desc' }],
     });
@@ -278,13 +278,13 @@ async function getFees(studentId: string) {
   let fees: any[] = [];
   try {
     fees = await db.findMany('fee_pending', {
-      where: [{ column: 'studentId', value: studentId }],
+      where: [{ column: 'student', value: studentId }],
       orderBy: [{ column: 'dueDate', dir: 'asc' }, { column: 'semester', dir: 'asc' }],
     });
   } catch {
     try {
       fees = await db.findMany('fee_transactions', {
-        where: [{ column: 'studentId', value: studentId }],
+        where: [{ column: 'student', value: studentId }],
         orderBy: [{ column: 'dueDate', dir: 'asc' }],
       });
     } catch { fees = []; }
@@ -308,7 +308,7 @@ async function getNotifications(studentId: string) {
 
   let notifications: any[] = [];
   try {
-    notifications = await db.findMany('notifications', {
+    notifications = await db.findMany('notification_broadcasts', {
       where: [
         {
           column: 'studentFilter',
@@ -328,7 +328,7 @@ async function getNotifications(studentId: string) {
 
 async function markNotificationRead(notificationId: string, studentId: string) {
   try {
-    const notification = await db.findFirst('notifications', {
+    const notification = await db.findFirst('notification_broadcasts', {
       where: [
         { column: 'id', value: notificationId },
         { column: 'studentId', value: studentId },
@@ -336,7 +336,7 @@ async function markNotificationRead(notificationId: string, studentId: string) {
     });
     if (!notification) throw AppError.notFound('Notification not found');
 
-    return db.update('notifications',
+    return db.update('notification_broadcasts',
       [{ column: 'id', value: notificationId }],
       { isRead: true },
     );

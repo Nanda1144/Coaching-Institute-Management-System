@@ -1,21 +1,24 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { MdPersonAdd, MdUpdate, MdLibraryBooks, MdInbox, MdErrorOutline, MdRefresh } from 'react-icons/md'
+import { MdPersonAdd, MdUpdate, MdLibraryBooks, MdInbox, MdErrorOutline, MdRefresh, MdSchool, MdAssignment } from 'react-icons/md'
 import { useFacultyListShared } from '../hooks/useSharedData'
+import { useAuth } from '../contexts/AuthContext'
 import EmptyState from './EmptyState'
 
 interface ActivityItem {
   id: number | string
-  type: 'joined' | 'profile_update' | 'course_assignment'
-  facultyName: string
+  type: 'joined' | 'profile_update' | 'course_assignment' | 'assignment_submitted' | 'student_registered'
+  name: string
   description: string
   timestamp: string
 }
 
-const activityIcons: Record<string, { icon: typeof MdPersonAdd; color: string; bg: string }> = {
+const activityIcons: Record<string, { icon: any; color: string; bg: string }> = {
   joined: { icon: MdPersonAdd, color: '#10b981', bg: '#d1fae5' },
   profile_update: { icon: MdUpdate, color: '#3b82f6', bg: '#dbeafe' },
   course_assignment: { icon: MdLibraryBooks, color: '#8b5cf6', bg: '#ede9fe' },
+  assignment_submitted: { icon: MdAssignment, color: '#f59e0b', bg: '#fef3c7' },
+  student_registered: { icon: MdSchool, color: '#06b6d4', bg: '#cffafe' },
 }
 
 function timeAgo(dateStr: string): string {
@@ -33,7 +36,11 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function RecentActivities() {
-  const { data: facultyList, isLoading, isError, error, refetch } = useFacultyListShared()
+  const { user } = useAuth()
+  const role = user?.role || ''
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HOD' || role === 'FACULTY'
+
+  const { data: facultyList, isLoading, isError, error, refetch } = useFacultyListShared({ enabled: isAdmin })
 
   const activities = useMemo(() => {
     if (!Array.isArray(facultyList)) return []
@@ -43,7 +50,7 @@ export default function RecentActivities() {
     return sorted.slice(0, 8).map((f, i) => ({
       id: f.id ?? `activity-${i}`,
       type: (i === 0 || i === 3 ? 'joined' : i % 2 === 0 ? 'profile_update' : 'course_assignment') as ActivityItem['type'],
-      facultyName: f.name || 'Unknown',
+      name: f.name || 'Unknown',
       description:
         i === 0 || i === 3
           ? `Joined as faculty in ${f.department || 'General'}`
@@ -53,6 +60,24 @@ export default function RecentActivities() {
       timestamp: timeAgo(f.joiningDate),
     }))
   }, [facultyList])
+
+  if (!isAdmin) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/30 shadow-md p-5"
+      >
+        <h3 className="font-semibold text-gray-800 mb-4">Recent Activities</h3>
+        <EmptyState
+          icon={<MdInbox className="w-8 h-8 text-gray-400" />}
+          title="No recent activities"
+          message="Recent activities will appear here."
+        />
+      </motion.div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -136,7 +161,7 @@ export default function RecentActivities() {
                   <Icon className="text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{activity.facultyName}</p>
+                  <p className="text-sm font-medium text-gray-800 truncate">{activity.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{activity.description}</p>
                   <p className="text-xs text-gray-400 mt-1">{activity.timestamp}</p>
                 </div>

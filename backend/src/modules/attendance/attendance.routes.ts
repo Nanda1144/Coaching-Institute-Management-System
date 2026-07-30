@@ -35,6 +35,10 @@ router.post('/bulk-update', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), cre
 router.post('/import', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), createImportHandler('attendances', 'Attendance'));
 
 router.post('/face-recognition/session', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(createFaceRecognitionSessionSchema), attendanceController.createFaceRecognitionSession);
+router.post('/face-recognition/scan', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.scanFaceAndMarkAttendance);
+router.post('/face-recognition/enroll', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.enrollStudentFace);
+router.get('/face-recognition/enrolled', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getEnrolledFaces);
+router.delete('/face-recognition/enrolled/:studentId', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), attendanceController.unenrollStudentFace);
 router.patch('/face-recognition/:sessionId/verify', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.verifyFaceRecognition);
 router.get('/face-recognition/:id', authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), attendanceController.getFaceRecognitionSession);
 

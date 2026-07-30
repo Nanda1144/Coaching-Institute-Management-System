@@ -230,4 +230,75 @@ export const reportService = {
     ]);
     return { attendance, students, faculty, fees, exams };
   },
+
+  async getMonthlyAttendance(params: {
+    month: number;
+    year: number;
+    facultyId?: string;
+    batchId?: string;
+    subjectId?: string;
+  }) {
+    const startDate = new Date(params.year, params.month - 1, 1);
+    const endDate = new Date(params.year, params.month, 1);
+    const where: any[] = [
+      { column: 'attendanceDate', operator: '>=', value: startDate },
+      { column: 'attendanceDate', operator: '<', value: endDate },
+    ];
+    if (params.facultyId) where.push({ column: 'facultyId', value: params.facultyId });
+    if (params.batchId) where.push({ column: 'batchId', value: params.batchId });
+    if (params.subjectId) where.push({ column: 'subjectId', value: params.subjectId });
+
+    const records = await db.findMany('attendances', {
+      where,
+      orderBy: [{ column: 'attendanceDate', dir: 'ASC' }],
+    });
+
+    const byStudent = new Map<string, any>();
+    for (const r of records) {
+      const sid = r.studentId;
+      if (!byStudent.has(sid)) {
+        byStudent.set(sid, {
+          studentId: sid,
+          total: 0, present: 0, absent: 0, late: 0, halfDay: 0, leave: 0,
+        });
+      }
+      const s = byStudent.get(sid);
+      s.total++;
+      const st = r.attendanceStatus || 'absent';
+      if (s[st] !== undefined) s[st]++;
+    }
+
+    const byDate = new Map<string, any>();
+    for (const r of records) {
+      const d = r.attendanceDate ? new Date(r.attendanceDate).toISOString().split('T')[0] : 'unknown';
+      if (!byDate.has(d)) {
+        byDate.set(d, { date: d, total: 0, present: 0, absent: 0, late: 0, halfDay: 0, leave: 0 });
+      }
+      const day = byDate.get(d);
+      day.total++;
+      const st = r.attendanceStatus || 'absent';
+      if (day[st] !== undefined) day[st]++;
+    }
+
+    const total = records.length;
+    const present = records.filter((r: any) => r.attendanceStatus === 'present').length;
+    const absent = records.filter((r: any) => r.attendanceStatus === 'absent').length;
+
+    return {
+      month: params.month,
+      year: params.year,
+      summary: {
+        total,
+        present,
+        absent,
+        percentage: total ? Math.round((present / total) * 100) : 0,
+      },
+      byStudent: Array.from(byStudent.values()).map((s: any) => ({
+        ...s,
+        percentage: s.total ? Math.round(((s.present + s.late) / s.total) * 100) : 0,
+      })),
+      byDate: Array.from(byDate.values()),
+      records,
+    };
+  },
 };

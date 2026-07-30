@@ -538,6 +538,7 @@ const mockRoutes: Record<string, MockHandler> = {
 
   /* ─── Admin: Notifications ─── */
   'GET /notifications/history': () => ({ success: true, data: notificationHistoryRows }),
+  'POST /notifications': (_url, _params, body) => ({ success: true, data: { id: `H${notificationHistoryRows.length + 1}`, ...body }, message: 'Notification sent successfully' }),
   'POST /notifications/send': (_url, _params, body) => ({ success: true, data: { id: `H${notificationHistoryRows.length + 1}`, ...body }, message: 'Notification sent successfully' }),
 
   'GET /auth/refresh-token': () => ({ success: true, data: { accessToken: 'mock-token' } }),

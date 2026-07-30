@@ -15,7 +15,7 @@ export interface AttendanceRecord {
   studentName: string
   rollNumber: string
   department: string
-  status: 'present' | 'absent' | 'late' | 'leave'
+  status: 'present' | 'absent' | 'late' | 'leave' | 'half_day'
   time: string
   method: string
   date: string

@@ -30,8 +30,11 @@ export default function StudentNotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
 
   useEffect(() => {
-    if (data?.data) {
-      setNotifications(data.data)
+    const raw = data?.data
+    if (Array.isArray(raw)) {
+      setNotifications(raw)
+    } else if (raw?.notifications) {
+      setNotifications(raw.notifications)
     }
   }, [data])
 

@@ -11,6 +11,7 @@ import AttendanceNotifications from '../components/AttendanceNotifications'
 import AttendanceNavBar from '../../../components/AttendanceNavBar'
 import ErrorMessage from '../../../components/ErrorMessage'
 import attendanceService from '../../../services/attendance/attendance.service'
+import notificationService from '../../../services/notification/notification.service'
 import type { AttendanceFilterState, PageState, AttendanceRecord, DailyAttendance, WeeklyTrend, DepartmentAttendance, MonthlySummary, AttendanceNotification } from '../types/attendance.types'
 
 const initialFilters: AttendanceFilterState = { search: '', department: '', date: '' }
@@ -24,16 +25,17 @@ export default function AttendanceDashboard() {
   const [weeklyData, setWeeklyData] = useState<WeeklyTrend[]>([])
   const [deptData, setDeptData] = useState<DepartmentAttendance[]>([])
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([])
-  const [notifications] = useState<AttendanceNotification[]>([])
+  const [notifications, setNotifications] = useState<AttendanceNotification[]>([])
 
   useEffect(() => {
     async function fetchData() {
       try {
         setPageState({ loading: true, error: null })
-        const [todayRes, statsRes, listRes] = await Promise.allSettled([
+        const [todayRes, statsRes, listRes, notifRes] = await Promise.allSettled([
           attendanceService.getTodayAttendance(),
           attendanceService.getAttendanceStats(),
           attendanceService.getAll({ page: 1, limit: 50 }),
+          notificationService.getHistory(),
         ])
 
         if (todayRes.status === 'fulfilled' && todayRes.value?.data) {
@@ -52,16 +54,16 @@ export default function AttendanceDashboard() {
         if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
           const s = statsRes.value.data
           if (s.bySubject) {
-            setDailyData(s.bySubject.map((sub: any) => ({ label: sub.subjectName, present: sub.present, absent: sub.absent, total: sub.total })))
+            setDailyData(s.bySubject.map((sub: any) => ({ date: sub.date || sub.subjectName, present: sub.present, absent: sub.absent, late: sub.late || 0, halfDay: sub.halfDay || 0, leave: sub.leave || 0 })))
           }
           if (s.byMonth) {
-            setMonthlyData(s.byMonth.map((m: any) => ({ month: `${m.month}/${m.year}`, present: m.present, absent: m.absent, total: m.total, percentage: m.percentage })))
+            setMonthlyData(s.byMonth.map((m: any) => ({ month: `${m.month}/${m.year}`, percentage: m.percentage, students: m.students || m.total || 0 })))
           }
           if (s.bySubject) {
-            setDeptData(s.bySubject.map((sub: any) => ({ name: sub.subjectName, value: sub.percentage })))
+            setDeptData(s.bySubject.map((sub: any) => ({ department: sub.subjectName, present: sub.present, total: sub.total, percentage: sub.percentage })))
           }
           if (s.byMonth) {
-            setWeeklyData(s.byMonth.map((m: any) => ({ week: `${m.month}/${m.year}`, rate: m.percentage })))
+            setWeeklyData(s.byMonth.map((m: any) => ({ day: `${m.month}/${m.year}`, percentage: m.percentage, total: m.students || m.total || 0, present: m.present || 0 })))
           }
         }
 
@@ -72,12 +74,26 @@ export default function AttendanceDashboard() {
             studentName: item.student?.fullName || 'Unknown',
             rollNumber: item.student?.rollNumber || '',
             department: item.student?.department || '',
-            status: item.attendanceStatus || 'present',
+            status: (item.attendanceStatus === 'half_day' ? 'half_day' : (item.attendanceStatus || 'present')) as AttendanceRecord['status'],
             time: item.startTime ? new Date(item.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '',
             method: item.attendanceMethod || 'manual',
             date: item.attendanceDate ? new Date(item.attendanceDate).toISOString().split('T')[0] : '',
           }))
           setRecords(mapped)
+        }
+
+        if (notifRes.status === 'fulfilled' && notifRes.value) {
+          const nData = notifRes.value?.data?.data || notifRes.value?.data || notifRes.value || []
+          const mapped: AttendanceNotification[] = (Array.isArray(nData) ? nData : []).slice(0, 10).map((n: any) => ({
+            id: n.id || '',
+            title: n.title || 'Notification',
+            description: n.message || n.description || '',
+            studentName: n.studentName || n.relatedName || '',
+            rollNumber: n.rollNumber || n.relatedRoll || '',
+            severity: ['high', 'medium', 'low'].includes(n.severity) ? n.severity : 'medium',
+            type: ['low-attendance', 'correction-request', 'leave-request'].includes(n.type) ? n.type : 'correction-request',
+          }))
+          setNotifications(mapped)
         }
 
         setPageState({ loading: false, error: null })

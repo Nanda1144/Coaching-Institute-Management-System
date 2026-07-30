@@ -21,6 +21,9 @@ Both frontend and backend are deployed together in one Vercel project:
   - `CORS_ORIGIN` — the Vercel deployment URL itself (e.g. `https://faculty-dashboard.vercel.app`)
   - `COOKIE_SECRET` — random secret
   - `VITE_API_BASE_URL` — leave empty (defaults to `/api` on same origin)
+  - `BREVO_API_KEY` — Brevo (Sendinblue) API key for transactional emails
+  - `BREVO_FROM_EMAIL` — verified sender email for Brevo
+  - `BREVO_FROM_NAME` — sender display name
 
 ### How routing works
 - `vercel.json` rewrites `/api/(.*)` → serverless function at `/api` (Express app handles all API routes)
@@ -53,6 +56,37 @@ Both frontend and backend are deployed together in one Vercel project:
 - Reports, Advanced Search, My Schedule, My Timetable removed from admin sidebar
 - Theme toggle removed from Navbar
 
+### JWT permissions
+- `auth.service.ts`: FACULTY/ADMIN/HOD JWT now includes `ROLE_PERMISSIONS[role]` (all `['*']`)
+- `enums/index.ts`: ROLE_PERMISSIONS.STUDENT missing READ_FACULTY, READ_STUDENT; PARENT missing READ_STUDENT
+
+### 502 fixes — Table/column name mismatches
+- `dashboard.service.ts`: `attendance` → `attendances`, `notifications` → `notification_broadcasts`, `studentId` → `student` (fee tables). Wrapped unprotected queries in try-catch.
+- `student-dashboard.service.ts`: Same fixes for `attendance`, `notifications`, `studentId` → `student`.
+- `faculty.service.ts`: `operator: 'is'` → `operator: 'IS NULL'` (unsupported operator bug).
+- `student.service.ts`: Added pagination (limit/offset) to prevent timeout on large datasets.
+
+### 403 fixes — Role-based access
+- `timetable.routes.ts`: Added FACULTY, STUDENT, PARENT to GET /.
+- `settings.routes.ts`: Added STUDENT, PARENT to GET endpoints for settings sync.
+- `notification.routes.ts`: Added HOD, FACULTY to POST / for faculty notifications.
+- `parent.routes.ts`: Added HOD, FACULTY to POST / for faculty to create parents.
+- `RecentActivities.tsx`: Only fetches faculty list for admin/faculty roles; shows empty state for students/parents.
+- `useSharedData.ts`: Each hook accepts `enabled` param (destructured from query params) to prevent unauthorized API calls.
+
+### Email service (EmailJS → Brevo)
+- `env.ts`: Replaced `EMAILJS_*` vars with `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME`.
+- `email.service.ts`: Rewrote to call Brevo SMTP API (`POST https://api.brevo.com/v3/smtp/email`) with styled HTML template.
+
+### Frontend fixes
+- `StudentNotificationsPage.tsx`: Fixed data shape — API returns `{ notifications, unreadCount }`, not a plain array.
+- `ParentNotificationsPage.tsx`: Same data shape fix as StudentNotificationsPage — `useEffect` now handles both array and `{ notifications, unreadCount }` response shapes.
+- `PersonalInfo.tsx` + `FacultyProfilePage.tsx`: Address object `{street, city, state, pincode}` now stringified before rendering.
+- `Sidebar.tsx`: Removed Registration Requests from admin nav; Settings restricted to `isAdmin`.
+- `FacultyNotificationsPage.tsx`: Added Send Notification modal with STUDENT/PARENT target picker.
+- `StudentRegistrationPage.tsx`: Removed broken department filter on courses API call; added `name="phone"` + `autoComplete="tel-national"` to fix autofill.
+- `AssignmentsPage.tsx`: New Assignment button now navigates to create page.
+
 ## Backend Structure
 - Express server in `backend/src/server.ts` (only used locally)
 - Routes mounted under `/api/` prefix (e.g. `/api/auth`, `/api/faculty`, `/api/timetable`)
@@ -67,3 +101,20 @@ Both frontend and backend are deployed together in one Vercel project:
 - File uploads won't persist on Vercel without Cloudinary/S3 config
 - Run `npm run build` locally (frontend only) for quick verification
 - Vercel automatically compiles `api/index.ts` and its TypeScript dependencies
+- Table name mismatches: use `attendances` (plural), `notification_broadcasts` (not `notifications`), `student` (not `student_id`) in fee tables
+- `db.ts` `buildWhereClause` only recognizes `'IS NULL'` and `'IS NOT NULL'` as operators, not `'is'`
+- `extraWhere` in `db.ts count` does NOT reindex `$N` placeholders — avoid combining extraWhere with where clause conditions
+
+## Work State
+### Completed
+- **Subscription system (Pro/Premium):** Complete subscription module with trial period, plans, and payment flow:
+  - **DB Migration:** `backend/prisma/migrations/20260730000000_add_subscription/` — `subscription_plans` and `admin_subscriptions` tables
+  - **Backend module:** `backend/src/modules/subscription/` — routes (GET /plans, GET /my, GET /status, POST /trial, POST /subscribe), controller, service, validator
+  - **Frontend SubscriptionPage:** `frontend/src/pages/SubscriptionPage.tsx` — displays 4 plans (Monthly ₹499, Quarterly ₹1199, Half-Yearly ₹1999, Yearly ₹3499), subscribe → UPI redirect to owner account
+  - **Admin sidebar:** Added "Subscription" nav item with `MdCrown` icon + "Pro" badge
+  - **Admin dashboard banner:** Amber trial-warning when ≤30 days remain; full-screen pause overlay with "View Plans" CTA when expired
+  - **Seed script:** `backend/src/scripts/seed-subscription-plans.ts`
+- **ParentNotificationsPage data shape:** Same fix as StudentNotificationsPage — `useEffect` now handles both array and `{notifications, unreadCount}` shapes
+- **Header hash nav fix:** `MainLayout.tsx` `handleNavClick` now redirects to `/#id` when `pathname !== '/'` — fixes hash links (Home, Overview, About, Services, Usage, Contact) not working on non-root pages
+- **Section scroll offset:** Added `scroll-mt-20` to `Section.tsx` for fixed header offset
+- **Faculty Send Notification:** Modal with STUDENT/PARENT target picker in `FacultyNotificationsPage.tsx`; HOD+FACULTY added to `POST /notifications`

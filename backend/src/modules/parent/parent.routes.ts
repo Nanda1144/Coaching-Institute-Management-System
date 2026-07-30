@@ -10,7 +10,7 @@ const router = Router();
 // CRUD
 router.get('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD), validate(parentQuerySchema, 'query'), parentController.getAll);
 router.get('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), parentController.getById);
-router.post('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), validate(createParentSchema), parentController.create);
+router.post('/', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HOD, UserRole.FACULTY), validate(createParentSchema), parentController.create);
 router.put('/:id', authenticate, authorize(UserRole.SUPER_ADMIN, UserRole.ADMIN), validate(updateParentSchema), parentController.update);
 router.delete('/:id', authenticate, authorize(UserRole.SUPER_ADMIN), parentController.delete);
 

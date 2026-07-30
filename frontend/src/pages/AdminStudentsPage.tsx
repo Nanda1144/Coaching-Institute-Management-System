@@ -31,7 +31,9 @@ export default function AdminStudentsPage() {
     api.get('/references/departments').then((res) => {
       const depts: any[] = res.data?.data ?? []
       setDeptOptions(depts.map((d: any) => d.name))
-    }).catch(() => {})
+    }).catch((err) => {
+      console.warn('Failed to load department filter options:', err?.message)
+    })
   }, [])
 
   const { data: students, isLoading, isError, error, refetch } = useStudentList()
