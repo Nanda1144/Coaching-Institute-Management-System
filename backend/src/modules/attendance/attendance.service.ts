@@ -157,12 +157,13 @@ export class AttendanceService {
     };
   }
 
-  async getAttendanceStats(facultyId: string, params: { subjectId?: string; month?: number; year?: number }) {
+  async getAttendanceStats(facultyId: string, params: { subjectId?: string; month?: number; year?: number; method?: string }) {
     const whereConditions: { column: string; value: any }[] = [
       { column: 'facultyId', value: facultyId },
       { column: 'isDeleted', value: false },
     ];
     if (params.subjectId) whereConditions.push({ column: 'subjectId', value: params.subjectId });
+    if (params.method) whereConditions.push({ column: 'attendanceMethod', value: params.method });
 
     let extraWhere: { sql: string; params: any[] } | undefined;
     if (params.month || params.year) {

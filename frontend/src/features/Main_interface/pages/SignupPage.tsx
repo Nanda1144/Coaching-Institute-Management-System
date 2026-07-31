@@ -23,10 +23,12 @@ export default function SignupPage() {
       navigate('/student-registration')
       return
     }
+    if (roleId === 'admin') {
+      navigate('/admin-registration')
+      return
+    }
     setAlertMsg(
-      roleId === 'admin'
-        ? 'Admin accounts are created by the system administrator. Please contact your institute management.'
-        : 'Self-registration is only available for students. Faculty and parents should contact their respective coaching institute management to get account credentials.'
+      'Self-registration is only available for students and admins. Faculty and parents should contact their respective coaching institute management to get account credentials.'
     )
   }
 

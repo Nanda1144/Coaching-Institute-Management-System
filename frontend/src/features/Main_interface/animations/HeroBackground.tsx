@@ -43,7 +43,7 @@ const THEMES: Record<'light' | 'dark', ThemeColors> = {
 
 const PUBLIC_PATHS = [
   '/', '/login', '/signup', '/register', '/forgot-password',
-  '/reset-password', '/student-registration', '/workflow',
+  '/reset-password', '/student-registration', '/admin-registration', '/workflow',
   '/developers', '/about', '/contact', '/privacy', '/terms', '/cookies',
 ]
 

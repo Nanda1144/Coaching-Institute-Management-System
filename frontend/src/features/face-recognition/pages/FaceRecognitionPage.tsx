@@ -31,9 +31,9 @@ export default function FaceRecognitionPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, recordsRes] = await Promise.all([
-        attendanceService.getAttendanceStats({ type: 'face' }),
-        attendanceService.getAll({ method: 'face_recognition', limit: 10 }),
+      const [statsRes, historyRes] = await Promise.all([
+        attendanceService.getAttendanceStats({ method: 'face_recognition' }),
+        attendanceService.getFaceRecognitionHistory({ limit: 10 }),
       ])
       const s = statsRes?.data || statsRes || {}
       setStats({
@@ -41,9 +41,9 @@ export default function FaceRecognitionPage() {
         attendanceMarked: s.present || 0,
         accuracy: s.percentage || 0,
       })
-      const recordsRaw = recordsRes?.data ?? []
-      const recs = Array.isArray(recordsRaw) ? recordsRaw : (recordsRaw?.data ?? [])
-      setRecords(Array.isArray(recs) ? recs : [])
+      const historyRaw = historyRes?.data ?? historyRes ?? []
+      const history = Array.isArray(historyRaw) ? historyRaw : (historyRaw?.data ?? [])
+      setRecords(Array.isArray(history) ? history : [])
     } catch {
       // silent fail on background refresh
     }

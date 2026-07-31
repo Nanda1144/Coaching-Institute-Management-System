@@ -23,11 +23,11 @@ async function getOverview(parentId: string) {
   }
 
   const [totalClasses, attendedClasses, pendingAssignments] = await Promise.all([
-    db.count('attendance', [
+    db.count('attendances', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
     ]),
-    db.count('attendance', [
+    db.count('attendances', [
       { column: 'studentId', value: studentId },
       { column: 'isDeleted', value: false },
       { column: 'attendanceStatus', value: 'present' },
@@ -87,7 +87,7 @@ async function getAttendance(parentId: string, month?: number, year?: number) {
     where.push({ column: 'attendanceDate', operator: 'lte', value: end });
   }
 
-  const records = await db.findMany('attendance', {
+  const records = await db.findMany('attendances', {
     where,
     orderBy: [{ column: 'attendanceDate', dir: 'desc' }],
   });

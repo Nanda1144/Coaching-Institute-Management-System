@@ -61,6 +61,11 @@ const attendanceService = {
     return data;
   },
 
+  async getFaceRecognitionHistory(params?: Record<string, unknown>) {
+    const { data } = await api.get('/attendance/face-recognition/history', { params });
+    return data;
+  },
+
   async unenrollStudentFace(studentId: string) {
     const { data } = await api.delete(`/attendance/face-recognition/enrolled/${studentId}`);
     return data;

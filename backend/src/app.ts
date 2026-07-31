@@ -25,6 +25,7 @@ import facultyTransferRoutes from './modules/faculty-transfer/faculty-transfer.r
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import studentAuthRoutes from './modules/student-auth/student-auth.routes';
+import adminAuthRoutes from './modules/admin-auth/admin-auth.routes';
 import studentDashboardRoutes from './modules/student-dashboard/student-dashboard.routes';
 import parentDashboardRoutes from './modules/parent-dashboard/parent-dashboard.routes';
 import studentRoutes from './modules/student/student.routes';
@@ -127,6 +128,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 app.use('/api/student-auth', authLimiter);
+app.use('/api/admin-auth', authLimiter);
 
 app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -151,6 +153,7 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/faculty-transfers', facultyTransferRoutes);
 app.use('/api/dashboard', dashboardLimiter, dashboardRoutes);
 app.use('/api/student-auth', studentAuthRoutes);
+app.use('/api/admin-auth', adminAuthRoutes);
 app.use('/api/student-dashboard', studentDashboardRoutes);
 app.use('/api/parent-dashboard', parentDashboardRoutes);
 app.use('/api/students', studentRoutes);

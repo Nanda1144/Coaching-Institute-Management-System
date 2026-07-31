@@ -51,6 +51,7 @@ export const attendanceController = {
       subjectId: req.query.subjectId as string | undefined,
       month: req.query.month ? Number(req.query.month) : undefined,
       year: req.query.year ? Number(req.query.year) : undefined,
+      method: (req.query.method as string) || (req.query.type as string) || undefined,
     });
     sendSuccess(res, result, 'Attendance statistics fetched successfully');
   }),
@@ -80,6 +81,12 @@ export const attendanceController = {
   getFaceRecognitionSession: asyncHandler(async (req: IAuthRequest, res: Response) => {
     const session = await faceRecognitionService.getSession(req.params.id);
     sendSuccess(res, session, 'Face recognition session fetched');
+  }),
+
+  getFaceRecognitionHistory: asyncHandler(async (req: IAuthRequest, res: Response) => {
+    const limit = req.query.limit ? Number(req.query.limit) : 10;
+    const history = await faceRecognitionService.getHistory(req.user!.id, limit);
+    sendSuccess(res, history, 'Face recognition history fetched');
   }),
 
   scanFaceAndMarkAttendance: asyncHandler(async (req: IAuthRequest, res: Response) => {

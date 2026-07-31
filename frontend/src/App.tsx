@@ -9,6 +9,7 @@ import LandingPage from './features/Main_interface/pages/LandingPage'
 import LoginPage from './features/Main_interface/pages/LoginPage'
 import SignupPage from './features/Main_interface/pages/SignupPage'
 import StudentRegistrationPage from './features/Main_interface/pages/StudentRegistrationPage'
+import AdminRegistrationPage from './features/Main_interface/pages/AdminRegistrationPage'
 import ForgotPasswordPage from './features/Main_interface/pages/ForgotPasswordPage'
 import ResetPasswordPage from './features/Main_interface/pages/ResetPasswordPage'
 import WorkflowPage from './features/Main_interface/pages/WorkflowPage'
@@ -285,6 +286,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/student-registration" element={<StudentRegistrationPage />} />
+        <Route path="/admin-registration" element={<AdminRegistrationPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/workflow" element={<WorkflowPage />} />

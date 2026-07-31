@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import * as db from '../../shared/utils/db';
+import { query } from '../../config/database';
 import { AppError } from '../../shared/errors/AppError';
 import { studentFaceService } from './student-face.service';
 import { attendanceService } from './attendance.service';
@@ -128,6 +129,32 @@ export class FaceRecognitionService {
     const session = await db.findUnique('face_recognitions', [{ column: 'id', value: id }]);
     if (!session) throw AppError.notFound('Face recognition session not found');
     return session;
+  }
+
+  async getHistory(userId: string, limit = 10) {
+    const result = await query(
+      `SELECT fr.id, fr.session_id, fr.student_id, fr.confidence, fr.recognition_time, fr.status,
+              COALESCE(s.full_name, 'Unknown') AS student_name
+       FROM face_recognitions fr
+       LEFT JOIN students s ON s.id = fr.student_id
+       WHERE fr.created_by_id = $1 AND fr.is_deleted = false
+       ORDER BY fr.recognition_time DESC
+       LIMIT $2`,
+      [userId, limit]
+    );
+
+    return (result.rows ?? []).map((r: any) => {
+      const time = r.recognition_time ? new Date(r.recognition_time) : new Date();
+      return {
+        id: r.id,
+        sessionId: r.session_id,
+        studentId: r.student_id,
+        studentName: r.student_name || 'Unknown',
+        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        confidence: Math.round((r.confidence ?? 0) * 100),
+        status: r.status === 'verified' ? 'success' : 'failed',
+      };
+    });
   }
 }
 
