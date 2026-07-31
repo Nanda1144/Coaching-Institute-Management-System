@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MdCheckCircle, MdCrown, MdArrowBack, MdPayment, MdInfo } from 'react-icons/md'
+import { GiCrown } from 'react-icons/gi'
+import { MdCheckCircle, MdArrowBack, MdInfo, MdClose } from 'react-icons/md'
+import { FaCreditCard, FaMobileAlt } from 'react-icons/fa'
 import { subscriptionService } from '../services/subscription.service'
 
 interface Plan {
@@ -22,14 +24,28 @@ interface SubStatus {
   endDate: string | null
 }
 
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
+
 export default function SubscriptionPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [plans, setPlans] = useState<Plan[]>([])
   const [status, setStatus] = useState<SubStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [subscribing, setSubscribing] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [payingPlan, setPayingPlan] = useState<Plan | null>(null)
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    if (paymentStatus === 'success') setSuccess('Payment successful! Your subscription is now active.')
+    else if (paymentStatus === 'failed') setError('Payment failed or was cancelled. Please try again.')
+  }, [searchParams])
 
   useEffect(() => {
     Promise.all([
@@ -42,23 +58,71 @@ export default function SubscriptionPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleSubscribe = async (planId: string) => {
+  const handleRazorpayPay = async (plan: Plan) => {
     setSubscribing(true)
     setError('')
     setSuccess('')
     try {
-      const res = await subscriptionService.subscribe(planId)
-      if (res.data?.success) {
-        setSuccess('Subscribed successfully! Redirecting to payment...')
-        const plan = plans.find((p) => p.id === planId)
-        if (plan) {
-          const upiId = 'owner@upi' // Application owner's UPI ID
-          const upiUrl = `upi://pay?pa=${upiId}&pn=AppOwner&am=${plan.price}&tn=Subscription-${plan.name}`
-          window.location.href = upiUrl
+      const orderRes = await subscriptionService.createRazorpayOrder(plan.id)
+      const { orderId, amount, keyId } = orderRes.data?.data || {}
+
+      const script = document.createElement('script')
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      script.onload = () => {
+        const options = {
+          key: keyId,
+          amount: amount * 100,
+          currency: 'INR',
+          name: 'CIMS Subscription',
+          description: `${plan.name} Plan`,
+          order_id: orderId,
+          handler: async (response: any) => {
+            try {
+              const verifyRes = await subscriptionService.verifyRazorpayPayment({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                planId: plan.id,
+              })
+              if (verifyRes.data?.success) {
+                setSuccess('Payment successful! Your subscription is now active.')
+                setPayingPlan(null)
+                const statusRes = await subscriptionService.getStatus()
+                setStatus(statusRes.data?.data || null)
+              }
+            } catch {
+              setError('Payment verification failed. Please contact support.')
+            }
+          },
+          modal: {
+            ondismiss: () => setSubscribing(false),
+          },
         }
+        const rzp = new window.Razorpay(options)
+        rzp.open()
+      }
+      document.body.appendChild(script)
+    } catch {
+      setError('Failed to initiate payment. Please try again.')
+      setSubscribing(false)
+    }
+  }
+
+  const handlePhonePePay = async (plan: Plan) => {
+    setSubscribing(true)
+    setError('')
+    setSuccess('')
+    try {
+      const callbackUrl = `${window.location.origin}/api/subscription/phonepe-callback`
+      const orderRes = await subscriptionService.createPhonePeOrder(plan.id, callbackUrl)
+      const { redirectUrl } = orderRes.data?.data || {}
+      if (redirectUrl) {
+        window.location.href = redirectUrl
+      } else {
+        setError('Failed to get PhonePe payment page. Please try Razorpay.')
       }
     } catch {
-      setError('Subscription failed. Please try again.')
+      setError('Failed to initiate PhonePe payment. Please try again.')
     } finally {
       setSubscribing(false)
     }
@@ -86,7 +150,7 @@ export default function SubscriptionPage() {
             <MdArrowBack size={16} /> Back
           </button>
           <h1 className="gradient-text text-3xl font-bold flex items-center gap-2">
-            <MdCrown className="text-yellow-500" /> Subscription
+            <GiCrown className="text-yellow-500" /> Subscription
           </h1>
           <p className="text-neutral-500 mt-1">
             {status?.isTrial
@@ -103,7 +167,7 @@ export default function SubscriptionPage() {
           <MdInfo size={18} /> {error}
         </div>
       )}
-      {success && (
+      {success && !payingPlan && (
         <div className="bg-success-light border border-success/20 rounded-lg p-4 text-sm text-success flex items-center gap-2">
           <MdCheckCircle size={18} /> {success}
         </div>
@@ -146,21 +210,85 @@ export default function SubscriptionPage() {
                 </li>
               ))}
             </ul>
-            <button
-              onClick={() => handleSubscribe(plan.id)}
-              disabled={subscribing}
-              className="btn btn-primary w-full mt-6"
-            >
-              {subscribing ? 'Processing...' : `Pay ₹${plan.price}`}
-            </button>
+            <div className="space-y-2 mt-6">
+              <button
+                onClick={() => setPayingPlan(plan)}
+                disabled={subscribing}
+                className="btn btn-primary w-full"
+              >
+                Pay ₹{plan.price}
+              </button>
+            </div>
           </motion.div>
         ))}
       </div>
 
       {plans.length === 0 && !loading && (
         <div className="text-center py-16 text-neutral-400">
-          <MdCrown size={48} className="mx-auto mb-4 opacity-30" />
+          <GiCrown size={48} className="mx-auto mb-4 opacity-30" />
           <p>No subscription plans available at this time.</p>
+        </div>
+      )}
+
+      {payingPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setPayingPlan(null); setSubscribing(false) }} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+              <button onClick={() => { setPayingPlan(null); setSubscribing(false) }} className="absolute top-4 right-4 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                <MdClose size={20} />
+              </button>
+              <GiCrown size={32} className="mb-2" />
+              <h2 className="text-xl font-bold">Choose Payment Method</h2>
+              <p className="text-blue-100 text-sm mt-1">{payingPlan.name} Plan - ₹{payingPlan.price}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-gray-50 rounded-xl p-4 text-center">
+                <p className="text-sm text-neutral-500 mb-1">Amount to Pay</p>
+                <p className="text-4xl font-bold text-neutral-900">₹{payingPlan.price}</p>
+              </div>
+
+              <button
+                onClick={() => handleRazorpayPay(payingPlan)}
+                disabled={subscribing}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-blue-100 hover:border-blue-300 hover:bg-blue-50 transition-all disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                  <FaCreditCard className="text-white" size={18} />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="font-semibold text-neutral-900">Pay with Razorpay</p>
+                  <p className="text-xs text-neutral-500">Credit/Debit Card, Net Banking, UPI</p>
+                </div>
+                {subscribing && <span className="text-sm text-neutral-400">Processing...</span>}
+              </button>
+
+              <button
+                onClick={() => handlePhonePePay(payingPlan)}
+                disabled={subscribing}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-2 border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition-all disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center shrink-0">
+                  <FaMobileAlt className="text-white" size={18} />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="font-semibold text-neutral-900">Pay with PhonePe</p>
+                  <p className="text-xs text-neutral-500">PhonePe UPI App</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setPayingPlan(null); setSubscribing(false) }}
+                className="w-full text-sm text-neutral-500 py-2 hover:text-neutral-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

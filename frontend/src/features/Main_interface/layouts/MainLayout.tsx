@@ -68,7 +68,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-lg group-hover:shadow-blue-500/25 transition-all duration-300">
                 <GraduationCap className="text-white" size={22} />
               </div>
-              <span className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">CIMS</span>
+              <span className={cn('text-lg font-bold transition-colors', scrolled ? 'text-gray-900 group-hover:text-blue-600' : 'text-white group-hover:text-blue-200')}>CIMS</span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-1">

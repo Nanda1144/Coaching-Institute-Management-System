@@ -8,11 +8,12 @@ import RecentActivities from '../components/RecentActivities'
 import UpcomingSchedule from '../components/UpcomingSchedule'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ErrorMessage from '../components/ErrorMessage'
+import { GiCrown } from 'react-icons/gi'
 import {
   MdSchool, MdPeople, MdHowToVote, MdAssignment, MdAttachMoney,
   MdEvent, MdNotifications, MdBook, MdGroup, MdCalendarMonth,
   MdTrendingUp, MdStars, MdCheckCircle, MdRateReview, MdPerson, MdAnalytics,
-  MdCrown, MdInfo, MdLock, MdPayment,
+  MdLock, MdPayment,
 } from 'react-icons/md'
 import { useAdminDashboard, useFacultyDashboard, useStudentDashboard, useParentDashboard } from '../hooks/useReactQuery'
 import { subscriptionService } from '../services/subscription.service'
@@ -78,7 +79,7 @@ function AdminDashboard() {
       {subLoaded && showTrialWarning && (
         <motion.div variants={itemVariants} className="flex items-center justify-between p-4 rounded-xl bg-amber-50 border border-amber-200">
           <div className="flex items-center gap-3">
-            <MdCrown className="text-amber-600 shrink-0" size={24} />
+            <GiCrown className="text-amber-600 shrink-0" size={24} />
             <div>
               <p className="text-sm font-semibold text-amber-800">Trial ends in {daysLeft} day{daysLeft > 1 ? 's' : ''}</p>
               <p className="text-xs text-amber-600 mt-0.5">Upgrade to Pro to continue using all features without interruption.</p>
@@ -98,7 +99,7 @@ function AdminDashboard() {
             Your free trial has ended. Subscribe to a plan to reactivate your dashboard and continue managing your institute.
           </p>
           <button onClick={() => navigate('/dashboard/subscription')} className="btn bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/20">
-            <MdCrown size={18} /> View Plans
+            <GiCrown size={18} /> View Plans
           </button>
         </motion.div>
       )}

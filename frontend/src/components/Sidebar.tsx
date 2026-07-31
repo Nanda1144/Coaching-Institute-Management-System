@@ -7,7 +7,7 @@ import {
   MdEvent, MdFace, MdFingerprint,
   MdQrCode, MdHistory, MdAnalytics, MdBook,
   MdChevronLeft, MdStars, MdAccountTree, MdEdit,
-  MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity, MdAssessment, MdCrown,
+  MdCloudUpload, MdMilitaryTech, MdReceipt, MdSecurity, MdAssessment,
 } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -73,7 +73,7 @@ const adminNavItems: NavItem[] = [
   { to: '/dashboard/admin/reports', icon: MdAssessment, label: 'Reports' },
   { to: '/dashboard/admin/notifications', icon: MdNotifications, label: 'Notifications' },
   { to: '/dashboard/admin/permissions', icon: MdSecurity, label: 'Permissions' },
-  { to: '/dashboard/subscription', icon: MdCrown, label: 'Subscription', badge: 'Pro' },
+  { to: '/dashboard/subscription', icon: MdStars, label: 'Subscription', badge: 'Pro' },
 ]
 
 const facultyNavItems: NavItem[] = [

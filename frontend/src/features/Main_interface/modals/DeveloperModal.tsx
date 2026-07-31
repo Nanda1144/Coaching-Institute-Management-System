@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Phone, User, LogIn, UserPlus } from 'lucide-react'
+import { X, Mail, Phone, LogIn, UserPlus } from 'lucide-react'
 import { FaLinkedin as Linkedin, FaGithub as Github } from 'react-icons/fa'
 import Button from '../components/Button'
 import Badge from '../components/Badge'
@@ -30,27 +30,34 @@ export default function DeveloperModal({ isOpen, onClose, developer }: Developer
           <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
           <motion.div
-            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+            className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col"
             variants={modalContent}
             initial="hidden"
             animate="visible"
             exit="exit"
           >
-            <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-gray-100 flex items-center justify-between p-4 sm:p-6">
+            <div className="sticky top-0 z-10 bg-white rounded-t-2xl border-b border-gray-100 flex items-center justify-between p-4 sm:p-6 shrink-0">
               <h3 className="text-lg font-bold text-gray-900">Developer Profile</h3>
               <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            <div className="flex flex-col md:flex-row">
-              <div className="md:w-[40%] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-8 md:min-h-[500px]">
-                <div className="w-40 h-40 rounded-2xl bg-white/80 backdrop-blur flex items-center justify-center shadow-xl">
-                  <User size={72} className="text-gray-400" />
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+              <div className="md:w-[40%] bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center py-[5%] overflow-hidden">
+                <div className="w-full max-w-[80%] rounded-2xl overflow-hidden shadow-xl">
+                  <img
+                    src={d.githubAvatar}
+                    alt={d.name}
+                    className="w-full h-auto object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=2563eb&color=fff&size=400`
+                    }}
+                  />
                 </div>
               </div>
 
-              <div className="md:w-[60%] p-6 sm:p-8 space-y-6">
+              <div className="md:w-[60%] p-6 sm:p-8 space-y-6 overflow-y-auto">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{d.name}</h2>
                   <p className="text-sm text-blue-600 font-medium">{d.designation}</p>

@@ -1,5 +1,7 @@
 import * as db from '../../shared/utils/db';
 import { AppError } from '../../shared/errors/AppError';
+import { razorpayGateway } from '../../services/gateways/razorpay';
+import { phonepeGateway } from '../../services/gateways/phonepe';
 
 function computeEndDate(start: Date, durationDays: number): Date {
   const end = new Date(start);
@@ -70,6 +72,57 @@ export const subscriptionService = {
       status: 'ACTIVE',
       paidAt: now,
     });
+  },
+
+  async createRazorpayOrder(adminId: string, planId: string) {
+    const plan = await db.findFirst('subscription_plans', {
+      where: [{ column: 'id', value: planId }, { column: 'isActive', value: true }],
+    });
+    if (!plan) throw AppError.notFound('Plan not found');
+    const receipt = `sub_${adminId.slice(0, 8)}_${Date.now()}`;
+    const order = await razorpayGateway.createOrder(Number(plan.price), 'INR', receipt, {
+      adminId,
+      planId,
+      planName: plan.name,
+    });
+    return {
+      orderId: order.id,
+      amount: Number(plan.price),
+      currency: 'INR',
+      keyId: process.env.RAZORPAY_KEY_ID || '',
+      planName: plan.name,
+      planDescription: plan.description,
+    };
+  },
+
+  async verifyAndActivate(adminId: string, payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string; planId: string }) {
+    const valid = razorpayGateway.verifyPayment(payload.razorpayOrderId, payload.razorpayPaymentId, payload.razorpaySignature);
+    if (!valid) throw AppError.badRequest('Payment verification failed');
+    return this.subscribe(adminId, payload.planId);
+  },
+
+  async createPhonePeOrder(adminId: string, planId: string, callbackUrl: string) {
+    const plan = await db.findFirst('subscription_plans', {
+      where: [{ column: 'id', value: planId }, { column: 'isActive', value: true }],
+    });
+    if (!plan) throw AppError.notFound('Plan not found');
+    const url = new URL(callbackUrl);
+    url.searchParams.set('planId', planId);
+    url.searchParams.set('adminId', adminId);
+    const result = await phonepeGateway.initiatePayment(Number(plan.price), adminId, url.toString());
+    return {
+      redirectUrl: result.data?.data?.instrumentResponse?.redirectInfo?.url || '',
+      merchantTransactionId: result.merchantTransactionId,
+      amount: Number(plan.price),
+      planName: plan.name,
+    };
+  },
+
+  async verifyPhonePePayment(merchantTransactionId: string) {
+    const result = await phonepeGateway.verifyPayment(merchantTransactionId);
+    const success = result?.code === 'PAYMENT_SUCCESS';
+    if (!success) throw AppError.badRequest('PhonePe payment was not successful');
+    return { success: true, data: result };
   },
 
   async getStatus(adminId: string) {

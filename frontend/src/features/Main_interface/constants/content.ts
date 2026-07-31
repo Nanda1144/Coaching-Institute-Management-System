@@ -8,7 +8,6 @@ import {
   Globe,
   UserPlus,
   Lock,
-  User,
 } from 'lucide-react'
 import type { Feature, Stat, Testimonial, Course, PricingPlan, FaqItem, TeamMember, ServiceDetail, Developer, WorkflowStep, WorkingModel, DownloadAppData } from '../types'
 
@@ -79,7 +78,36 @@ export const STATS: Stat[] = [
   { id: 'centers', value: 50, suffix: '+', label: 'Learning Centers', trend: 'up', trendValue: '5%' },
 ]
 
-
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 't1',
+    name: 'Dr. Meena Sharma',
+    role: 'Director, Excellence Academy',
+    content: 'CIMS has transformed how we manage our institution. The attendance tracking and performance analytics are game-changers for our faculty and students alike.',
+    rating: 5,
+  },
+  {
+    id: 't2',
+    name: 'Ravi Kumar',
+    role: 'Founder, Gyanodaya Classes',
+    content: 'The automated fee reminders alone saved us countless hours. The platform is intuitive, and the support team is incredibly responsive. Highly recommend.',
+    rating: 5,
+  },
+  {
+    id: 't3',
+    name: 'Priya Patel',
+    role: 'Academic Head, SmartLearn Institute',
+    content: 'Migrating from our legacy system was seamless. The role-based access control gives us the security we need while making data accessible to the right people.',
+    rating: 4,
+  },
+  {
+    id: 't4',
+    name: 'Suresh Reddy',
+    role: 'CEO, Reddy\'s Study Circle',
+    content: 'The multi-mode attendance system is exactly what we needed. Face recognition saved us from proxy attendance issues, and parents love the real-time updates.',
+    rating: 5,
+  },
+]
 
 export const COURSES: Course[] = [
   {

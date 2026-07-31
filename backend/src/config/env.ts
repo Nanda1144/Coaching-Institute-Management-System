@@ -31,6 +31,12 @@ export const env = {
   BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL || 'noreply@ciiims.edu',
   BREVO_FROM_NAME: process.env.BREVO_FROM_NAME || 'CIMS',
   CLOUD_PROVIDER: process.env.CLOUD_PROVIDER || 'local',
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || '',
+  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
+  PHONEPE_MERCHANT_ID: process.env.PHONEPE_MERCHANT_ID || '',
+  PHONEPE_SALT_KEY: process.env.PHONEPE_SALT_KEY || '',
+  PHONEPE_SALT_INDEX: process.env.PHONEPE_SALT_INDEX || '1',
+  PHONEPE_BASE_URL: process.env.PHONEPE_BASE_URL || 'https://api.phonepe.com/apis/hermes',
 } as const;
 
 if (env.NODE_ENV === 'production') {
